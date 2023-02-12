@@ -6,15 +6,11 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.objects.PolygonMapObject;
-import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
-import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
-import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.HexagonalTiledMapRenderer;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
@@ -25,6 +21,7 @@ import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputEvent.Type;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -38,16 +35,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import lotr.Constants.ArmyType;
-import static lotr.Risk.CLASSPTH_RSLVR;
+import static lotr.Risk.GREEN_BATTALION;
+import static lotr.Risk.GREY_BATTALION;
+import static lotr.Risk.RED_BATTALION;
 import lotr.Risk.RegionWrapper;
+import static lotr.Risk.TMX_MAP;
+import static lotr.Risk.YELLOW_BATTALION;
 
 public class ClaimTerritoryScreen implements Screen {
 
     private final HexagonalTiledMapRenderer renderer;
-    private final TiledMap tmxMap;
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
 
-    TextureRegion redIcon, greyIcon, greenIcon, yellowIcon;
     Game game;
     float unitScale = 0.35f;
     List<RegionWrapper> regions = new ArrayList<>();
@@ -81,21 +80,10 @@ public class ClaimTerritoryScreen implements Screen {
         this.camera.position.set(MAP_VIEWPORT_WIDTH / 2 - 200, MAP_VIEWPORT_HEIGHT / 2 - 15, 0);
         this.mapViewport.update(MAP_VIEWPORT_WIDTH * 2, MAP_VIEWPORT_HEIGHT, false);
 
-        TmxMapLoader loader = new TmxMapLoader(CLASSPTH_RSLVR);
-        this.tmxMap = loader.load("assets/data/map.tmx");
-
-        this.renderer = new HexagonalTiledMapRenderer(this.tmxMap, this.unitScale, this.batch);
+        this.renderer = new HexagonalTiledMapRenderer(TMX_MAP, this.unitScale, this.batch);
         this.renderer.setView(this.camera);
 
-        TiledMapTileSet tileset = this.tmxMap.getTileSets().getTileSet("monsters");
-        int firstgid = tileset.getProperties().get("firstgid", Integer.class);
-
-        redIcon = tileset.getTile(firstgid + 82).getTextureRegion();
-        greyIcon = tileset.getTile(firstgid + 237).getTextureRegion();
-        greenIcon = tileset.getTile(firstgid + 245).getTextureRegion();
-        yellowIcon = tileset.getTile(firstgid + 1143).getTextureRegion();
-
-        MapLayer regionsLayer = this.tmxMap.getLayers().get("regions");
+        MapLayer regionsLayer = TMX_MAP.getLayers().get("regions");
         Iterator<MapObject> iter = regionsLayer.getObjects().iterator();
         while (iter.hasNext()) {
             PolygonMapObject obj = (PolygonMapObject) iter.next();
@@ -112,51 +100,47 @@ public class ClaimTerritoryScreen implements Screen {
             regions.add(w);
         }
 
-        TiledMapTileLayer iconLayer = (TiledMapTileLayer) this.tmxMap.getLayers().get("icons");
+        TiledMapTileLayer iconLayer = (TiledMapTileLayer) TMX_MAP.getLayers().get("icons");
         Risk.setPoints(iconLayer, regions, unitScale);
 
-        this.table.align(Align.left | Align.top).pad(1);
+        this.table.align(Align.left | Align.top).pad(5);
         this.table.columnDefaults(0).expandX().left().uniformX();
-        this.table.columnDefaults(1).expandX().left().uniformX();
 
         ScrollPane sp = new ScrollPane(table, Risk.skin);
-        sp.setBounds(100, 600, 300, 400);
+        sp.setBounds(500, 700, 150, 200);
         this.stage.addActor(sp);
 
-        this.claim = new TextButton("CLAIM", Risk.skin, "red-larger");
+        this.claim = new TextButton("CLAIM", Risk.skin);
         this.claim.setVisible(false);
         this.claim.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-
+                boolean foundSelected = false;
                 for (RegionWrapper w : regions) {
                     if (w.selected) {
+                        foundSelected = true;
                         if (w.territory.battalions.isEmpty()) {
                             addBattalion(w);
                         } else if (claim.getText().toString().equals("REINFORCE")) {
-                            if (w.territory.battalions.get(0).army.armyType == game.armies[turnIndex].armyType) {
+                            if (w.territory.battalions.get(0).army.armyType == game.armies.get(turnIndex).armyType) {
                                 addBattalion(w);
+                            } else {
+                                Sounds.play(Sound.NEGATIVE_EFFECT);
                             }
+                        } else {
+                            Sounds.play(Sound.NEGATIVE_EFFECT);
                         }
                         break;
                     }
                 }
-
+                if (!foundSelected) {
+                    Sounds.play(Sound.NEGATIVE_EFFECT);
+                }
             }
         });
-        this.claim.setBounds(260, 500, 100, 40);
+        this.claim.setBounds(525, 600, 150, 40);
 
-        this.exit = new TextButton("EXIT", Risk.skin, "red-larger");
-        this.exit.setVisible(false);
-        this.exit.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-
-            }
-        });
-        this.exit.setBounds(150, 500, 100, 40);
-
-        this.auto = new TextButton("AUTO REINFORCE", Risk.skin, "red-larger");
+        this.auto = new TextButton("AUTO REINFORCE", Risk.skin);
         this.auto.setVisible(false);
         this.auto.addListener(new ChangeListener() {
             @Override
@@ -164,7 +148,17 @@ public class ClaimTerritoryScreen implements Screen {
                 autoReinforce();
             }
         });
-        this.auto.setBounds(370, 500, 200, 40);
+        this.auto.setBounds(525, 475, 150, 40);
+
+        this.exit = new TextButton("EXIT", Risk.skin);
+        this.exit.setVisible(false);
+        this.exit.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+
+            }
+        });
+        this.exit.setBounds(525, 600, 150, 40);
 
         this.stage.addActor(this.claim);
         this.stage.addActor(this.exit);
@@ -196,22 +190,33 @@ public class ClaimTerritoryScreen implements Screen {
     }
 
     public void initArmies() {
-        this.table.add(armyCell(ArmyType.RED, redLabel));
-        this.table.add(armyCell(ArmyType.GREY, greyLabel));
-        this.table.row();
-        this.table.add(armyCell(ArmyType.GREEN, greenLabel));
-        this.table.add(armyCell(ArmyType.YELLOW, yellowLabel));
-        this.table.row();
+        armyCell(this.table, ArmyType.RED, redLabel);
+        armyCell(this.table, ArmyType.GREY, greyLabel);
+        armyCell(this.table, ArmyType.GREEN, greenLabel);
+        armyCell(this.table, ArmyType.YELLOW, yellowLabel);
 
-        this.turnIndex = rand.nextInt(4);
-        if (this.game.armies[turnIndex] == null) {
-            this.turnIndex++;
-        }
-        if (this.turnIndex >= this.game.armies.length) {
-            this.turnIndex = 0;
-        }
+        this.turnIndex = rand.nextInt(this.game.armies.size());
 
         setActiveArmy();
+    }
+
+    private void armyCell(Table t, ArmyType type, Label label) {
+        Image image = null;
+        if (type == ArmyType.RED) {
+            image = new Image(RED_BATTALION);
+        }
+        if (type == ArmyType.GREEN) {
+            image = new Image(GREEN_BATTALION);
+        }
+        if (type == ArmyType.GREY) {
+            image = new Image(GREY_BATTALION);
+        }
+        if (type == ArmyType.YELLOW) {
+            image = new Image(YELLOW_BATTALION);
+        }
+        t.add(image).expandX().left().pad(5).uniformX();
+        t.add(label).expandX().left().pad(5).uniformX();
+        t.row();
     }
 
     private void setActiveArmy() {
@@ -225,7 +230,7 @@ public class ClaimTerritoryScreen implements Screen {
         greyLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
         yellowLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
 
-        Army a = this.game.armies[turnIndex];
+        Army a = this.game.armies.get(turnIndex);
 
         if (a.armyType == ArmyType.RED) {
             redLabel.setStyle(Risk.skin.get("default-blue", Label.LabelStyle.class));
@@ -255,50 +260,21 @@ public class ClaimTerritoryScreen implements Screen {
         }
     }
 
-    private Table armyCell(ArmyType type, Label label) {
-        Table t = new Table();
-        t.columnDefaults(0).expandX().left().uniformX();
-        t.align(Align.left | Align.top).pad(1);
-        Label l = new Label(type + "", Risk.skin);
-
-        if (type == ArmyType.RED) {
-            l.setStyle(Risk.skin.get("default-red", Label.LabelStyle.class));
-        }
-        if (type == ArmyType.GREEN) {
-            l.setStyle(Risk.skin.get("default-green", Label.LabelStyle.class));
-        }
-        if (type == ArmyType.GREY) {
-            l.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
-        }
-        if (type == ArmyType.YELLOW) {
-            l.setStyle(Risk.skin.get("default-yellow", Label.LabelStyle.class));
-        }
-
-        t.add(l);
-        t.row();
-        t.add(label);
-        return t;
-    }
-
     private void addBattalion(RegionWrapper w) {
 
-        if (!game.armies[turnIndex].battalions.isEmpty()) {
-            Battalion b = game.armies[turnIndex].battalions.remove(0);
+        if (!game.armies.get(turnIndex).battalions.isEmpty()) {
+            Battalion b = game.armies.get(turnIndex).battalions.remove(0);
             w.territory.battalions.add(b);
+            Sounds.play(Sound.TRIGGER);
         }
 
         claim.setVisible(false);
 
         turnIndex++;
-        if (turnIndex >= game.armies.length) {
+        if (turnIndex >= game.armies.size()) {
             turnIndex = 0;
         }
-        if (game.armies[turnIndex] == null) {
-            turnIndex++;
-        }
-        if (turnIndex >= game.armies.length) {
-            turnIndex = 0;
-        }
+
         setActiveArmy();
 
         boolean done = true;
@@ -316,9 +292,12 @@ public class ClaimTerritoryScreen implements Screen {
     }
 
     private void autoReinforce() {
+
+        Sounds.play(Sound.DIVINE_INTERVENTION);
+
         while (true) {
 
-            Army army = this.game.armies[turnIndex];
+            Army army = this.game.armies.get(turnIndex);
 
             boolean done = true;
             for (Army a : this.game.armies) {
@@ -331,13 +310,7 @@ public class ClaimTerritoryScreen implements Screen {
             }
 
             turnIndex++;
-            if (turnIndex >= game.armies.length) {
-                turnIndex = 0;
-            }
-            if (game.armies[turnIndex] == null) {
-                turnIndex++;
-            }
-            if (turnIndex >= game.armies.length) {
+            if (turnIndex >= game.armies.size()) {
                 turnIndex = 0;
             }
 
@@ -385,33 +358,33 @@ public class ClaimTerritoryScreen implements Screen {
 
         renderer.render();
 
-        Gdx.gl.glLineWidth(3);
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
 
         for (RegionWrapper w : regions) {
 
+            Gdx.gl.glLineWidth(w.selected ? 6 : 3);
             shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-            shapeRenderer.setColor(w.selected ? Color.RED : Color.YELLOW);
+            shapeRenderer.setColor(w.selected ? Color.RED : Color.LIGHT_GRAY);
             shapeRenderer.polygon(w.vertices);
             shapeRenderer.end();
 
             if (w.territory != null && !w.territory.battalions.isEmpty()) {
                 renderer.getBatch().begin();
                 if (w.territory.battalions.get(0).army.armyType == ArmyType.RED) {
-                    renderer.getBatch().draw(redIcon, w.redPosition.x, w.redPosition.y);
+                    renderer.getBatch().draw(RED_BATTALION, w.redPosition.x, w.redPosition.y);
                     Risk.font.draw(renderer.getBatch(), w.territory.battalions.size() + "", w.redPosition.x + 8, w.redPosition.y + 8);
                 }
                 if (w.territory.battalions.get(0).army.armyType == ArmyType.GREY) {
-                    renderer.getBatch().draw(greyIcon, w.greyPosition.x, w.greyPosition.y);
+                    renderer.getBatch().draw(GREY_BATTALION, w.greyPosition.x, w.greyPosition.y);
                     Risk.font.draw(renderer.getBatch(), w.territory.battalions.size() + "", w.greyPosition.x + 8, w.greyPosition.y + 8);
                 }
                 if (w.territory.battalions.get(0).army.armyType == ArmyType.GREEN) {
-                    renderer.getBatch().draw(greenIcon, w.greenPosition.x, w.greenPosition.y);
+                    renderer.getBatch().draw(GREEN_BATTALION, w.greenPosition.x, w.greenPosition.y);
                     Risk.font.draw(renderer.getBatch(), w.territory.battalions.size() + "", w.greenPosition.x + 8, w.greenPosition.y + 8);
                 }
                 if (w.territory.battalions.get(0).army.armyType == ArmyType.YELLOW) {
-                    renderer.getBatch().draw(yellowIcon, w.yellowPosition.x, w.yellowPosition.y);
+                    renderer.getBatch().draw(YELLOW_BATTALION, w.yellowPosition.x, w.yellowPosition.y);
                     Risk.font.draw(renderer.getBatch(), w.territory.battalions.size() + "", w.yellowPosition.x + 8, w.yellowPosition.y + 8);
                 }
                 renderer.getBatch().end();

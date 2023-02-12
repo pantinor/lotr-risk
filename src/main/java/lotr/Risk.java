@@ -10,8 +10,12 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
+import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
+import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -27,8 +31,10 @@ public class Risk extends Game {
 
     public static final int SCREEN_WIDTH = 1800;
     public static final int SCREEN_HEIGHT = 1050;
-    
+
     public static Risk mainGame;
+    public static TiledMap TMX_MAP;
+    public static TextureRegion RED_BATTALION, GREY_BATTALION, GREEN_BATTALION, YELLOW_BATTALION;
 
     public static void main(String[] args) {
 
@@ -67,8 +73,19 @@ public class Risk extends Game {
         Label.LabelStyle ls = new Label.LabelStyle();
         skin.add("small-font", ls, Label.LabelStyle.class);
         ls.font = fontSmallYellow;
-        
+
         TerritoryCard.init();
+
+        TmxMapLoader loader = new TmxMapLoader(CLASSPTH_RSLVR);
+        TMX_MAP = loader.load("assets/data/map.tmx");
+
+        TiledMapTileSet tileset = TMX_MAP.getTileSets().getTileSet("monsters");
+        int firstgid = tileset.getProperties().get("firstgid", Integer.class);
+
+        RED_BATTALION = tileset.getTile(firstgid + 82).getTextureRegion();
+        GREY_BATTALION = tileset.getTile(firstgid + 237).getTextureRegion();
+        GREEN_BATTALION = tileset.getTile(firstgid + 245).getTextureRegion();
+        YELLOW_BATTALION = tileset.getTile(firstgid + 1143).getTextureRegion();
 
         lotr.Game game = new lotr.Game();
 

@@ -41,7 +41,7 @@ public class PlayerSelectionDialog extends Window {
         setSkin(Risk.skin);
         setModal(true);
         defaults().pad(5);
-        
+
         Table table = new Table();
         table.align(Align.left | Align.top).pad(1);
         table.columnDefaults(0).expandX().left().uniformX();
@@ -107,19 +107,24 @@ public class PlayerSelectionDialog extends Window {
                     }
 
                     if (count < 2) {
+                        Sounds.play(Sound.NEGATIVE_EFFECT);
                         return false;
                     }
 
                     if (cb1.isChecked() && cb11.isChecked()) {
+                        Sounds.play(Sound.NEGATIVE_EFFECT);
                         return false;
                     }
                     if (cb2.isChecked() && cb12.isChecked()) {
+                        Sounds.play(Sound.NEGATIVE_EFFECT);
                         return false;
                     }
                     if (cb3.isChecked() && cb13.isChecked()) {
+                        Sounds.play(Sound.NEGATIVE_EFFECT);
                         return false;
                     }
                     if (cb4.isChecked() && cb14.isChecked()) {
+                        Sounds.play(Sound.NEGATIVE_EFFECT);
                         return false;
                     }
 

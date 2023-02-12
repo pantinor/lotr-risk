@@ -52,14 +52,13 @@ public class Game {
         }
 
         //claim empty territories
-        Army[] armies = game.armies;
-        int idx = rand.nextInt(4);
+        int idx = rand.nextInt(game.armies.size());
         while (true) {
 
-            Army army = armies[idx];
+            Army army = game.armies.get(idx);
 
             idx++;
-            if (idx >= armies.length) {
+            if (idx >= game.armies.size()) {
                 idx = 0;
             }
 
@@ -76,10 +75,10 @@ public class Game {
         //reinforce territories
         while (true) {
 
-            Army army = armies[idx];
+            Army army = game.armies.get(idx);
 
             boolean done = true;
-            for (Army a : armies) {
+            for (Army a : game.armies) {
                 if (!a.battalions.isEmpty()) {
                     done = false;
                 }
@@ -89,7 +88,7 @@ public class Game {
             }
 
             idx++;
-            if (idx >= armies.length) {
+            if (idx >= game.armies.size()) {
                 idx = 0;
             }
 
@@ -103,8 +102,7 @@ public class Game {
             t.battalions.add(b);
         }
 
-        for (int i = 0; i < armies.length; i++) {
-            Army army = armies[i];
+        for (Army army : game.armies) {
             System.out.printf("Army [%s] [%s]\n", army.armyType, army.classType);
             List<Territory> terrs = TerritoryCard.getClaimedTerritories(army.armyType);
             for (Territory t : terrs) {
@@ -114,27 +112,25 @@ public class Game {
 
     }
 
-    Army[] armies = new Army[4];
+    List<Army> armies = new ArrayList<>();
     Army red, green, grey, yellow;
     List<TerritoryCard> deck;
-    
+
     public void addArmy(Army army) {
+
+        armies.add(army);
 
         switch (army.armyType) {
             case RED:
-                armies[ArmyType.RED.ordinal()] = army;
                 red = army;
                 break;
             case GREEN:
-                armies[ArmyType.GREEN.ordinal()] = army;
                 green = army;
                 break;
             case GREY:
-                armies[ArmyType.GREY.ordinal()] = army;
                 grey = army;
                 break;
             case YELLOW:
-                armies[ArmyType.YELLOW.ordinal()] = army;
                 yellow = army;
                 break;
         }
