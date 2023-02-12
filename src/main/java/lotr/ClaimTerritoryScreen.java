@@ -36,11 +36,17 @@ import java.util.List;
 import java.util.Random;
 import lotr.Constants.ArmyType;
 import static lotr.Risk.GREEN_BATTALION;
+import static lotr.Risk.GREEN_LEADER;
 import static lotr.Risk.GREY_BATTALION;
+import static lotr.Risk.GREY_LEADER;
+import static lotr.Risk.LEADER_CIRCLE;
 import static lotr.Risk.RED_BATTALION;
+import static lotr.Risk.RED_LEADER;
 import lotr.Risk.RegionWrapper;
+import static lotr.Risk.TEXT_CIRCLE;
 import static lotr.Risk.TMX_MAP;
 import static lotr.Risk.YELLOW_BATTALION;
+import static lotr.Risk.YELLOW_LEADER;
 
 public class ClaimTerritoryScreen implements Screen {
 
@@ -107,7 +113,7 @@ public class ClaimTerritoryScreen implements Screen {
         this.table.columnDefaults(0).expandX().left().uniformX();
 
         ScrollPane sp = new ScrollPane(table, Risk.skin);
-        sp.setBounds(500, 700, 150, 200);
+        sp.setBounds(350, 700, 300, 200);
         this.stage.addActor(sp);
 
         this.claim = new TextButton("CLAIM", Risk.skin);
@@ -120,13 +126,33 @@ public class ClaimTerritoryScreen implements Screen {
                     if (w.selected) {
                         foundSelected = true;
                         if (w.territory.battalions.isEmpty()) {
-                            addBattalion(w);
+
+                            addBattalion(w, false);
+
                         } else if (claim.getText().toString().equals("REINFORCE")) {
+
                             if (w.territory.battalions.get(0).army.armyType == game.armies.get(turnIndex).armyType) {
-                                addBattalion(w);
+                                addBattalion(w, false);
                             } else {
                                 Sounds.play(Sound.NEGATIVE_EFFECT);
                             }
+
+                        } else if (claim.getText().toString().equals("PLACE LEADERS")) {
+
+                            if (w.territory.battalions.get(0).army.armyType == game.armies.get(turnIndex).armyType && w.territory.leader == null) {
+                                int size = TerritoryCard.getClaimedTerritoriesWithLeaders(game.armies.get(turnIndex).armyType).size();
+                                if (size == 0) {
+                                    w.territory.leader = game.armies.get(turnIndex).leader1;
+                                } else if (size == 1) {
+                                    w.territory.leader = game.armies.get(turnIndex).leader2;
+                                } else {
+                                    Sounds.play(Sound.BLOCKED);
+                                }
+                                addBattalion(w, false); //just to advance the next player
+                            } else {
+                                Sounds.play(Sound.NEGATIVE_EFFECT);
+                            }
+
                         } else {
                             Sounds.play(Sound.NEGATIVE_EFFECT);
                         }
@@ -214,16 +240,22 @@ public class ClaimTerritoryScreen implements Screen {
         if (type == ArmyType.YELLOW) {
             image = new Image(YELLOW_BATTALION);
         }
-        t.add(image).expandX().left().pad(5).uniformX();
-        t.add(label).expandX().left().pad(5).uniformX();
+        t.add(image).left().pad(5);
+        t.add(label).left().pad(5).expandX();
         t.row();
     }
 
     private void setActiveArmy() {
-        redLabel.setText(this.game.red != null ? this.game.red.battalions.size() + "" : "-");
-        greenLabel.setText(this.game.green != null ? this.game.green.battalions.size() + "" : "-");
-        greyLabel.setText(this.game.grey != null ? this.game.grey.battalions.size() + "" : "-");
-        yellowLabel.setText(this.game.yellow != null ? this.game.yellow.battalions.size() + "" : "-");
+
+        int rlc = TerritoryCard.getClaimedTerritoriesWithLeaders(ArmyType.RED).size();
+        int glc = TerritoryCard.getClaimedTerritoriesWithLeaders(ArmyType.GREY).size();
+        int grlc = TerritoryCard.getClaimedTerritoriesWithLeaders(ArmyType.GREEN).size();
+        int ylc = TerritoryCard.getClaimedTerritoriesWithLeaders(ArmyType.YELLOW).size();
+
+        redLabel.setText(this.game.red != null ? "Battalions: " + this.game.red.battalions.size() + " Leaders: " + rlc : "-");
+        greenLabel.setText(this.game.green != null ? "Battalions: " + this.game.green.battalions.size() + " Leaders: " + grlc : "-");
+        greyLabel.setText(this.game.grey != null ? "Battalions: " + this.game.grey.battalions.size() + " Leaders: " + glc : "-");
+        yellowLabel.setText(this.game.yellow != null ? "Battalions: " + this.game.yellow.battalions.size() + " Leaders: " + ylc : "-");
 
         redLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
         greenLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
@@ -254,18 +286,20 @@ public class ClaimTerritoryScreen implements Screen {
                 foundEmpty = true;
             }
         }
-        if (!foundEmpty) {
+        if (!foundEmpty && this.claim.getText().toString().equals("CLAIM")) {
             this.claim.setText("REINFORCE");
             this.auto.setVisible(true);
         }
     }
 
-    private void addBattalion(RegionWrapper w) {
+    private void addBattalion(RegionWrapper w, boolean isAuto) {
 
         if (!game.armies.get(turnIndex).battalions.isEmpty()) {
             Battalion b = game.armies.get(turnIndex).battalions.remove(0);
             w.territory.battalions.add(b);
-            Sounds.play(Sound.TRIGGER);
+            if (!isAuto) {
+                Sounds.play(Sound.TRIGGER);
+            }
         }
 
         claim.setVisible(false);
@@ -277,23 +311,29 @@ public class ClaimTerritoryScreen implements Screen {
 
         setActiveArmy();
 
-        boolean done = true;
+        boolean reinforcedone = true;
+        boolean leaderPlacementDone = true;
         for (Army a : this.game.armies) {
             if (a != null) {
                 if (!a.battalions.isEmpty()) {
-                    done = false;
+                    reinforcedone = false;
+                }
+                if (TerritoryCard.getClaimedTerritoriesWithLeaders(a.armyType).size() != 2) {
+                    leaderPlacementDone = false;
                 }
             }
         }
-        if (done) {
-            this.exit.setVisible(true);
-            this.claim.setVisible(false);
+        if (reinforcedone) {
+            if (leaderPlacementDone) {
+                this.exit.setVisible(true);
+                this.claim.setVisible(false);
+            } else {
+                this.claim.setText("PLACE LEADERS");
+            }
         }
     }
 
     private void autoReinforce() {
-
-        Sounds.play(Sound.DIVINE_INTERVENTION);
 
         while (true) {
 
@@ -305,40 +345,27 @@ public class ClaimTerritoryScreen implements Screen {
                     done = false;
                 }
             }
+
             if (done) {
                 break;
             }
 
-            turnIndex++;
-            if (turnIndex >= game.armies.size()) {
-                turnIndex = 0;
-            }
-
-            if (army.battalions.isEmpty()) {
-                continue;
-            }
-
-            Battalion b = army.battalions.remove(0);
             List<Territory> terrs = TerritoryCard.getClaimedTerritories(army.armyType);
             Territory t = terrs.get(rand.nextInt(terrs.size()));
-            t.battalions.add(b);
 
+            RegionWrapper found = null;
+            for (RegionWrapper w : regions) {
+                if (w.territory == t) {
+                    found = w;
+                    break;
+                }
+            }
+
+            addBattalion(found, true);
         }
 
-        this.exit.setVisible(true);
-        this.claim.setVisible(false);
+        Sounds.play(Sound.DIVINE_INTERVENTION);
         this.auto.setVisible(false);
-
-        redLabel.setText(this.game.red != null ? this.game.red.battalions.size() + "" : "-");
-        greenLabel.setText(this.game.green != null ? this.game.green.battalions.size() + "" : "-");
-        greyLabel.setText(this.game.grey != null ? this.game.grey.battalions.size() + "" : "-");
-        yellowLabel.setText(this.game.yellow != null ? this.game.yellow.battalions.size() + "" : "-");
-
-        redLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
-        greenLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
-        greyLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
-        yellowLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
-
     }
 
     @Override
@@ -371,22 +398,35 @@ public class ClaimTerritoryScreen implements Screen {
 
             if (w.territory != null && !w.territory.battalions.isEmpty()) {
                 renderer.getBatch().begin();
+
                 if (w.territory.battalions.get(0).army.armyType == ArmyType.RED) {
                     renderer.getBatch().draw(RED_BATTALION, w.redPosition.x, w.redPosition.y);
-                    Risk.font.draw(renderer.getBatch(), w.territory.battalions.size() + "", w.redPosition.x + 8, w.redPosition.y + 8);
+                    if (w.territory.leader != null) {
+                        renderer.getBatch().draw(RED_LEADER, w.redPosition.x - 10, w.redPosition.y - 10);
+                    }
                 }
                 if (w.territory.battalions.get(0).army.armyType == ArmyType.GREY) {
                     renderer.getBatch().draw(GREY_BATTALION, w.greyPosition.x, w.greyPosition.y);
-                    Risk.font.draw(renderer.getBatch(), w.territory.battalions.size() + "", w.greyPosition.x + 8, w.greyPosition.y + 8);
+                    if (w.territory.leader != null) {
+                        renderer.getBatch().draw(GREY_LEADER, w.greyPosition.x - 10, w.greyPosition.y - 10);
+                    }
                 }
                 if (w.territory.battalions.get(0).army.armyType == ArmyType.GREEN) {
                     renderer.getBatch().draw(GREEN_BATTALION, w.greenPosition.x, w.greenPosition.y);
-                    Risk.font.draw(renderer.getBatch(), w.territory.battalions.size() + "", w.greenPosition.x + 8, w.greenPosition.y + 8);
+                    if (w.territory.leader != null) {
+                        renderer.getBatch().draw(GREEN_LEADER, w.greenPosition.x - 10, w.greenPosition.y - 10);
+                    }
                 }
                 if (w.territory.battalions.get(0).army.armyType == ArmyType.YELLOW) {
                     renderer.getBatch().draw(YELLOW_BATTALION, w.yellowPosition.x, w.yellowPosition.y);
-                    Risk.font.draw(renderer.getBatch(), w.territory.battalions.size() + "", w.yellowPosition.x + 8, w.yellowPosition.y + 8);
+                    if (w.territory.leader != null) {
+                        renderer.getBatch().draw(YELLOW_LEADER, w.yellowPosition.x - 10, w.yellowPosition.y - 10);
+                    }
                 }
+
+                renderer.getBatch().draw(w.territory.leader != null ? LEADER_CIRCLE : TEXT_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                Risk.fontSmall.draw(renderer.getBatch(), w.territory.battalions.size() + "", w.textPosition.x + 3, w.textPosition.y + 8);
+
                 renderer.getBatch().end();
             }
 

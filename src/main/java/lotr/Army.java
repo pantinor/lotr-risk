@@ -11,11 +11,16 @@ public class Army {
     public final ClassType classType;
     public final boolean defenseOnly;
     public final List<Battalion> battalions = new ArrayList<>();
+    public final Leader leader1;
+    public final Leader leader2;
 
     public Army(ArmyType a, ClassType c, int startingBattalions, boolean defenseOnly) {
         this.armyType = a;
         this.classType = c;
         this.defenseOnly = defenseOnly;
+        
+        this.leader1 = new Leader(this);
+        this.leader2 = new Leader(this);
 
         for (int i = 0; i < startingBattalions; i++) {
             this.battalions.add(new Battalion(this));

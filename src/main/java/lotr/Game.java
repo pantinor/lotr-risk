@@ -8,17 +8,38 @@ import lotr.Constants.ClassType;
 
 public class Game {
 
-    public static void main(String[] args) throws Exception {
-        //4 player game
+    List<Army> armies = new ArrayList<>();
+    Army red, green, grey, yellow;
+    List<TerritoryCard> deck;
 
-        TerritoryCard.init();
+    public void addArmy(Army army) {
+
+        armies.add(army);
+
+        switch (army.armyType) {
+            case RED:
+                red = army;
+                break;
+            case GREEN:
+                green = army;
+                break;
+            case GREY:
+                grey = army;
+                break;
+            case YELLOW:
+                yellow = army;
+                break;
+        }
+
+    }
+
+    public static void testInit4PlayerGame(Game game) {
+        //4 player game
 
         Army red = new Army(ArmyType.RED, ClassType.EVIL, 45, false);
         Army green = new Army(ArmyType.GREEN, ClassType.GOOD, 45, false);
         Army grey = new Army(ArmyType.GREY, ClassType.EVIL, 45, false);
         Army yellow = new Army(ArmyType.YELLOW, ClassType.GOOD, 45, false);
-
-        Game game = new Game();
 
         game.addArmy(red);
         game.addArmy(green);
@@ -103,36 +124,37 @@ public class Game {
         }
 
         for (Army army : game.armies) {
-            System.out.printf("Army [%s] [%s]\n", army.armyType, army.classType);
+            //System.out.printf("Army [%s] [%s]\n", army.armyType, army.classType);
             List<Territory> terrs = TerritoryCard.getClaimedTerritories(army.armyType);
             for (Territory t : terrs) {
-                System.out.printf("\t%s\t%d\n", t.card(), t.battalions.size());
+                //System.out.printf("\t%s\t%d\n", t.card(), t.battalions.size());
             }
-        }
 
-    }
+            Territory t = terrs.get(rand.nextInt(terrs.size()));
+            t.leader = army.leader1;
 
-    List<Army> armies = new ArrayList<>();
-    Army red, green, grey, yellow;
-    List<TerritoryCard> deck;
+            t = terrs.get(rand.nextInt(terrs.size()));
+            if (t.leader == null) {
+                t.leader = army.leader2;
+            } else {
+                t = terrs.get(rand.nextInt(terrs.size()));
+                if (t.leader == null) {
+                    t.leader = army.leader2;
+                } else {
+                    t = terrs.get(rand.nextInt(terrs.size()));
+                    if (t.leader == null) {
+                        t.leader = army.leader2;
+                    } else {
+                        t = terrs.get(rand.nextInt(terrs.size()));
+                        if (t.leader == null) {
+                            t.leader = army.leader2;
+                        } else {
+                            throw new RuntimeException("failed to place second leader");
+                        }
+                    }
+                }
+            }
 
-    public void addArmy(Army army) {
-
-        armies.add(army);
-
-        switch (army.armyType) {
-            case RED:
-                red = army;
-                break;
-            case GREEN:
-                green = army;
-                break;
-            case GREY:
-                grey = army;
-                break;
-            case YELLOW:
-                yellow = army;
-                break;
         }
 
     }

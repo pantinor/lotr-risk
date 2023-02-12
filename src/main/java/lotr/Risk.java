@@ -12,6 +12,9 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.maps.MapLayer;
+import com.badlogic.gdx.maps.MapObject;
+import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
@@ -20,6 +23,9 @@ import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 public class Risk extends Game {
@@ -35,6 +41,11 @@ public class Risk extends Game {
     public static Risk mainGame;
     public static TiledMap TMX_MAP;
     public static TextureRegion RED_BATTALION, GREY_BATTALION, GREEN_BATTALION, YELLOW_BATTALION;
+    public static TextureRegion RED_LEADER, GREY_LEADER, GREEN_LEADER, YELLOW_LEADER;
+    public static TextureRegion FRODO, SAM;
+    public static Texture TEXT_CIRCLE, LEADER_CIRCLE;
+    
+    public static List<RingPathWrapper> RING_PATHS = new ArrayList<>();
 
     public static void main(String[] args) {
 
@@ -83,17 +94,41 @@ public class Risk extends Game {
         int firstgid = tileset.getProperties().get("firstgid", Integer.class);
 
         RED_BATTALION = tileset.getTile(firstgid + 82).getTextureRegion();
-        GREY_BATTALION = tileset.getTile(firstgid + 237).getTextureRegion();
-        GREEN_BATTALION = tileset.getTile(firstgid + 245).getTextureRegion();
-        YELLOW_BATTALION = tileset.getTile(firstgid + 1143).getTextureRegion();
+        GREY_BATTALION = tileset.getTile(firstgid + 223).getTextureRegion();
+        GREEN_BATTALION = tileset.getTile(firstgid + 360).getTextureRegion();
+        YELLOW_BATTALION = tileset.getTile(firstgid + 352).getTextureRegion();
+        FRODO = tileset.getTile(firstgid + 328).getTextureRegion();
+        SAM = tileset.getTile(firstgid + 307).getTextureRegion();
+        RED_LEADER = tileset.getTile(firstgid + 84).getTextureRegion();
+        GREY_LEADER = tileset.getTile(firstgid + 237).getTextureRegion();
+        GREEN_LEADER = tileset.getTile(firstgid + 245).getTextureRegion();
+        YELLOW_LEADER = tileset.getTile(firstgid + 429).getTextureRegion();
+
+        MapLayer pathLayer = TMX_MAP.getLayers().get("ring-path");
+        Iterator<MapObject> pathIter = pathLayer.getObjects().iterator();
+        while (pathIter.hasNext()) {
+            RectangleMapObject obj = (RectangleMapObject) pathIter.next();
+            RingPathWrapper w = new RingPathWrapper();
+            w.name = obj.getName();
+            w.id = obj.getProperties().get("id", Integer.class);
+            w.x = obj.getProperties().get("x", Float.class);
+            w.y = obj.getProperties().get("y", Float.class);
+            RING_PATHS.add(w);
+        }
+        Collections.sort(RING_PATHS);
+        RING_PATHS.get(0).selected = true;
+        
+        TEXT_CIRCLE = fillCircle(new Color(0, 0, 1, 0.5f));
+        LEADER_CIRCLE = fillCircle(new Color(1, 0, 0, 0.5f));
 
         lotr.Game game = new lotr.Game();
 
-        ClaimTerritoryScreen startScreen = new ClaimTerritoryScreen(game);
-        setScreen(startScreen);
+        //ClaimTerritoryScreen startScreen = new ClaimTerritoryScreen(game);
+        //setScreen(startScreen);
 
-        //GameScreen gameScreen = new GameScreen(this, game);
-        //setScreen(gameScreen);
+        lotr.Game.testInit4PlayerGame(game);
+        GameScreen gameScreen = new GameScreen(game);
+        setScreen(gameScreen);
     }
 
     public static Texture fillRectangle(int width, int height, Color color, float alpha) {
@@ -102,6 +137,15 @@ public class Risk extends Game {
         pix.fillRectangle(0, 0, width, height);
         Texture t = new Texture(pix);
         pix.dispose();
+        return t;
+    }
+    
+    private static Texture fillCircle(Color color) {
+        Pixmap px = new Pixmap(24, 24, Pixmap.Format.RGBA8888);
+        px.setColor(color);
+        px.fillCircle(12, 12, 10);
+        Texture t = new Texture(px);
+        px.dispose();
         return t;
     }
 
@@ -123,6 +167,29 @@ public class Risk extends Game {
         Vector2 greyPosition;
         Vector2 greenPosition;
         Vector2 yellowPosition;
+        Vector2 textPosition;
+    }
+
+    public static class RingPathWrapper implements Comparable {
+
+        int id;
+        String name;
+        float x;
+        float y;
+        boolean selected;
+
+        @Override
+        public int compareTo(Object obj) {
+            final RingPathWrapper other = (RingPathWrapper) obj;
+            if (this.id > other.id) {
+                return 1;
+            } else if (this.id < other.id) {
+                return -1;
+            } else {
+                return 0;
+            }
+        }
+
     }
 
     public static void setPoints(TiledMapTileLayer layer, List<RegionWrapper> regions, float unitScale) {
@@ -167,8 +234,10 @@ public class Risk extends Game {
                                 w.yellowPosition = new Vector2(v);
                             } else if (iconId == 1) {
                                 w.greenPosition = new Vector2(v);
-                            } else {
+                            } else if (iconId == 17) {
                                 w.greyPosition = new Vector2(v);
+                            } else {
+                                w.textPosition = new Vector2(v);
                             }
                         }
                     }
@@ -189,8 +258,10 @@ public class Risk extends Game {
                                 w.yellowPosition = new Vector2(v);
                             } else if (iconId == 1) {
                                 w.greenPosition = new Vector2(v);
-                            } else {
+                            } else if (iconId == 17) {
                                 w.greyPosition = new Vector2(v);
+                            } else {
+                                w.textPosition = new Vector2(v);
                             }
                         }
                     }

@@ -199,22 +199,10 @@ public class PlayerSelectionDialog extends Window {
                     }
 
                     game.deck = new ArrayList<>();
-                    Random rand = new Random();
-                    {
-                        for (TerritoryCard c : TerritoryCard.values()) {
-                            game.deck.add(c);
-                        }
-
-                        List<TerritoryCard> shuffled = new ArrayList<>();
-                        count = game.deck.size();
-                        for (int i = 0; i < count; i++) {
-                            int r = rand.nextInt(game.deck.size());
-                            TerritoryCard c = game.deck.remove(r);
-                            shuffled.add(c);
-                        }
-
-                        game.deck = shuffled;
+                    for (TerritoryCard c : TerritoryCard.values()) {
+                        game.deck.add(c);
                     }
+                    game.deck = TerritoryCard.randomCards(game.deck, game.deck.size());
 
                     hide();
 

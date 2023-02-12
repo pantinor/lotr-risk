@@ -7,6 +7,7 @@ public class Territory {
 
     private final TerritoryCard card;
     public final List<Battalion> battalions = new ArrayList<>();
+    public Leader leader;
 
     public Territory(TerritoryCard c) {
         this.card = c;

@@ -320,7 +320,7 @@ public enum TerritoryCard {
         }
 
     }
-    
+
     public static Territory getTerritory(String name) {
         for (Territory t : TERRITORIES) {
             String n = t.card().toString().toLowerCase().replace("_", " ");
@@ -338,7 +338,7 @@ public enum TerritoryCard {
                 cards.add(c);
             }
         }
-        return cards;
+        return randomCards(cards, cards.size());
     }
 
     public static List<TerritoryCard> randomCards(List<TerritoryCard> cards, int count) {
@@ -375,12 +375,24 @@ public enum TerritoryCard {
         int r = rand.nextInt(empties.size());
         return empties.get(r);
     }
-    
+
     public static List<Territory> getClaimedTerritories(ArmyType at) {
         List<Territory> terrs = new ArrayList<>();
         for (Territory t : TERRITORIES) {
             if (!t.battalions.isEmpty() && t.battalions.get(0).army.armyType == at) {
                 terrs.add(t);
+            }
+        }
+        return terrs;
+    }
+
+    public static List<Territory> getClaimedTerritoriesWithLeaders(ArmyType at) {
+        List<Territory> terrs = new ArrayList<>();
+        for (Territory t : TERRITORIES) {
+            if (!t.battalions.isEmpty() && t.battalions.get(0).army.armyType == at) {
+                if (t.leader != null) {
+                    terrs.add(t);
+                }
             }
         }
         return terrs;

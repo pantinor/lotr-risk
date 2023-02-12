@@ -1,9 +1,11 @@
 package lotr;
 
-public class Leader extends Battalion {
-    
+public class Leader {
+
+    public final Army army;
+
     public Leader(Army a) {
-        super(a);
+        this.army = a;
     }
-    
+
 }
