@@ -27,7 +27,6 @@ public class StartScreen implements Screen {
 
     @Override
     public void show() {
-        new PlayerSelectionDialog(this.game, this).show(stage);
     }
 
     @Override

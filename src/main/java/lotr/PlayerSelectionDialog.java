@@ -1,7 +1,6 @@
 package lotr;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -31,10 +30,10 @@ public class PlayerSelectionDialog extends Window {
     Actor previousKeyboardFocus, previousScrollFocus;
     private final FocusListener focusListener;
 
-    private final StartScreen screen;
-    Game game;
+    private final ClaimTerritoryScreen screen;
+    private final Game game;
 
-    public PlayerSelectionDialog(Game game, StartScreen screen) {
+    public PlayerSelectionDialog(Game game, ClaimTerritoryScreen screen) {
         super("Army Selection", Risk.skin.get("dialog", Window.WindowStyle.class));
         this.screen = screen;
         this.game = game;
@@ -293,7 +292,7 @@ public class PlayerSelectionDialog extends Window {
             remove();
         }
 
-        //Gdx.input.setInputProcessor(new InputMultiplexer(screen, stage));
+        this.screen.initArmies();
     }
 
     protected InputListener ignoreTouchDown = new InputListener() {

@@ -19,7 +19,6 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.HexagonalTiledMapRenderer;
 import com.badlogic.gdx.math.Polygon;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -92,6 +91,7 @@ public class GameScreen implements Screen, InputProcessor {
             w.polygon = poly;
             w.vertices = poly.getTransformedVertices();
             w.name = name;
+            w.territory = TerritoryCard.getTerritory(name);
 
             regions.add(w);
         }
@@ -103,14 +103,11 @@ public class GameScreen implements Screen, InputProcessor {
 
         this.game = game;
 
-        for (RegionWrapper w : regions) {
-            w.territory = TerritoryCard.getTerritory(w.name);
-        }
-
     }
 
     @Override
     public void show() {
+        Gdx.input.setInputProcessor(this.cameraController);
     }
 
     @Override

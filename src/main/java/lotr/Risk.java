@@ -23,10 +23,11 @@ public class Risk extends Game {
     public static Skin skin;
     public static BitmapFont font;
     public static BitmapFont fontSmall;
+    public static BitmapFont fontSmallYellow;
 
     public static final int SCREEN_WIDTH = 1800;
     public static final int SCREEN_HEIGHT = 1050;
-
+    
     public static Risk mainGame;
 
     public static void main(String[] args) {
@@ -55,24 +56,26 @@ public class Risk extends Game {
 
         parameter.size = 16;
         parameter.color = Color.YELLOW;
-        BitmapFont small = generator.generateFont(parameter);
+        fontSmallYellow = generator.generateFont(parameter);
 
         generator.dispose();
 
         skin = new Skin(Gdx.files.classpath("assets/skin/uiskin.json"));
         skin.remove("default-font", BitmapFont.class);
         skin.add("default-font", font, BitmapFont.class);
-        skin.add("small-font", small, BitmapFont.class);
+        skin.add("small-font", fontSmallYellow, BitmapFont.class);
         Label.LabelStyle ls = new Label.LabelStyle();
         skin.add("small-font", ls, Label.LabelStyle.class);
-        ls.font = small;
+        ls.font = fontSmallYellow;
+        
+        TerritoryCard.init();
 
         lotr.Game game = new lotr.Game();
 
         ClaimTerritoryScreen startScreen = new ClaimTerritoryScreen(game);
         setScreen(startScreen);
 
-        //GameScreen gameScreen = new GameScreen(this);
+        //GameScreen gameScreen = new GameScreen(this, game);
         //setScreen(gameScreen);
     }
 
@@ -94,6 +97,7 @@ public class Risk extends Game {
 
     public static class RegionWrapper {
 
+        boolean selected;
         float[] vertices;
         Polygon polygon;
         String name;
@@ -132,40 +136,44 @@ public class Risk extends Game {
 
         for (int row = row2 - 1; row >= row1; row--) {
             for (int col = colA; col < col2; col += 2) {
-                if (layer.getCell(col, row) != null) {
+                TiledMapTileLayer.Cell iconCell = layer.getCell(col, row);
+                if (iconCell != null) {
+                    int iconId = iconCell.getTile().getId();
                     float x = tileWidthUpperCorner * col + layerOffsetX;
                     float y = layerTileHeight50 + (layerTileHeight * row) + layerOffsetY;
                     Vector2 v = new Vector2(x, y);
                     for (RegionWrapper w : regions) {
                         if (w.polygon.contains(v)) {
-                            if (w.redPosition == null) {
+                            if (iconId == 43) {
                                 w.redPosition = new Vector2(v);
-                            } else if (w.greyPosition == null) {
-                                w.greyPosition = new Vector2(v);
-                            } else if (w.greenPosition == null) {
+                            } else if (iconId == 42) {
+                                w.yellowPosition = new Vector2(v);
+                            } else if (iconId == 1) {
                                 w.greenPosition = new Vector2(v);
                             } else {
-                                w.yellowPosition = new Vector2(v);
+                                w.greyPosition = new Vector2(v);
                             }
                         }
                     }
                 }
             }
             for (int col = colB; col < col2; col += 2) {
-                if (layer.getCell(col, row) != null) {
+                TiledMapTileLayer.Cell iconCell = layer.getCell(col, row);
+                if (iconCell != null) {
+                    int iconId = iconCell.getTile().getId();
                     float x = tileWidthUpperCorner * col + layerOffsetX;
                     float y = layerTileHeight * row + layerOffsetY;
                     Vector2 v = new Vector2(x, y);
                     for (RegionWrapper w : regions) {
                         if (w.polygon.contains(v)) {
-                            if (w.redPosition == null) {
+                            if (iconId == 43) {
                                 w.redPosition = new Vector2(v);
-                            } else if (w.greyPosition == null) {
-                                w.greyPosition = new Vector2(v);
-                            } else if (w.greenPosition == null) {
+                            } else if (iconId == 42) {
+                                w.yellowPosition = new Vector2(v);
+                            } else if (iconId == 1) {
                                 w.greenPosition = new Vector2(v);
                             } else {
-                                w.yellowPosition = new Vector2(v);
+                                w.greyPosition = new Vector2(v);
                             }
                         }
                     }
