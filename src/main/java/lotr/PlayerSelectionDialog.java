@@ -50,36 +50,22 @@ public class PlayerSelectionDialog extends Window {
         ScrollPane sp = new ScrollPane(table, Risk.skin);
         add(sp).expand().fill().minWidth(200);
 
-        table.add(new Label("Select your army", Risk.skin));
+        table.add(new Label("Select the number of players.", Risk.skin));
         table.row();
-        CheckBox cb1 = new CheckBox("Red Army (evil)", Risk.skin, "selection-blue");
-        CheckBox cb2 = new CheckBox("Grey Army (evil)", Risk.skin, "selection-blue");
-        CheckBox cb3 = new CheckBox("Green Army (good)", Risk.skin, "selection-blue");
-        CheckBox cb4 = new CheckBox("Yellow Army (good)", Risk.skin, "selection-blue");
-        ButtonGroup buttonGroup = new ButtonGroup(cb1, cb2, cb3, cb4);
+        table.add(new Label("Each player chooses a color and takes all of the battalions of that color.", Risk.skin));
+        table.row();
+        table.add(new Label("The yellow and green armies represent the good armies while the black and red ones represent the evil armies.", Risk.skin));
+        table.row();
+        table.add(new Label("In a 3 player game, one player will control a good army while the remaining two players control the evil armies.", Risk.skin));
+        table.row();
+        CheckBox cb4 = new CheckBox("4 Players", Risk.skin, "selection-blue");
+        CheckBox cb3 = new CheckBox("3 Players", Risk.skin, "selection-blue");
+        ButtonGroup buttonGroup = new ButtonGroup(cb4, cb3);
         buttonGroup.setMaxCheckCount(1);
-        buttonGroup.setMinCheckCount(0);
-        table.add(cb1);
-        table.add(cb2);
-        table.row();
-        table.add(cb3);
+        buttonGroup.setMinCheckCount(1);
         table.add(cb4);
         table.row();
-
-        table.add(new Label("", Risk.skin));
-        table.row();
-
-        table.add(new Label("Select at least 2 opposing armies.", Risk.skin));
-        table.row();
-        CheckBox cb11 = new CheckBox("Red Army (evil)", Risk.skin, "selection-yellow");
-        CheckBox cb12 = new CheckBox("Grey Army (evil)", Risk.skin, "selection-yellow");
-        CheckBox cb13 = new CheckBox("Green Army (good)", Risk.skin, "selection-yellow");
-        CheckBox cb14 = new CheckBox("Yellow Army (good)", Risk.skin, "selection-yellow");
-        table.add(cb11);
-        table.add(cb12);
-        table.row();
-        table.add(cb13);
-        table.add(cb14);
+        table.add(cb3);
         table.row();
 
         table.add(new Label("", Risk.skin));
@@ -92,117 +78,61 @@ public class PlayerSelectionDialog extends Window {
             public boolean handle(Event event) {
                 if (event.toString().equals("touchDown")) {
 
-                    int count = 0;
-                    if (cb11.isChecked()) {
-                        count++;
-                    }
-                    if (cb12.isChecked()) {
-                        count++;
-                    }
-                    if (cb13.isChecked()) {
-                        count++;
-                    }
-                    if (cb14.isChecked()) {
-                        count++;
-                    }
-
-                    if (count < 2) {
-                        Sounds.play(Sound.NEGATIVE_EFFECT);
-                        return false;
-                    }
-
-                    if (cb1.isChecked() && cb11.isChecked()) {
-                        Sounds.play(Sound.NEGATIVE_EFFECT);
-                        return false;
-                    }
-                    if (cb2.isChecked() && cb12.isChecked()) {
-                        Sounds.play(Sound.NEGATIVE_EFFECT);
-                        return false;
-                    }
-                    if (cb3.isChecked() && cb13.isChecked()) {
-                        Sounds.play(Sound.NEGATIVE_EFFECT);
-                        return false;
-                    }
-                    if (cb4.isChecked() && cb14.isChecked()) {
-                        Sounds.play(Sound.NEGATIVE_EFFECT);
-                        return false;
-                    }
-
-                    int startingBattalionCount = (count == 1 ? 60 : (count == 2 ? 52 : 45));
-
-                    if (cb1.isChecked()) {
-                        Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, startingBattalionCount, false);
-                        game.addArmy(red);
-                    }
-                    if (cb2.isChecked()) {
-                        Army grey = new Army(Constants.ArmyType.GREY, Constants.ClassType.EVIL, startingBattalionCount, false);
-                        game.addArmy(grey);
-                    }
-                    if (cb3.isChecked()) {
-                        Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, startingBattalionCount, false);
-                        game.addArmy(green);
-                    }
                     if (cb4.isChecked()) {
-                        Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, startingBattalionCount, false);
-                        game.addArmy(yellow);
-                    }
+                        Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, 45);
+                        game.setRed(red);
 
-                    if (cb11.isChecked()) {
-                        Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, startingBattalionCount, false);
-                        game.addArmy(red);
-                    }
-                    if (cb12.isChecked()) {
-                        Army grey = new Army(Constants.ArmyType.GREY, Constants.ClassType.EVIL, startingBattalionCount, false);
-                        game.addArmy(grey);
-                    }
-                    if (cb13.isChecked()) {
-                        Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, startingBattalionCount, false);
-                        game.addArmy(green);
-                    }
-                    if (cb14.isChecked()) {
-                        Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, startingBattalionCount, false);
-                        game.addArmy(yellow);
+                        Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 45);
+                        game.setBlack(black);
+
+                        Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 45);
+                        game.setGreen(green);
+
+                        Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, 45);
+                        game.setYellow(yellow);
+                    } else {
+                        Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, 52);
+                        game.setRed(red);
+
+                        Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 52);
+                        game.setBlack(black);
+
+                        Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 52);
+                        game.setGreen(green);
                     }
 
                     //split deck into good and evil territories
-                    List<TerritoryCard> evil = TerritoryCard.cardsOfClass(Constants.ClassType.EVIL);
-                    List<TerritoryCard> good = TerritoryCard.cardsOfClass(Constants.ClassType.GOOD);
-                    List<TerritoryCard> neutral = TerritoryCard.cardsOfClass(Constants.ClassType.NEUTRAL);
+                    List<TerritoryCard> evil = TerritoryCard.shuffledTerritoriesOfClass(Constants.ClassType.EVIL);
+                    List<TerritoryCard> good = TerritoryCard.shuffledTerritoriesOfClass(Constants.ClassType.GOOD);
+                    List<TerritoryCard> neutral = TerritoryCard.shuffledTerritoriesOfClass(Constants.ClassType.NEUTRAL);
 
-                    if (count == 3) {
+                    if (cb4.isChecked()) {
                         game.red.pickTerritories(evil, 8);
-                        game.grey.pickTerritories(evil, 8);
+                        game.black.pickTerritories(evil, 8);
                         game.green.pickTerritories(good, 8);
                         game.yellow.pickTerritories(good, 8);
                     } else {
-                        if (game.red != null && game.grey != null) {
-                            game.red.pickTerritories(evil, 8);
-                            game.grey.pickTerritories(evil, 8);
-                            game.red.pickTerritories(neutral, 8);
-                            game.grey.pickTerritories(neutral, 8);
-                            if (game.green != null) {
-                                game.green.pickTerritories(good, 16);
-                            } else {
-                                game.yellow.pickTerritories(good, 16);
-                            }
+                        game.red.pickTerritories(evil, 8);
+                        game.black.pickTerritories(evil, 8);
+                        game.red.pickTerritories(neutral, 8);
+                        game.black.pickTerritories(neutral, 8);
+                        if (game.green != null) {
+                            game.green.pickTerritories(good, 16);
                         } else {
-                            game.green.pickTerritories(good, 8);
-                            game.yellow.pickTerritories(good, 8);
-                            game.green.pickTerritories(neutral, 8);
-                            game.yellow.pickTerritories(neutral, 8);
-                            if (game.red != null) {
-                                game.red.pickTerritories(evil, 16);
-                            } else {
-                                game.grey.pickTerritories(evil, 16);
-                            }
+                            game.yellow.pickTerritories(good, 16);
                         }
                     }
 
-                    game.deck = new ArrayList<>();
+                    List<TerritoryCard> temp = new ArrayList<>();
                     for (TerritoryCard c : TerritoryCard.values()) {
+                        temp.add(c);
+                    }
+                    Random rand = new Random();
+                    while (!temp.isEmpty()) {
+                        int r = rand.nextInt(temp.size());
+                        TerritoryCard c = temp.remove(r);
                         game.deck.add(c);
                     }
-                    game.deck = TerritoryCard.randomCards(game.deck, game.deck.size());
 
                     hide();
 

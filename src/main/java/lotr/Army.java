@@ -1,39 +1,114 @@
 package lotr;
 
+import com.google.gson.annotations.Expose;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import lotr.Constants.ArmyType;
 import lotr.Constants.ClassType;
 
 public class Army {
 
-    public final ArmyType armyType;
-    public final ClassType classType;
-    public final boolean defenseOnly;
-    public final List<Battalion> battalions = new ArrayList<>();
-    public final Leader leader1;
-    public final Leader leader2;
+    @Expose
+    public ArmyType armyType;
+    @Expose
+    public ClassType classType;
+    @Expose
+    public List<Battalion> battalions;
+    @Expose
+    public Leader leader1;
+    @Expose
+    public Leader leader2;
 
-    public Army(ArmyType a, ClassType c, int startingBattalions, boolean defenseOnly) {
+    public Army() {
+
+    }
+
+    public Army(ArmyType a, ClassType c, int startingBattalions) {
         this.armyType = a;
         this.classType = c;
-        this.defenseOnly = defenseOnly;
-        
-        this.leader1 = new Leader(this);
-        this.leader2 = new Leader(this);
+        this.leader1 = new Leader(a);
+        this.leader2 = new Leader(a);
+        this.battalions = new ArrayList<>();
 
         for (int i = 0; i < startingBattalions; i++) {
-            this.battalions.add(new Battalion(this));
+            this.battalions.add(new Battalion(a));
         }
     }
 
+    //set 1 battalion in each owned territories
     public void pickTerritories(List<TerritoryCard> deck, int count) {
-        //set 1 battalion in each owned territories
-        List<TerritoryCard> cards = TerritoryCard.randomCards(deck, count);
-        for (TerritoryCard c : cards) {
-            Battalion b = this.battalions.remove(0);
-            TerritoryCard.addBattalion(c, b);
+        Random rand = new Random();
+
+        List<Battalion> tmp = new ArrayList<>();
+        tmp.addAll(this.battalions);
+
+        for (int i = 0; i < count; i++) {
+            int r = rand.nextInt(deck.size());
+            TerritoryCard c = deck.remove(r);
+            Battalion b = tmp.remove(0);
+            b.territory = c;
         }
+    }
+
+    public boolean assignTerritory(TerritoryCard tc) {
+        for (Battalion b : this.battalions) {
+            if (b.territory == null) {
+                b.territory = tc;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<TerritoryCard> claimedTerritories() {
+        List<TerritoryCard> tmp = new ArrayList<>();
+        for (Battalion b : this.battalions) {
+            if (!tmp.contains(b.territory)) {
+                tmp.add(b.territory);
+            }
+        }
+        return tmp;
+    }
+
+    public ArmyType getArmyType() {
+        return armyType;
+    }
+
+    public void setArmyType(ArmyType armyType) {
+        this.armyType = armyType;
+    }
+
+    public ClassType getClassType() {
+        return classType;
+    }
+
+    public void setClassType(ClassType classType) {
+        this.classType = classType;
+    }
+
+    public List<Battalion> getBattalions() {
+        return battalions;
+    }
+
+    public void setBattalions(List<Battalion> battalions) {
+        this.battalions = battalions;
+    }
+
+    public Leader getLeader1() {
+        return leader1;
+    }
+
+    public void setLeader1(Leader leader1) {
+        this.leader1 = leader1;
+    }
+
+    public Leader getLeader2() {
+        return leader2;
+    }
+
+    public void setLeader2(Leader leader2) {
+        this.leader2 = leader2;
     }
 
 }

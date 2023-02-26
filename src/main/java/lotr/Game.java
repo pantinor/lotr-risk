@@ -1,162 +1,183 @@
 package lotr;
 
+import com.google.gson.annotations.Expose;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import lotr.Constants.ArmyType;
-import lotr.Constants.ClassType;
 
 public class Game {
 
-    List<Army> armies = new ArrayList<>();
-    Army red, green, grey, yellow;
-    List<TerritoryCard> deck;
+    @Expose
+    public Army red;
+    @Expose
+    public Army green;
+    @Expose
+    public Army black;
+    @Expose
+    public Army yellow;
 
-    public void addArmy(Army army) {
-
-        armies.add(army);
-
-        switch (army.armyType) {
-            case RED:
-                red = army;
-                break;
-            case GREEN:
-                green = army;
-                break;
-            case GREY:
-                grey = army;
-                break;
-            case YELLOW:
-                yellow = army;
-                break;
-        }
-
+    public final Army[] armies = new Army[4];
+    public final List<TerritoryCard> deck = new ArrayList<>();
+    
+    public Game() {
+        
     }
 
-    public static void testInit4PlayerGame(Game game) {
-        //4 player game
+    public Army getRed() {
+        return red;
+    }
 
-        Army red = new Army(ArmyType.RED, ClassType.EVIL, 45, false);
-        Army green = new Army(ArmyType.GREEN, ClassType.GOOD, 45, false);
-        Army grey = new Army(ArmyType.GREY, ClassType.EVIL, 45, false);
-        Army yellow = new Army(ArmyType.YELLOW, ClassType.GOOD, 45, false);
+    public void setRed(Army a) {
+        this.armies[0] = a;
+        this.red = a;
+    }
 
-        game.addArmy(red);
-        game.addArmy(green);
-        game.addArmy(grey);
-        game.addArmy(yellow);
+    public Army getGreen() {
+        return green;
+    }
 
-        List<TerritoryCard> evil = TerritoryCard.cardsOfClass(ClassType.EVIL);
-        List<TerritoryCard> good = TerritoryCard.cardsOfClass(ClassType.GOOD);
+    public void setGreen(Army a) {
+        this.armies[1] = a;
+        this.green = a;
+    }
 
-        red.pickTerritories(evil, 8);
-        grey.pickTerritories(evil, 8);
-        green.pickTerritories(good, 8);
-        yellow.pickTerritories(good, 8);
+    public Army getBlack() {
+        return black;
+    }
 
-        List<TerritoryCard> deck = new ArrayList<>();
-        Random rand = new Random();
-        {
-            for (TerritoryCard c : TerritoryCard.values()) {
-                deck.add(c);
-            }
+    public void setBlack(Army a) {
+        this.armies[2] = a;
+        this.black = a;
+    }
 
-            List<TerritoryCard> shuffled = new ArrayList<>();
-            int count = deck.size();
-            for (int i = 0; i < count; i++) {
-                int r = rand.nextInt(deck.size());
-                TerritoryCard c = deck.remove(r);
-                shuffled.add(c);
-            }
+    public Army getYellow() {
+        return yellow;
+    }
 
-            deck = shuffled;
+    public void setYellow(Army a) {
+        this.armies[3] = a;
+        this.yellow = a;
+    }
+
+    public boolean isClaimed(TerritoryCard tc) {
+
+        if (this.red == null) {
+            return false;
         }
 
-        //claim empty territories
-        int idx = rand.nextInt(game.armies.size());
-        while (true) {
-
-            Army army = game.armies.get(idx);
-
-            idx++;
-            if (idx >= game.armies.size()) {
-                idx = 0;
+        for (Battalion b : this.red.getBattalions()) {
+            if (b.territory == tc) {
+                return true;
             }
-
-            Battalion b = army.battalions.remove(0);
-            Territory t = TerritoryCard.findRandomEmptyTerritory();
-            if (t != null) {
-                t.battalions.add(b);
-            } else {
-                break;
-            }
-
         }
 
-        //reinforce territories
-        while (true) {
+        for (Battalion b : this.black.getBattalions()) {
+            if (b.territory == tc) {
+                return true;
+            }
+        }
 
-            Army army = game.armies.get(idx);
+        for (Battalion b : this.green.getBattalions()) {
+            if (b.territory == tc) {
+                return true;
+            }
+        }
 
-            boolean done = true;
-            for (Army a : game.armies) {
-                if (!a.battalions.isEmpty()) {
-                    done = false;
+        if (this.yellow != null) {
+            for (Battalion b : this.yellow.getBattalions()) {
+                if (b.territory == tc) {
+                    return true;
                 }
             }
-            if (done) {
-                break;
-            }
-
-            idx++;
-            if (idx >= game.armies.size()) {
-                idx = 0;
-            }
-
-            if (army.battalions.isEmpty()) {
-                continue;
-            }
-
-            Battalion b = army.battalions.remove(0);
-            List<Territory> terrs = TerritoryCard.getClaimedTerritories(army.armyType);
-            Territory t = terrs.get(rand.nextInt(terrs.size()));
-            t.battalions.add(b);
         }
 
-        for (Army army : game.armies) {
-            //System.out.printf("Army [%s] [%s]\n", army.armyType, army.classType);
-            List<Territory> terrs = TerritoryCard.getClaimedTerritories(army.armyType);
-            for (Territory t : terrs) {
-                //System.out.printf("\t%s\t%d\n", t.card(), t.battalions.size());
+        return false;
+    }
+
+    public int battalionCount(TerritoryCard tc) {
+
+        if (this.red == null) {
+            return 0;
+        }
+
+        int count = 0;
+
+        for (Battalion b : this.red.getBattalions()) {
+            if (b.territory == tc) {
+                count++;
             }
+        }
 
-            Territory t = terrs.get(rand.nextInt(terrs.size()));
-            t.leader = army.leader1;
+        if (count > 0) {
+            return count;
+        }
 
-            t = terrs.get(rand.nextInt(terrs.size()));
-            if (t.leader == null) {
-                t.leader = army.leader2;
-            } else {
-                t = terrs.get(rand.nextInt(terrs.size()));
-                if (t.leader == null) {
-                    t.leader = army.leader2;
-                } else {
-                    t = terrs.get(rand.nextInt(terrs.size()));
-                    if (t.leader == null) {
-                        t.leader = army.leader2;
-                    } else {
-                        t = terrs.get(rand.nextInt(terrs.size()));
-                        if (t.leader == null) {
-                            t.leader = army.leader2;
-                        } else {
-                            throw new RuntimeException("failed to place second leader");
-                        }
-                    }
+        for (Battalion b : this.black.getBattalions()) {
+            if (b.territory == tc) {
+                count++;
+            }
+        }
+        
+        if (count > 0) {
+            return count;
+        }
+        
+        for (Battalion b : this.green.getBattalions()) {
+            if (b.territory == tc) {
+                count++;
+            }
+        }
+        
+        if (count > 0) {
+            return count;
+        }
+        
+        if (this.yellow != null) {
+            for (Battalion b : this.yellow.getBattalions()) {
+                if (b.territory == tc) {
+                    count++;
                 }
             }
-
         }
 
+        return count;
+    }
+
+    public ArmyType getOccupyingArmy(TerritoryCard tc) {
+
+        if (this.red == null) {
+            return null;
+        }
+
+        for (Battalion b : this.red.getBattalions()) {
+            if (b.territory == tc) {
+                return ArmyType.RED;
+            }
+        }
+
+        for (Battalion b : this.black.getBattalions()) {
+            if (b.territory == tc) {
+                return ArmyType.BLACK;
+            }
+        }
+
+        for (Battalion b : this.green.getBattalions()) {
+            if (b.territory == tc) {
+                return ArmyType.GREEN;
+            }
+        }
+
+        if (this.yellow != null) {
+            for (Battalion b : this.yellow.getBattalions()) {
+                if (b.territory == tc) {
+                    return ArmyType.YELLOW;
+                }
+            }
+        }
+
+        return null;
     }
 
 }

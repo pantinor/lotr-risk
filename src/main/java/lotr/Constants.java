@@ -3,7 +3,7 @@ package lotr;
 public class Constants {
 
     public static enum ArmyType {
-        RED, GREEN, GREY, YELLOW;
+        RED, GREEN, BLACK, YELLOW;
     }
 
     public static enum BattalionType {

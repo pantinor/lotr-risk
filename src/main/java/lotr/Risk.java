@@ -23,10 +23,16 @@ import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
 
 public class Risk extends Game {
 
@@ -40,11 +46,11 @@ public class Risk extends Game {
 
     public static Risk mainGame;
     public static TiledMap TMX_MAP;
-    public static TextureRegion RED_BATTALION, GREY_BATTALION, GREEN_BATTALION, YELLOW_BATTALION;
-    public static TextureRegion RED_LEADER, GREY_LEADER, GREEN_LEADER, YELLOW_LEADER;
+    public static TextureRegion RED_BATTALION, BLACK_BATTALION, GREEN_BATTALION, YELLOW_BATTALION;
+    public static TextureRegion RED_LEADER, BLACK_LEADER, GREEN_LEADER, YELLOW_LEADER;
     public static TextureRegion FRODO, SAM;
-    public static Texture TEXT_CIRCLE, LEADER_CIRCLE;
-    
+    public static Texture RED_CIRCLE, GREEN_CIRCLE, BLACK_CIRCLE, YELLOW_CIRCLE, LEADER_CIRCLE;
+
     public static List<RingPathWrapper> RING_PATHS = new ArrayList<>();
 
     public static void main(String[] args) {
@@ -94,13 +100,13 @@ public class Risk extends Game {
         int firstgid = tileset.getProperties().get("firstgid", Integer.class);
 
         RED_BATTALION = tileset.getTile(firstgid + 82).getTextureRegion();
-        GREY_BATTALION = tileset.getTile(firstgid + 223).getTextureRegion();
+        BLACK_BATTALION = tileset.getTile(firstgid + 223).getTextureRegion();
         GREEN_BATTALION = tileset.getTile(firstgid + 360).getTextureRegion();
         YELLOW_BATTALION = tileset.getTile(firstgid + 352).getTextureRegion();
         FRODO = tileset.getTile(firstgid + 328).getTextureRegion();
         SAM = tileset.getTile(firstgid + 307).getTextureRegion();
         RED_LEADER = tileset.getTile(firstgid + 84).getTextureRegion();
-        GREY_LEADER = tileset.getTile(firstgid + 237).getTextureRegion();
+        BLACK_LEADER = tileset.getTile(firstgid + 237).getTextureRegion();
         GREEN_LEADER = tileset.getTile(firstgid + 245).getTextureRegion();
         YELLOW_LEADER = tileset.getTile(firstgid + 429).getTextureRegion();
 
@@ -117,18 +123,40 @@ public class Risk extends Game {
         }
         Collections.sort(RING_PATHS);
         RING_PATHS.get(0).selected = true;
-        
-        TEXT_CIRCLE = fillCircle(new Color(0, 0, 1, 0.5f));
-        LEADER_CIRCLE = fillCircle(new Color(1, 0, 0, 0.5f));
 
-        lotr.Game game = new lotr.Game();
+        RED_CIRCLE = fillCircle(Color.RED, 24);
+        BLACK_CIRCLE = fillCircle(Color.GRAY, 24);
+        GREEN_CIRCLE = fillCircle(Color.FOREST, 24);
+        YELLOW_CIRCLE = fillCircle(Color.GOLDENROD, 24);
+        LEADER_CIRCLE = fillCircle(Color.BLUE, 28);
 
-        //ClaimTerritoryScreen startScreen = new ClaimTerritoryScreen(game);
-        //setScreen(startScreen);
+        lotr.Game game = null;
 
-        lotr.Game.testInit4PlayerGame(game);
-        GameScreen gameScreen = new GameScreen(game);
-        setScreen(gameScreen);
+        try {
+            
+            InputStream is = new FileInputStream("savedGame.json");
+            
+            if (is == null) {
+                game = new lotr.Game();
+
+                ClaimTerritoryScreen startScreen = new ClaimTerritoryScreen(this, game);
+                setScreen(startScreen);
+
+            } else {
+                String json = IOUtils.toString(is);
+                GsonBuilder builder = new GsonBuilder();
+                Gson gson = builder.excludeFieldsWithoutExposeAnnotation().create();
+                
+                game = gson.fromJson(json, new TypeToken<lotr.Game>() {
+                }.getType());
+
+                GameScreen gameScreen = new GameScreen(game);
+                setScreen(gameScreen);
+            }
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     public static Texture fillRectangle(int width, int height, Color color, float alpha) {
@@ -139,11 +167,11 @@ public class Risk extends Game {
         pix.dispose();
         return t;
     }
-    
-    private static Texture fillCircle(Color color) {
-        Pixmap px = new Pixmap(24, 24, Pixmap.Format.RGBA8888);
+
+    private static Texture fillCircle(Color color, int size) {
+        Pixmap px = new Pixmap(size, size, Pixmap.Format.RGBA8888);
         px.setColor(color);
-        px.fillCircle(12, 12, 10);
+        px.fillCircle(size / 2, size / 2, size / 2 - 2);
         Texture t = new Texture(px);
         px.dispose();
         return t;
@@ -162,11 +190,8 @@ public class Risk extends Game {
         float[] vertices;
         Polygon polygon;
         String name;
-        Territory territory;
-        Vector2 redPosition;
-        Vector2 greyPosition;
-        Vector2 greenPosition;
-        Vector2 yellowPosition;
+        TerritoryCard territory;
+        Vector2 battalionPosition;
         Vector2 textPosition;
     }
 
@@ -228,16 +253,10 @@ public class Risk extends Game {
                     Vector2 v = new Vector2(x, y);
                     for (RegionWrapper w : regions) {
                         if (w.polygon.contains(v)) {
-                            if (iconId == 43) {
-                                w.redPosition = new Vector2(v);
-                            } else if (iconId == 42) {
-                                w.yellowPosition = new Vector2(v);
-                            } else if (iconId == 1) {
-                                w.greenPosition = new Vector2(v);
-                            } else if (iconId == 17) {
-                                w.greyPosition = new Vector2(v);
-                            } else {
+                            if (iconId == 7) {
                                 w.textPosition = new Vector2(v);
+                            } else {
+                                w.battalionPosition = new Vector2(v);
                             }
                         }
                     }
@@ -252,16 +271,10 @@ public class Risk extends Game {
                     Vector2 v = new Vector2(x, y);
                     for (RegionWrapper w : regions) {
                         if (w.polygon.contains(v)) {
-                            if (iconId == 43) {
-                                w.redPosition = new Vector2(v);
-                            } else if (iconId == 42) {
-                                w.yellowPosition = new Vector2(v);
-                            } else if (iconId == 1) {
-                                w.greenPosition = new Vector2(v);
-                            } else if (iconId == 17) {
-                                w.greyPosition = new Vector2(v);
-                            } else {
+                            if (iconId == 7) {
                                 w.textPosition = new Vector2(v);
+                            } else {
+                                w.battalionPosition = new Vector2(v);
                             }
                         }
                     }

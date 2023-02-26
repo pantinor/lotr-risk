@@ -3,7 +3,6 @@ package lotr;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import lotr.Constants.ArmyType;
 import lotr.Constants.BattalionType;
 import static lotr.Constants.BattalionType.DARK_RIDER;
 import static lotr.Constants.BattalionType.EAGLE;
@@ -86,8 +85,6 @@ public enum TerritoryCard {
     private BattalionType battalion;
     private TerritoryCard[] adjacents;
 
-    public static List<Territory> TERRITORIES = new ArrayList<>();
-
     private TerritoryCard(ClassType t, BattalionType b) {
         this.type = t;
         this.battalion = b;
@@ -106,14 +103,6 @@ public enum TerritoryCard {
     }
 
     public static void init() {
-
-        TERRITORIES.clear();
-
-        for (TerritoryCard c : TerritoryCard.values()) {
-            if (c.type() != null) {
-                TERRITORIES.add(new Territory(c));
-            }
-        }
 
         for (TerritoryCard c : TerritoryCard.values()) {
             switch (c) {
@@ -321,9 +310,9 @@ public enum TerritoryCard {
 
     }
 
-    public static Territory getTerritory(String name) {
-        for (Territory t : TERRITORIES) {
-            String n = t.card().toString().toLowerCase().replace("_", " ");
+    public static TerritoryCard getTerritory(String name) {
+        for (TerritoryCard t : TerritoryCard.values()) {
+            String n = t.toString().toLowerCase().replace("_", " ");
             if (n.equals(name)) {
                 return t;
             }
@@ -331,70 +320,20 @@ public enum TerritoryCard {
         return null;
     }
 
-    public static List<TerritoryCard> cardsOfClass(ClassType t) {
-        List<TerritoryCard> cards = new ArrayList<>();
+    public static List<TerritoryCard> shuffledTerritoriesOfClass(ClassType t) {
+        List<TerritoryCard> temp = new ArrayList<>();
         for (TerritoryCard c : TerritoryCard.values()) {
-            if (c.type == t) {
-                cards.add(c);
+            if (c.type == t && c != WILD_CARD_1 && c != WILD_CARD_2) {
+                temp.add(c);
             }
         }
-        return randomCards(cards, cards.size());
-    }
-
-    public static List<TerritoryCard> randomCards(List<TerritoryCard> cards, int count) {
         List<TerritoryCard> shuffled = new ArrayList<>();
         Random rand = new Random();
-        for (int i = 0; i < count; i++) {
-            int r = rand.nextInt(cards.size());
-            TerritoryCard c = cards.remove(r);
+        while (!temp.isEmpty()) {
+            int r = rand.nextInt(temp.size());
+            TerritoryCard c = temp.remove(r);
             shuffled.add(c);
         }
-
         return shuffled;
-    }
-
-    public static void addBattalion(TerritoryCard card, Battalion b) {
-        for (Territory t : TERRITORIES) {
-            if (t.card() == card) {
-                t.battalions.add(b);
-            }
-        }
-    }
-
-    public static Territory findRandomEmptyTerritory() {
-        Random rand = new Random();
-        List<Territory> empties = new ArrayList<>();
-        for (Territory t : TERRITORIES) {
-            if (t.battalions.isEmpty()) {
-                empties.add(t);
-            }
-        }
-        if (empties.isEmpty()) {
-            return null;
-        }
-        int r = rand.nextInt(empties.size());
-        return empties.get(r);
-    }
-
-    public static List<Territory> getClaimedTerritories(ArmyType at) {
-        List<Territory> terrs = new ArrayList<>();
-        for (Territory t : TERRITORIES) {
-            if (!t.battalions.isEmpty() && t.battalions.get(0).army.armyType == at) {
-                terrs.add(t);
-            }
-        }
-        return terrs;
-    }
-
-    public static List<Territory> getClaimedTerritoriesWithLeaders(ArmyType at) {
-        List<Territory> terrs = new ArrayList<>();
-        for (Territory t : TERRITORIES) {
-            if (!t.battalions.isEmpty() && t.battalions.get(0).army.armyType == at) {
-                if (t.leader != null) {
-                    terrs.add(t);
-                }
-            }
-        }
-        return terrs;
     }
 }
