@@ -32,7 +32,6 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -53,10 +52,10 @@ import static lotr.Risk.RED_CIRCLE;
 import static lotr.Risk.GREEN_CIRCLE;
 import static lotr.Risk.BLACK_CIRCLE;
 import static lotr.Risk.YELLOW_CIRCLE;
-import static lotr.Risk.LEADER_CIRCLE;
 
 public class ClaimTerritoryScreen implements Screen {
 
+    protected float time = 0;
     private final HexagonalTiledMapRenderer renderer;
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
 
@@ -123,7 +122,7 @@ public class ClaimTerritoryScreen implements Screen {
         this.table.columnDefaults(0).expandX().left().uniformX();
 
         ScrollPane sp = new ScrollPane(table, Risk.skin);
-        sp.setBounds(350, 700, 300, 200);
+        sp.setBounds(300, 700, 300, 225);
         this.stage.addActor(sp);
 
         this.claim = new TextButton("CLAIM", Risk.skin);
@@ -243,37 +242,35 @@ public class ClaimTerritoryScreen implements Screen {
 
     public void initArmies() {
         armyCell(this.table, ArmyType.RED, redLabel);
-        armyCell(this.table, ArmyType.BLACK, blackLabel);
         armyCell(this.table, ArmyType.GREEN, greenLabel);
-
+        armyCell(this.table, ArmyType.BLACK, blackLabel);
         if (this.game.yellow != null) {
             armyCell(this.table, ArmyType.YELLOW, yellowLabel);
             this.turnIndex = rand.nextInt(4);
         } else {
             this.turnIndex = rand.nextInt(3);
         }
-
         setActiveArmy();
     }
 
     private void armyCell(Table t, ArmyType type, Label label) {
         if (type == ArmyType.RED) {
-            t.add(new Image(RED_CIRCLE)).left().pad(5);
-            t.add(new Image(RED_BATTALION)).left().pad(5);
-        }
-        if (type == ArmyType.GREEN) {
-            t.add(new Image(GREEN_CIRCLE)).left().pad(5);
-            t.add(new Image(GREEN_BATTALION)).left().pad(5);
+            t.add(new Image(RED_CIRCLE)).left().pad(2);
+            t.add(new Image(RED_BATTALION.getKeyFrame(0))).left().pad(2);
         }
         if (type == ArmyType.BLACK) {
-            t.add(new Image(BLACK_CIRCLE)).left().pad(5);
-            t.add(new Image(BLACK_BATTALION)).left().pad(5);
+            t.add(new Image(BLACK_CIRCLE)).left().pad(2);
+            t.add(new Image(BLACK_BATTALION.getKeyFrame(0))).left().pad(2);
+        }
+        if (type == ArmyType.GREEN) {
+            t.add(new Image(GREEN_CIRCLE)).left().pad(2);
+            t.add(new Image(GREEN_BATTALION.getKeyFrame(0))).left().pad(2);
         }
         if (type == ArmyType.YELLOW) {
-            t.add(new Image(YELLOW_CIRCLE)).left().pad(5);
-            t.add(new Image(YELLOW_BATTALION)).left().pad(5);
+            t.add(new Image(YELLOW_CIRCLE)).left().pad(2);
+            t.add(new Image(YELLOW_BATTALION.getKeyFrame(0))).left().pad(2);
         }
-        t.add(label).left().pad(5).expandX();
+        t.add(label).left().pad(3).expandX();
         t.row();
     }
 
@@ -300,16 +297,16 @@ public class ClaimTerritoryScreen implements Screen {
         Army a = this.game.armies[turnIndex];
 
         if (a.armyType == ArmyType.RED) {
-            redLabel.setStyle(Risk.skin.get("default-blue", Label.LabelStyle.class));
+            redLabel.setStyle(Risk.skin.get("default-yellow", Label.LabelStyle.class));
         }
         if (a.armyType == ArmyType.GREEN) {
-            greenLabel.setStyle(Risk.skin.get("default-blue", Label.LabelStyle.class));
+            greenLabel.setStyle(Risk.skin.get("default-yellow", Label.LabelStyle.class));
         }
         if (a.armyType == ArmyType.BLACK) {
-            blackLabel.setStyle(Risk.skin.get("default-blue", Label.LabelStyle.class));
+            blackLabel.setStyle(Risk.skin.get("default-yellow", Label.LabelStyle.class));
         }
         if (a.armyType == ArmyType.YELLOW) {
-            yellowLabel.setStyle(Risk.skin.get("default-blue", Label.LabelStyle.class));
+            yellowLabel.setStyle(Risk.skin.get("default-yellow", Label.LabelStyle.class));
         }
 
         claim.setVisible(true);
@@ -418,7 +415,7 @@ public class ClaimTerritoryScreen implements Screen {
 
     @Override
     public void render(float delta) {
-
+        time += delta;
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         renderer.render();
@@ -428,53 +425,45 @@ public class ClaimTerritoryScreen implements Screen {
 
         for (RegionWrapper w : regions) {
 
-            Gdx.gl.glLineWidth(5);
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-            shapeRenderer.setColor(Color.LIGHT_GRAY);
-            shapeRenderer.polygon(w.vertices);
-            shapeRenderer.end();
-
             if (w.territory != null) {
                 renderer.getBatch().begin();
+
+                Risk.fontSmall.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
 
                 ArmyType at = game.getOccupyingArmy(w.territory);
 
                 if (at == ArmyType.RED) {
-                    renderer.getBatch().draw(RED_BATTALION, w.battalionPosition.x, w.battalionPosition.y);
+                    renderer.getBatch().draw(RED_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.red.leader1.territory || w.territory == game.red.leader2.territory) {
-                        renderer.getBatch().draw(RED_LEADER, w.battalionPosition.x - 10, w.battalionPosition.y - 10);
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                        renderer.getBatch().draw(RED_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
                     }
-                    renderer.getBatch().draw(RED_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                    renderer.getBatch().draw(RED_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
                 }
                 if (at == ArmyType.BLACK) {
-                    renderer.getBatch().draw(BLACK_BATTALION, w.battalionPosition.x, w.battalionPosition.y);
+                    renderer.getBatch().draw(BLACK_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.black.leader1.territory || w.territory == game.black.leader2.territory) {
-                        renderer.getBatch().draw(BLACK_LEADER, w.battalionPosition.x - 10, w.battalionPosition.y - 10);
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                        renderer.getBatch().draw(BLACK_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
                     }
-                    renderer.getBatch().draw(BLACK_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                    renderer.getBatch().draw(BLACK_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
                 }
                 if (at == ArmyType.GREEN) {
-                    renderer.getBatch().draw(GREEN_BATTALION, w.battalionPosition.x, w.battalionPosition.y);
+                    renderer.getBatch().draw(GREEN_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.green.leader1.territory || w.territory == game.green.leader2.territory) {
-                        renderer.getBatch().draw(GREEN_LEADER, w.battalionPosition.x - 10, w.battalionPosition.y - 10);
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                        renderer.getBatch().draw(GREEN_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
                     }
-                    renderer.getBatch().draw(GREEN_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                    renderer.getBatch().draw(GREEN_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
                 }
                 if (at == ArmyType.YELLOW) {
-                    renderer.getBatch().draw(YELLOW_BATTALION, w.battalionPosition.x, w.battalionPosition.y);
+                    renderer.getBatch().draw(YELLOW_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.yellow.leader1.territory || w.territory == game.yellow.leader2.territory) {
-                        renderer.getBatch().draw(YELLOW_LEADER, w.battalionPosition.x - 10, w.battalionPosition.y - 10);
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                        renderer.getBatch().draw(YELLOW_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
                     }
-                    renderer.getBatch().draw(YELLOW_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                    renderer.getBatch().draw(YELLOW_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
                 }
 
                 int bc = game.battalionCount(w.territory);
                 if (bc > 0) {
-                    Risk.fontSmall.draw(renderer.getBatch(), bc + "", w.textPosition.x + 3, w.textPosition.y + 8);
+                    Risk.fontSmall.draw(renderer.getBatch(), bc + "", w.textPosition.x + 24, w.textPosition.y + 17);
                 }
 
                 renderer.getBatch().end();
@@ -484,7 +473,7 @@ public class ClaimTerritoryScreen implements Screen {
 
         for (RegionWrapper w : regions) {
             if (w.selected) {
-                Gdx.gl.glLineWidth(8);
+                Gdx.gl.glLineWidth(6);
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
                 shapeRenderer.setColor(Color.RED);
                 shapeRenderer.polygon(w.vertices);

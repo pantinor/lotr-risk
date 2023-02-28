@@ -19,9 +19,6 @@ import com.badlogic.gdx.maps.tiled.renderers.HexagonalTiledMapRenderer;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.Event;
-import com.badlogic.gdx.scenes.scene2d.EventListener;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -47,18 +44,17 @@ import static lotr.Risk.RED_CIRCLE;
 import static lotr.Risk.GREEN_CIRCLE;
 import static lotr.Risk.BLACK_CIRCLE;
 import static lotr.Risk.YELLOW_CIRCLE;
-import static lotr.Risk.LEADER_CIRCLE;
 import lotr.Risk.RegionWrapper;
 import lotr.Risk.RingPathWrapper;
 
 public class GameScreen implements Screen, InputProcessor {
+    protected float time = 0;
 
     private final Stage stage, mapStage;
     private final Batch batch, mapBatch;
 
     private final HexagonalTiledMapRenderer renderer;
     private final OrthographicCamera camera;
-    //public final OrthoCamController cameraController;
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
 
     private final Viewport mapViewport;
@@ -76,7 +72,6 @@ public class GameScreen implements Screen, InputProcessor {
         this.camera = new OrthographicCamera(SCREEN_WIDTH, SCREEN_HEIGHT);
         this.mapViewport = new ScreenViewport(this.camera);
 
-        //this.cameraController = new OrthoCamController(this.camera);
         this.renderer = new HexagonalTiledMapRenderer(TMX_MAP, 1f);
 
         this.mapBatch = this.renderer.getBatch();
@@ -92,7 +87,7 @@ public class GameScreen implements Screen, InputProcessor {
             RegionWrapper w = new RegionWrapper();
             w.polygon = poly;
             w.vertices = poly.getTransformedVertices();
-            w.name = name;
+            w.name = name.toUpperCase();
             w.territory = TerritoryCard.getTerritory(name);
 
             regions.add(w);
@@ -153,7 +148,7 @@ public class GameScreen implements Screen, InputProcessor {
 
     @Override
     public void render(float delta) {
-
+        time += delta;
         Gdx.gl.glClearColor(0, 0, 0, 0);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -168,53 +163,45 @@ public class GameScreen implements Screen, InputProcessor {
 
         for (RegionWrapper w : regions) {
 
-            Gdx.gl.glLineWidth(5);
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-            shapeRenderer.setColor(Color.LIGHT_GRAY);
-            shapeRenderer.polygon(w.vertices);
-            shapeRenderer.end();
-
             if (w.territory != null) {
                 renderer.getBatch().begin();
+
+                Risk.font.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
 
                 ArmyType at = game.getOccupyingArmy(w.territory);
 
                 if (at == ArmyType.RED) {
-                    renderer.getBatch().draw(RED_BATTALION, w.battalionPosition.x, w.battalionPosition.y);
+                    renderer.getBatch().draw(RED_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.red.leader1.territory || w.territory == game.red.leader2.territory) {
-                        renderer.getBatch().draw(RED_LEADER, w.battalionPosition.x - 10, w.battalionPosition.y - 10);
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                        renderer.getBatch().draw(RED_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
                     }
-                    renderer.getBatch().draw(RED_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                    renderer.getBatch().draw(RED_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
                 }
                 if (at == ArmyType.BLACK) {
-                    renderer.getBatch().draw(BLACK_BATTALION, w.battalionPosition.x, w.battalionPosition.y);
+                    renderer.getBatch().draw(BLACK_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.black.leader1.territory || w.territory == game.black.leader2.territory) {
-                        renderer.getBatch().draw(BLACK_LEADER, w.battalionPosition.x - 10, w.battalionPosition.y - 10);
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                        renderer.getBatch().draw(BLACK_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
                     }
-                    renderer.getBatch().draw(BLACK_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                    renderer.getBatch().draw(BLACK_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
                 }
                 if (at == ArmyType.GREEN) {
-                    renderer.getBatch().draw(GREEN_BATTALION, w.battalionPosition.x, w.battalionPosition.y);
+                    renderer.getBatch().draw(GREEN_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.green.leader1.territory || w.territory == game.green.leader2.territory) {
-                        renderer.getBatch().draw(GREEN_LEADER, w.battalionPosition.x - 10, w.battalionPosition.y - 10);
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                        renderer.getBatch().draw(GREEN_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
                     }
-                    renderer.getBatch().draw(GREEN_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                    renderer.getBatch().draw(GREEN_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
                 }
                 if (at == ArmyType.YELLOW) {
-                    renderer.getBatch().draw(YELLOW_BATTALION, w.battalionPosition.x, w.battalionPosition.y);
+                    renderer.getBatch().draw(YELLOW_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.yellow.leader1.territory || w.territory == game.yellow.leader2.territory) {
-                        renderer.getBatch().draw(YELLOW_LEADER, w.battalionPosition.x - 10, w.battalionPosition.y - 10);
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                        renderer.getBatch().draw(YELLOW_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
                     }
-                    renderer.getBatch().draw(YELLOW_CIRCLE, w.textPosition.x - 6, w.textPosition.y - 10);
+                    renderer.getBatch().draw(YELLOW_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
                 }
 
                 int bc = game.battalionCount(w.territory);
                 if (bc > 0) {
-                    Risk.fontSmall.draw(renderer.getBatch(), bc + "", w.textPosition.x + 3, w.textPosition.y + 8);
+                    Risk.fontSmall.draw(renderer.getBatch(), bc + "", w.textPosition.x + 24, w.textPosition.y + 17);
                 }
 
                 renderer.getBatch().end();
@@ -235,8 +222,8 @@ public class GameScreen implements Screen, InputProcessor {
         for (RingPathWrapper rw : RING_PATHS) {
             if (rw.selected) {
                 renderer.getBatch().begin();
-                renderer.getBatch().draw(FRODO, rw.x + 10, rw.y + 10);
-                renderer.getBatch().draw(SAM, rw.x - 10, rw.y - 10);
+                renderer.getBatch().draw(FRODO.getKeyFrame(time, true), rw.x + 10, rw.y + 10);
+                renderer.getBatch().draw(SAM.getKeyFrame(time, true), rw.x - 10, rw.y - 10);
                 renderer.getBatch().end();
             }
         }
