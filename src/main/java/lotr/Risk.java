@@ -42,6 +42,8 @@ public class Risk extends Game {
     public static BitmapFont font;
     public static BitmapFont fontSmall;
     public static BitmapFont fontSmallYellow;
+    public static BitmapFont regionLabelFont;
+    public static BitmapFont regionLabelFontSmall;
 
     public static final int SCREEN_WIDTH = 1800;
     public static final int SCREEN_HEIGHT = 1050;
@@ -70,20 +72,24 @@ public class Risk extends Game {
     @Override
     public void create() {
 
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/gnuolane.ttf"));
+        FreeTypeFontGenerator generator2 = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/font2.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
 
         parameter.size = 18;
-        font = generator.generateFont(parameter);
-
+        regionLabelFont = generator2.generateFont(parameter);
         parameter.size = 16;
-        fontSmall = generator.generateFont(parameter);
+        regionLabelFontSmall = generator2.generateFont(parameter);
+        generator2.dispose();
 
+        FreeTypeFontGenerator generator1 = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/gnuolane.ttf"));
+        parameter.size = 18;
+        font = generator1.generateFont(parameter);
+        parameter.size = 16;
+        fontSmall = generator1.generateFont(parameter);
         parameter.size = 16;
         parameter.color = Color.YELLOW;
-        fontSmallYellow = generator.generateFont(parameter);
-
-        generator.dispose();
+        fontSmallYellow = generator1.generateFont(parameter);
+        generator1.dispose();
 
         skin = new Skin(Gdx.files.classpath("assets/skin/uiskin.json"));
         skin.remove("default-font", BitmapFont.class);
@@ -101,15 +107,17 @@ public class Risk extends Game {
         TiledMapTileSet tileset = TMX_MAP.getTileSets().getTileSet("uf_heroes");
 
         RED_BATTALION = getAnimation(tileset, 36);
-        BLACK_BATTALION = getAnimation(tileset, 108);
+        BLACK_BATTALION = getAnimation(tileset, 152);
         GREEN_BATTALION = getAnimation(tileset, 96);
-        YELLOW_BATTALION = getAnimation(tileset, 52);
+        YELLOW_BATTALION = getAnimation(tileset, 24);
+
+        RED_LEADER = getAnimation(tileset, 300);
+        BLACK_LEADER = getAnimation(tileset, 64);
+        GREEN_LEADER = getAnimation(tileset, 16);
+        YELLOW_LEADER = getAnimation(tileset, 60);
+
         FRODO = getAnimation(tileset, 332);
         SAM = getAnimation(tileset, 320);
-        RED_LEADER = getAnimation(tileset, 300);
-        BLACK_LEADER = getAnimation(tileset, 40);
-        GREEN_LEADER = getAnimation(tileset, 32);
-        YELLOW_LEADER = getAnimation(tileset, 316);
 
         MapLayer pathLayer = TMX_MAP.getLayers().get("ring-path");
         Iterator<MapObject> pathIter = pathLayer.getObjects().iterator();
@@ -132,7 +140,7 @@ public class Risk extends Game {
         LEADER_CIRCLE = fillCircle(Color.BLUE, 28);
 
         lotr.Game game = null;
-        
+
         InputStream is = null;
         String json = null;
         try {
@@ -140,6 +148,13 @@ public class Risk extends Game {
             json = IOUtils.toString(is);
         } catch (Throwable e) {
         }
+
+//        if (true) {
+//            game = new lotr.Game();
+//            ClaimTerritoryScreen startScreen = new ClaimTerritoryScreen(this, game);
+//            setScreen(startScreen);
+//            return;
+//        }
 
         if (is == null) {
             game = new lotr.Game();
@@ -154,8 +169,15 @@ public class Risk extends Game {
             game = gson.fromJson(json, new TypeToken<lotr.Game>() {
             }.getType());
 
+            game.setBlack(game.black);
+            game.setGreen(game.green);
+            game.setYellow(game.yellow);
+            game.setRed(game.red);
+
             GameScreen gameScreen = new GameScreen(game);
-            setScreen(gameScreen);
+            //setScreen(gameScreen);
+            ReinforceScreen rsc = new ReinforceScreen(this, game, game.green, gameScreen);
+            setScreen(rsc);
         }
 
     }
@@ -288,16 +310,16 @@ public class Risk extends Game {
             }
         }
     }
-    
+
     public static Animation getAnimation(TiledMapTileSet tileset, int id) {
         int firstgid = tileset.getProperties().get("firstgid", Integer.class);
-        
+
         Array<TextureRegion> arr = new Array<>();
         arr.add(tileset.getTile(firstgid + id).getTextureRegion());
         arr.add(tileset.getTile(firstgid + id + 1).getTextureRegion());
         arr.add(tileset.getTile(firstgid + id + 2).getTextureRegion());
         arr.add(tileset.getTile(firstgid + id + 3).getTextureRegion());
-        
+
         Animation<TextureRegion> anim = new Animation(.4f, arr);
         return anim;
     }

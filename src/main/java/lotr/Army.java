@@ -19,6 +19,8 @@ public class Army {
     public Leader leader1;
     @Expose
     public Leader leader2;
+    @Expose
+    public List<TerritoryCard> territoryCards;
 
     public Army() {
 
@@ -38,6 +40,10 @@ public class Army {
 
     //set 1 battalion in each owned territories
     public void pickTerritories(List<TerritoryCard> deck, int count) {
+        
+        this.territoryCards = new ArrayList<>();
+        this.territoryCards.addAll(deck);
+        
         Random rand = new Random();
 
         List<Battalion> tmp = new ArrayList<>();
@@ -66,6 +72,26 @@ public class Army {
         for (Battalion b : this.battalions) {
             if (!tmp.contains(b.territory)) {
                 tmp.add(b.territory);
+            }
+        }
+        return tmp;
+    }
+    
+    public List<Location> ownedStrongholds(List<TerritoryCard> claimedTerritories) {
+        List<Location> tmp = new ArrayList<>();
+        for (Location l : Location.values()) {
+            if (!l.isSiteOfPower() && claimedTerritories.contains(l.getTerritory())) {
+                tmp.add(l);
+            }
+        }
+        return tmp;
+    }
+
+    public List<Region> ownedRegions(List<TerritoryCard> claimedTerritories) {
+        List<Region> tmp = new ArrayList<>();
+        for (Region r : Region.values()) {
+            if (claimedTerritories.containsAll(r.territories())) {
+                tmp.add(r);
             }
         }
         return tmp;

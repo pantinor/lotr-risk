@@ -20,9 +20,9 @@ public class Game {
 
     public final Army[] armies = new Army[4];
     public final List<TerritoryCard> deck = new ArrayList<>();
-    
+
     public Game() {
-        
+
     }
 
     public Army getRed() {
@@ -119,21 +119,21 @@ public class Game {
                 count++;
             }
         }
-        
+
         if (count > 0) {
             return count;
         }
-        
+
         for (Battalion b : this.green.getBattalions()) {
             if (b.territory == tc) {
                 count++;
             }
         }
-        
+
         if (count > 0) {
             return count;
         }
-        
+
         if (this.yellow != null) {
             for (Battalion b : this.yellow.getBattalions()) {
                 if (b.territory == tc) {
@@ -147,32 +147,33 @@ public class Game {
 
     public ArmyType getOccupyingArmy(TerritoryCard tc) {
 
-        if (this.red == null) {
-            return null;
-        }
-
-        for (Battalion b : this.red.getBattalions()) {
-            if (b.territory == tc) {
-                return ArmyType.RED;
-            }
-        }
-
-        for (Battalion b : this.black.getBattalions()) {
-            if (b.territory == tc) {
-                return ArmyType.BLACK;
-            }
-        }
-
-        for (Battalion b : this.green.getBattalions()) {
-            if (b.territory == tc) {
-                return ArmyType.GREEN;
-            }
-        }
-
-        if (this.yellow != null) {
-            for (Battalion b : this.yellow.getBattalions()) {
+        if (this.red != null) {
+            for (Battalion b : this.red.getBattalions()) {
                 if (b.territory == tc) {
-                    return ArmyType.YELLOW;
+                    return ArmyType.RED;
+                }
+            }
+        }
+        if (this.black != null) {
+            for (Battalion b : this.black.getBattalions()) {
+                if (b.territory == tc) {
+                    return ArmyType.BLACK;
+                }
+            }
+        }
+        if (this.green != null) {
+            for (Battalion b : this.green.getBattalions()) {
+                if (b.territory == tc) {
+                    return ArmyType.GREEN;
+                }
+            }
+        }
+        if (this.yellow != null) {
+            if (this.yellow != null) {
+                for (Battalion b : this.yellow.getBattalions()) {
+                    if (b.territory == tc) {
+                        return ArmyType.YELLOW;
+                    }
                 }
             }
         }
