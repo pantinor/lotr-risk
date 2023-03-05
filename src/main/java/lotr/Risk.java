@@ -167,7 +167,6 @@ public class Risk extends Game {
             game.setYellow(game.yellow);
             game.setRed(game.red);
 
-            ClaimTerritoryScreen ctScreen = new ClaimTerritoryScreen(this, game);
             GameScreen gameScreen = new GameScreen(game);
             setScreen(gameScreen);
             //ReinforceScreen rsc = new ReinforceScreen(this, game, game.green, gameScreen);
@@ -302,11 +301,6 @@ public class Risk extends Game {
                     }
                 }
             }
-
-            for (RegionWrapper w : regions) {
-                System.out.printf("%s %s %s %s\n", w.name, w.textPosition, w.namePosition, w.battalionPosition);
-            }
-            System.out.println("***************");
         }
     }
 

@@ -133,11 +133,11 @@ public class ReinforceScreen implements Screen {
         Iterator<MapObject> iter = regionsLayer.getObjects().iterator();
         while (iter.hasNext()) {
             PolygonMapObject obj = (PolygonMapObject) iter.next();
-            
+
             Polygon poly = new Polygon(obj.getPolygon().getVertices());
             poly.setPosition(obj.getPolygon().getX(), obj.getPolygon().getY());
             poly.setOrigin(obj.getPolygon().getOriginX(), obj.getPolygon().getOriginY());
-            
+
             String name = obj.getName();
 
             RegionWrapper w = new RegionWrapper();
@@ -174,11 +174,6 @@ public class ReinforceScreen implements Screen {
         this.reinforceTerritories = new TextButton("REINFORCE TERRITORIES", Risk.skin);
         this.reinforceRegions = new TextButton("REINFORCE REGIONS", Risk.skin);
         this.reinforceCards = new TextButton("REINFORCE CARDS", Risk.skin);
-
-        this.reinforceStrongholds.setBounds(400, 720, 220, 35);
-        this.reinforceTerritories.setBounds(400, 680, 220, 35);
-        this.reinforceRegions.setBounds(400, 640, 220, 35);
-        this.reinforceCards.setBounds(400, 600, 220, 35);
 
         this.reinforceStrongholds.addListener(new ChangeListener() {
             @Override
@@ -269,7 +264,7 @@ public class ReinforceScreen implements Screen {
             }
         });
 
-        this.exit = new TextButton("EXIT", Risk.skin);
+        this.exit = new TextButton("DONE", Risk.skin);
         this.exit.setVisible(false);
         this.exit.addListener(new ChangeListener() {
             @Override
@@ -277,13 +272,17 @@ public class ReinforceScreen implements Screen {
                 main.setScreen(ReinforceScreen.this.gameScreen);
             }
         });
-        this.exit.setBounds(525, 600, 150, 40);
+
+        this.reinforceStrongholds.setBounds(400, 720, 220, 35);
+        this.reinforceTerritories.setBounds(400, 680, 220, 35);
+        this.reinforceRegions.setBounds(400, 640, 220, 35);
+        this.reinforceCards.setBounds(400, 600, 220, 35);
+        this.exit.setBounds(400, 560, 220, 35);
 
         this.stage.addActor(this.reinforceStrongholds);
         this.stage.addActor(this.reinforceTerritories);
         this.stage.addActor(this.reinforceRegions);
         this.stage.addActor(this.reinforceCards);
-
         this.stage.addActor(this.exit);
 
         this.stage.addListener(new EventListener() {
@@ -399,6 +398,10 @@ public class ReinforceScreen implements Screen {
 
         stage.act();
         stage.draw();
+        
+        if (strongholdReinforcements == 0 && territoryReinforcements == 0 && regionReinforcements == 0) {
+            this.exit.setVisible(true);
+        }
 
     }
 

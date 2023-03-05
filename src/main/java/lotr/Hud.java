@@ -8,8 +8,12 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.utils.Align;
 import static lotr.Risk.GREEN_BATTALION;
 import static lotr.Risk.BLACK_BATTALION;
+import static lotr.Risk.BLACK_LEADER;
+import static lotr.Risk.GREEN_LEADER;
 import static lotr.Risk.RED_BATTALION;
+import static lotr.Risk.RED_LEADER;
 import static lotr.Risk.YELLOW_BATTALION;
+import static lotr.Risk.YELLOW_LEADER;
 
 public class Hud {
 
@@ -19,7 +23,7 @@ public class Hud {
     static final int LOG_AREA_TOP = 355;
     static final int LOG_X = 735;
     private final GlyphLayout layout = new GlyphLayout(Risk.font, "", Color.WHITE, LOG_AREA_WIDTH - 5, Align.left, true);
-    private final Texture background = Risk.fillRectangle(280, 250, Color.GRAY, .5f);
+    private final Texture background = Risk.fillRectangle(300, 250, Color.GRAY, .5f);
 
     public void append(String s) {
         synchronized (logs) {
@@ -53,8 +57,8 @@ public class Hud {
 
     public void render(Batch batch, Game game) {
 
-        int y = Risk.SCREEN_HEIGHT - 830;
-        int py = Risk.SCREEN_HEIGHT - 875;
+        int y = Risk.SCREEN_HEIGHT - 810;
+        int py = Risk.SCREEN_HEIGHT - 855;
 
         batch.draw(this.background, 0, 0);
 
@@ -68,36 +72,44 @@ public class Hud {
 
             switch (a.armyType) {
                 case RED:
-                    Risk.fontSmall.setColor(Color.RED);
+                    Risk.regionLabelFont.setColor(Color.RED);
                     batch.draw(RED_BATTALION.getKeyFrame(0), 0, py);
+                    batch.draw(RED_LEADER.getKeyFrame(0), 250, py);
+
                     break;
                 case GREEN:
-                    Risk.fontSmall.setColor(Color.GREEN);
+                    Risk.regionLabelFont.setColor(Color.GREEN);
                     batch.draw(GREEN_BATTALION.getKeyFrame(0), 0, py);
+                    batch.draw(GREEN_LEADER.getKeyFrame(0), 250, py);
+
                     break;
                 case BLACK:
-                    Risk.fontSmall.setColor(Color.WHITE);
+                    Risk.regionLabelFont.setColor(Color.BLACK);
                     batch.draw(BLACK_BATTALION.getKeyFrame(0), 0, py);
+                    batch.draw(BLACK_LEADER.getKeyFrame(0), 250, py);
+
                     break;
                 case YELLOW:
-                    Risk.fontSmall.setColor(Color.YELLOW);
+                    Risk.regionLabelFont.setColor(Color.YELLOW);
                     batch.draw(YELLOW_BATTALION.getKeyFrame(0), 0, py);
+                    batch.draw(YELLOW_LEADER.getKeyFrame(0), 250, py);
+
                     break;
             }
 
-            String row1 = String.format("%s  Battalions %d Territories %d", a.armyType, a.battalions.size(), claimedTerritories.size());
+            String row1 = String.format("Battalions %d Territories %d", a.battalions.size(), claimedTerritories.size());
             String row2 = String.format("Regions %s  Strongholds %d", a.ownedRegions(claimedTerritories).size(), a.ownedStrongholds(claimedTerritories).size());
 
-            Risk.fontSmall.draw(batch, row1, 50, y);
-            Risk.fontSmall.draw(batch, row2, 50, y - 17);
+            Risk.regionLabelFont.draw(batch, a.armyType.toString(), 50, y);
+            Risk.regionLabelFont.draw(batch, row1, 50, y - 17);
+            Risk.regionLabelFont.draw(batch, row2, 50, y - 34);
 
-            y -= 55;
-            py -= 55;
+            y -= 60;
+            py -= 60;
 
         }
 
-        Risk.font.setColor(Color.WHITE);
-        Risk.fontSmall.setColor(Color.WHITE);
+        Risk.regionLabelFont.setColor(Color.WHITE);
 
         y = 28;
 
@@ -110,7 +122,7 @@ public class Hud {
                 if (y > LOG_AREA_TOP) {
                     break;
                 }
-                Risk.font.draw(batch, layout, LOG_X, y);
+                Risk.regionLabelFontSmall.draw(batch, layout, LOG_X, y);
             }
         }
     }
