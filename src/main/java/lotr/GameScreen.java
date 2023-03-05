@@ -62,7 +62,7 @@ public class GameScreen implements Screen, InputProcessor {
     private final Game game;
     private final Hud hud = new Hud();
 
-    List<RegionWrapper> regions = new ArrayList<>();
+    private final List<RegionWrapper> regions = new ArrayList<>();
 
     public GameScreen(Game game) {
 
@@ -75,7 +75,11 @@ public class GameScreen implements Screen, InputProcessor {
         Iterator<MapObject> iter = regionsLayer.getObjects().iterator();
         while (iter.hasNext()) {
             PolygonMapObject obj = (PolygonMapObject) iter.next();
-            Polygon poly = obj.getPolygon();
+
+            Polygon poly = new Polygon(obj.getPolygon().getVertices());
+            poly.setPosition(obj.getPolygon().getX(), obj.getPolygon().getY());
+            poly.setOrigin(obj.getPolygon().getOriginX(), obj.getPolygon().getOriginY());
+
             String name = obj.getName();
 
             RegionWrapper w = new RegionWrapper();

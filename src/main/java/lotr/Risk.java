@@ -149,13 +149,6 @@ public class Risk extends Game {
         } catch (Throwable e) {
         }
 
-//        if (true) {
-//            game = new lotr.Game();
-//            ClaimTerritoryScreen startScreen = new ClaimTerritoryScreen(this, game);
-//            setScreen(startScreen);
-//            return;
-//        }
-
         if (is == null) {
             game = new lotr.Game();
 
@@ -174,10 +167,11 @@ public class Risk extends Game {
             game.setYellow(game.yellow);
             game.setRed(game.red);
 
+            ClaimTerritoryScreen ctScreen = new ClaimTerritoryScreen(this, game);
             GameScreen gameScreen = new GameScreen(game);
-            //setScreen(gameScreen);
-            ReinforceScreen rsc = new ReinforceScreen(this, game, game.green, gameScreen);
-            setScreen(rsc);
+            setScreen(gameScreen);
+            //ReinforceScreen rsc = new ReinforceScreen(this, game, game.green, gameScreen);
+            //setScreen(rsc);
         }
 
     }
@@ -308,6 +302,11 @@ public class Risk extends Game {
                     }
                 }
             }
+
+            for (RegionWrapper w : regions) {
+                System.out.printf("%s %s %s %s\n", w.name, w.textPosition, w.namePosition, w.battalionPosition);
+            }
+            System.out.println("***************");
         }
     }
 

@@ -38,6 +38,14 @@ public class Army {
         }
     }
 
+    public void addTerritoryCard(TerritoryCard c) {
+        this.territoryCards.add(c);
+    }
+
+    public void removeTerritoryCard(TerritoryCard c) {
+        this.territoryCards.remove(c);
+    }
+
     //set 1 battalion in each owned territories
     public void pickTerritories(List<TerritoryCard> deck, int count) {
 
@@ -49,7 +57,6 @@ public class Army {
         for (int i = 0; i < count; i++) {
             int r = rand.nextInt(deck.size());
             TerritoryCard c = deck.remove(r);
-            this.territoryCards.add(c);
             Battalion b = tmp.remove(0);
             b.territory = c;
         }

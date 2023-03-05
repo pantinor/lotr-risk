@@ -49,13 +49,13 @@ public class ReinforceScreen implements Screen {
     private final HexagonalTiledMapRenderer renderer;
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
 
-    Game game;
-    Risk main;
-    Army army;
-    GameScreen gameScreen;
+    private final Game game;
+    private final Risk main;
+    private final Army army;
+    private final GameScreen gameScreen;
 
-    float unitScale = 0.35f;
-    List<RegionWrapper> regions = new ArrayList<>();
+    private final float unitScale = 0.35f;
+    private final List<RegionWrapper> regions = new ArrayList<>();
 
     private final SpriteBatch hudbatch = new SpriteBatch();
     private final SpriteBatch batch = new SpriteBatch();
@@ -133,7 +133,11 @@ public class ReinforceScreen implements Screen {
         Iterator<MapObject> iter = regionsLayer.getObjects().iterator();
         while (iter.hasNext()) {
             PolygonMapObject obj = (PolygonMapObject) iter.next();
-            Polygon poly = obj.getPolygon();
+            
+            Polygon poly = new Polygon(obj.getPolygon().getVertices());
+            poly.setPosition(obj.getPolygon().getX(), obj.getPolygon().getY());
+            poly.setOrigin(obj.getPolygon().getOriginX(), obj.getPolygon().getOriginY());
+            
             String name = obj.getName();
 
             RegionWrapper w = new RegionWrapper();
@@ -152,20 +156,17 @@ public class ReinforceScreen implements Screen {
         this.table.align(Align.left | Align.top).pad(5);
         table.columnDefaults(0).expandX().left().uniformX();
         table.columnDefaults(1).expandX().left().uniformX();
-        table.columnDefaults(2).expandX().left().uniformX();
 
         ScrollPane sp = new ScrollPane(table, Risk.skin);
         sp.setBounds(300, 50, 300, 500);
         this.stage.addActor(sp);
 
-        for (TerritoryCard c : this.claimedTerritories) {
-            String bt = c.battalionType() == null ? "WILDCARD" : c.battalionType().toString().replace("_", " ");
-            Label l = new Label(c.toString().replace("_", " "), Risk.skin);
-            l.setUserObject(c);
-            this.table.add(l);
-            this.table.add(new Label(bt, Risk.skin));
-            CheckBox cb = new CheckBox("", Risk.skin, "default");
+        for (TerritoryCard c : army.territoryCards) {
+            CheckBox cb = new CheckBox(c.toString().replace("_", " "), Risk.skin, "default");
+            cb.setUserObject(c);
             this.table.add(cb);
+            String bt = c.battalionType() == null ? "WILDCARD" : c.battalionType().toString().replace("_", " ");
+            this.table.add(new Label(bt, Risk.skin));
             this.table.row();
         }
 
@@ -186,7 +187,7 @@ public class ReinforceScreen implements Screen {
                 for (RegionWrapper w : regions) {
                     if (w.selected) {
                         foundSelected = true;
-                        if (strongholdReinforcements > 0 && claimedTerritories.contains(w.territory) 
+                        if (strongholdReinforcements > 0 && claimedTerritories.contains(w.territory)
                                 && Location.getStronghold(w.territory) != null && !reinforcedStrongholds.contains(w.territory)) {
                             army.addBattalion(w.territory);
                             reinforcedStrongholds.add(w.territory);
@@ -210,8 +211,10 @@ public class ReinforceScreen implements Screen {
                 for (RegionWrapper w : regions) {
                     if (w.selected) {
                         foundSelected = true;
-                        if (!game.isClaimed(w.territory)) {
-
+                        if (territoryReinforcements > 0 && claimedTerritories.contains(w.territory)) {
+                            army.addBattalion(w.territory);
+                            territoryReinforcements--;
+                            Sounds.play(Sound.TRIGGER);
                         } else {
                             Sounds.play(Sound.NEGATIVE_EFFECT);
                         }
@@ -230,8 +233,10 @@ public class ReinforceScreen implements Screen {
                 for (RegionWrapper w : regions) {
                     if (w.selected) {
                         foundSelected = true;
-                        if (!game.isClaimed(w.territory)) {
-
+                        if (regionReinforcements > 0 && claimedTerritories.contains(w.territory)) {
+                            army.addBattalion(w.territory);
+                            regionReinforcements--;
+                            Sounds.play(Sound.TRIGGER);
                         } else {
                             Sounds.play(Sound.NEGATIVE_EFFECT);
                         }
@@ -250,7 +255,7 @@ public class ReinforceScreen implements Screen {
                 for (RegionWrapper w : regions) {
                     if (w.selected) {
                         foundSelected = true;
-                        if (!game.isClaimed(w.territory)) {
+                        if (false) {
 
                         } else {
                             Sounds.play(Sound.NEGATIVE_EFFECT);
@@ -329,7 +334,6 @@ public class ReinforceScreen implements Screen {
             if (w.territory != null) {
                 renderer.getBatch().begin();
 
-                //Risk.fontSmall.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
                 ArmyType at = game.getOccupyingArmy(w.territory);
 
                 if (at == ArmyType.RED) {

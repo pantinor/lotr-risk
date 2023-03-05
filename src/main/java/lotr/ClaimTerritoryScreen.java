@@ -39,18 +39,15 @@ import java.util.List;
 import java.util.Random;
 import lotr.Constants.ArmyType;
 import static lotr.Risk.GREEN_BATTALION;
-import static lotr.Risk.GREEN_LEADER;
 import static lotr.Risk.BLACK_BATTALION;
-import static lotr.Risk.BLACK_LEADER;
+import static lotr.Risk.BLACK_CIRCLE;
+import static lotr.Risk.GREEN_CIRCLE;
 import static lotr.Risk.RED_BATTALION;
-import static lotr.Risk.RED_LEADER;
 import lotr.Risk.RegionWrapper;
 import static lotr.Risk.TMX_MAP;
 import static lotr.Risk.YELLOW_BATTALION;
-import static lotr.Risk.YELLOW_LEADER;
+import static lotr.Risk.LEADER_CIRCLE;
 import static lotr.Risk.RED_CIRCLE;
-import static lotr.Risk.GREEN_CIRCLE;
-import static lotr.Risk.BLACK_CIRCLE;
 import static lotr.Risk.YELLOW_CIRCLE;
 
 public class ClaimTerritoryScreen implements Screen {
@@ -59,11 +56,11 @@ public class ClaimTerritoryScreen implements Screen {
     private final HexagonalTiledMapRenderer renderer;
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
 
-    Game game;
-    Risk main;
+    private final Game game;
+    private final Risk main;
 
-    float unitScale = 0.35f;
-    List<RegionWrapper> regions = new ArrayList<>();
+    private final float unitScale = 0.35f;
+    private final List<RegionWrapper> regions = new ArrayList<>();
 
     private final SpriteBatch batch = new SpriteBatch();
     private final Viewport mapViewport;
@@ -83,7 +80,7 @@ public class ClaimTerritoryScreen implements Screen {
     private final Label blackLabel = new Label("-", Risk.skin);
 
     private int turnIndex = 0;
-    private Random rand = new Random();
+    private final Random rand = new Random();
 
     public ClaimTerritoryScreen(Risk main, Game game) {
 
@@ -102,7 +99,11 @@ public class ClaimTerritoryScreen implements Screen {
         Iterator<MapObject> iter = regionsLayer.getObjects().iterator();
         while (iter.hasNext()) {
             PolygonMapObject obj = (PolygonMapObject) iter.next();
-            Polygon poly = obj.getPolygon();
+
+            Polygon poly = new Polygon(obj.getPolygon().getVertices());
+            poly.setPosition(obj.getPolygon().getX(), obj.getPolygon().getY());
+            poly.setOrigin(obj.getPolygon().getOriginX(), obj.getPolygon().getOriginY());
+
             String name = obj.getName();
 
             RegionWrapper w = new RegionWrapper();
@@ -192,6 +193,14 @@ public class ClaimTerritoryScreen implements Screen {
         this.exit.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+
+                //deal 1 territory card to each player
+                for (Army a : game.armies) {
+                    if (a != null) {
+                        TerritoryCard c = game.deck.remove(0);
+                        a.addTerritoryCard(c);
+                    }
+                }
 
                 try {
                     GsonBuilder builder = new GsonBuilder();
@@ -428,42 +437,36 @@ public class ClaimTerritoryScreen implements Screen {
             if (w.territory != null) {
                 renderer.getBatch().begin();
 
-                Risk.fontSmall.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
-
                 ArmyType at = game.getOccupyingArmy(w.territory);
 
                 if (at == ArmyType.RED) {
-                    renderer.getBatch().draw(RED_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.red.leader1.territory || w.territory == game.red.leader2.territory) {
-                        renderer.getBatch().draw(RED_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
+                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
                     }
-                    renderer.getBatch().draw(RED_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
+                    renderer.getBatch().draw(RED_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
                 }
                 if (at == ArmyType.BLACK) {
-                    renderer.getBatch().draw(BLACK_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.black.leader1.territory || w.territory == game.black.leader2.territory) {
-                        renderer.getBatch().draw(BLACK_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
+                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
                     }
-                    renderer.getBatch().draw(BLACK_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
+                    renderer.getBatch().draw(BLACK_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
                 }
                 if (at == ArmyType.GREEN) {
-                    renderer.getBatch().draw(GREEN_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.green.leader1.territory || w.territory == game.green.leader2.territory) {
-                        renderer.getBatch().draw(GREEN_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
+                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
                     }
-                    renderer.getBatch().draw(GREEN_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
+                    renderer.getBatch().draw(GREEN_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
                 }
                 if (at == ArmyType.YELLOW) {
-                    renderer.getBatch().draw(YELLOW_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.yellow.leader1.territory || w.territory == game.yellow.leader2.territory) {
-                        renderer.getBatch().draw(YELLOW_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
+                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
                     }
-                    renderer.getBatch().draw(YELLOW_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
+                    renderer.getBatch().draw(YELLOW_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
                 }
 
                 int bc = game.battalionCount(w.territory);
                 if (bc > 0) {
-                    Risk.fontSmall.draw(renderer.getBatch(), bc + "", w.textPosition.x + 24, w.textPosition.y + 17);
+                    Risk.font.draw(renderer.getBatch(), bc + "", w.textPosition.x + 0, w.textPosition.y + 0);
                 }
 
                 renderer.getBatch().end();
