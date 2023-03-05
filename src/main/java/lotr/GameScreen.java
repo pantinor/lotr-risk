@@ -48,6 +48,7 @@ import lotr.Risk.RegionWrapper;
 import lotr.Risk.RingPathWrapper;
 
 public class GameScreen implements Screen, InputProcessor {
+
     protected float time = 0;
 
     private final Stage stage;
@@ -91,6 +92,10 @@ public class GameScreen implements Screen, InputProcessor {
 
         this.game = game;
 
+    }
+
+    @Override
+    public void show() {
         Gdx.input.setInputProcessor(new InputAdapter() {
 
             Vector3 curr = new Vector3();
@@ -126,12 +131,6 @@ public class GameScreen implements Screen, InputProcessor {
                 return false;
             }
         });
-
-    }
-
-    @Override
-    public void show() {
-
     }
 
     @Override
@@ -224,7 +223,7 @@ public class GameScreen implements Screen, InputProcessor {
         this.batch.begin();
         this.hud.render(this.batch, this.game);
         this.batch.end();
-        
+
         stage.act();
         stage.draw();
 
@@ -291,7 +290,7 @@ public class GameScreen implements Screen, InputProcessor {
     public boolean scrolled(float amountX, float amountY) {
         return false;
     }
-    
+
     public Hud hud() {
         return this.hud;
     }

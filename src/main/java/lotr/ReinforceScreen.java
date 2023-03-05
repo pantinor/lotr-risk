@@ -25,6 +25,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -32,21 +33,14 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import lotr.Constants.ArmyType;
-import static lotr.Risk.GREEN_BATTALION;
-import static lotr.Risk.GREEN_LEADER;
-import static lotr.Risk.BLACK_BATTALION;
-import static lotr.Risk.BLACK_LEADER;
-import static lotr.Risk.RED_BATTALION;
-import static lotr.Risk.RED_LEADER;
+import lotr.Constants.BattalionType;
 import lotr.Risk.RegionWrapper;
 import static lotr.Risk.TMX_MAP;
-import static lotr.Risk.YELLOW_BATTALION;
-import static lotr.Risk.YELLOW_LEADER;
-import static lotr.Risk.RED_CIRCLE;
 import static lotr.Risk.GREEN_CIRCLE;
 import static lotr.Risk.BLACK_CIRCLE;
+import static lotr.Risk.LEADER_CIRCLE;
+import static lotr.Risk.RED_CIRCLE;
 import static lotr.Risk.YELLOW_CIRCLE;
 
 public class ReinforceScreen implements Screen {
@@ -63,7 +57,9 @@ public class ReinforceScreen implements Screen {
     float unitScale = 0.35f;
     List<RegionWrapper> regions = new ArrayList<>();
 
+    private final SpriteBatch hudbatch = new SpriteBatch();
     private final SpriteBatch batch = new SpriteBatch();
+
     private final Viewport mapViewport;
     private final OrthographicCamera camera;
 
@@ -73,12 +69,15 @@ public class ReinforceScreen implements Screen {
     private static final int MAP_VIEWPORT_WIDTH = 736;
     private static final int MAP_VIEWPORT_HEIGHT = 968;
 
-    private final TextButton reinforce, exit;
     private final Table table = new Table();
-    private final Label redLabel = new Label("-", Risk.skin);
 
-    private int turnIndex = 0;
-    private Random rand = new Random();
+    private final TextButton reinforceStrongholds, reinforceTerritories, reinforceRegions, reinforceCards, exit;
+
+    private final List<TerritoryCard> claimedTerritories;
+    private final List<TerritoryCard> reinforcedStrongholds = new ArrayList<>();
+
+    private int strongholdReinforcements, territoryReinforcements, regionReinforcements, cardReinforcements;
+    private int sumArchers = 0, sumRiders = 0, sumEagles = 0;
 
     public ReinforceScreen(Risk main, Game game, Army army, GameScreen gameScreen) {
 
@@ -87,12 +86,47 @@ public class ReinforceScreen implements Screen {
         this.army = army;
         this.gameScreen = gameScreen;
 
+        this.claimedTerritories = army.claimedTerritories();
+
+        strongholdReinforcements = army.ownedStrongholds(claimedTerritories).size();
+        territoryReinforcements = claimedTerritories.size() / 3 < 3 ? 3 : claimedTerritories.size() / 3;
+
+        for (Region r : Region.values()) {
+            if (claimedTerritories.containsAll(r.territories())) {
+                regionReinforcements += r.reinforcements();
+            }
+        }
+
+        for (TerritoryCard c : army.territoryCards) {
+            if (c.battalionType() == BattalionType.ELVEN_ARCHER || c.battalionType() == null) {
+                sumArchers++;
+            }
+            if (c.battalionType() == BattalionType.DARK_RIDER || c.battalionType() == null) {
+                sumRiders++;
+            }
+            if (c.battalionType() == BattalionType.EAGLE || c.battalionType() == null) {
+                sumEagles++;
+            }
+        }
+        if (sumArchers >= 3) {
+            cardReinforcements = 4;
+        }
+        if (sumRiders >= 3) {
+            cardReinforcements = 6;
+        }
+        if (sumEagles >= 3) {
+            cardReinforcements = 8;
+        }
+        if (sumArchers >= 1 && sumRiders >= 1 && sumEagles >= 1) {
+            cardReinforcements = 10;
+        }
+
         this.camera = new OrthographicCamera(MAP_VIEWPORT_WIDTH, MAP_VIEWPORT_HEIGHT);
         this.mapViewport = new ScreenViewport(this.camera);
         this.camera.position.set(MAP_VIEWPORT_WIDTH / 2 - 200, MAP_VIEWPORT_HEIGHT / 2 - 15, 0);
         this.mapViewport.update(MAP_VIEWPORT_WIDTH * 2, MAP_VIEWPORT_HEIGHT, false);
 
-        this.renderer = new HexagonalTiledMapRenderer(TMX_MAP, this.unitScale);
+        this.renderer = new HexagonalTiledMapRenderer(TMX_MAP, this.unitScale, this.batch);
         this.renderer.setView(this.camera);
 
         MapLayer regionsLayer = TMX_MAP.getLayers().get("regions");
@@ -116,15 +150,60 @@ public class ReinforceScreen implements Screen {
         Risk.setPoints(iconLayer, regions, unitScale);
 
         this.table.align(Align.left | Align.top).pad(5);
-        this.table.columnDefaults(0).expandX().left().uniformX();
+        table.columnDefaults(0).expandX().left().uniformX();
+        table.columnDefaults(1).expandX().left().uniformX();
+        table.columnDefaults(2).expandX().left().uniformX();
 
         ScrollPane sp = new ScrollPane(table, Risk.skin);
-        sp.setBounds(300, 700, 300, 225);
+        sp.setBounds(300, 50, 300, 500);
         this.stage.addActor(sp);
 
-        this.reinforce = new TextButton("REINFORCE", Risk.skin);
+        for (TerritoryCard c : this.claimedTerritories) {
+            String bt = c.battalionType() == null ? "WILDCARD" : c.battalionType().toString().replace("_", " ");
+            Label l = new Label(c.toString().replace("_", " "), Risk.skin);
+            l.setUserObject(c);
+            this.table.add(l);
+            this.table.add(new Label(bt, Risk.skin));
+            CheckBox cb = new CheckBox("", Risk.skin, "default");
+            this.table.add(cb);
+            this.table.row();
+        }
 
-        this.reinforce.addListener(new ChangeListener() {
+        this.reinforceStrongholds = new TextButton("REINFORCE STRONGHOLDS", Risk.skin);
+        this.reinforceTerritories = new TextButton("REINFORCE TERRITORIES", Risk.skin);
+        this.reinforceRegions = new TextButton("REINFORCE REGIONS", Risk.skin);
+        this.reinforceCards = new TextButton("REINFORCE CARDS", Risk.skin);
+
+        this.reinforceStrongholds.setBounds(400, 720, 220, 35);
+        this.reinforceTerritories.setBounds(400, 680, 220, 35);
+        this.reinforceRegions.setBounds(400, 640, 220, 35);
+        this.reinforceCards.setBounds(400, 600, 220, 35);
+
+        this.reinforceStrongholds.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                boolean foundSelected = false;
+                for (RegionWrapper w : regions) {
+                    if (w.selected) {
+                        foundSelected = true;
+                        if (strongholdReinforcements > 0 && claimedTerritories.contains(w.territory) 
+                                && Location.getStronghold(w.territory) != null && !reinforcedStrongholds.contains(w.territory)) {
+                            army.addBattalion(w.territory);
+                            reinforcedStrongholds.add(w.territory);
+                            strongholdReinforcements--;
+                            Sounds.play(Sound.TRIGGER);
+                        } else {
+                            Sounds.play(Sound.NEGATIVE_EFFECT);
+                        }
+                        break;
+                    }
+                }
+                if (!foundSelected) {
+                    Sounds.play(Sound.NEGATIVE_EFFECT);
+                }
+            }
+        });
+        this.reinforceTerritories.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
                 boolean foundSelected = false;
@@ -144,7 +223,46 @@ public class ReinforceScreen implements Screen {
                 }
             }
         });
-        this.reinforce.setBounds(525, 600, 150, 40);
+        this.reinforceRegions.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                boolean foundSelected = false;
+                for (RegionWrapper w : regions) {
+                    if (w.selected) {
+                        foundSelected = true;
+                        if (!game.isClaimed(w.territory)) {
+
+                        } else {
+                            Sounds.play(Sound.NEGATIVE_EFFECT);
+                        }
+                        break;
+                    }
+                }
+                if (!foundSelected) {
+                    Sounds.play(Sound.NEGATIVE_EFFECT);
+                }
+            }
+        });
+        this.reinforceCards.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                boolean foundSelected = false;
+                for (RegionWrapper w : regions) {
+                    if (w.selected) {
+                        foundSelected = true;
+                        if (!game.isClaimed(w.territory)) {
+
+                        } else {
+                            Sounds.play(Sound.NEGATIVE_EFFECT);
+                        }
+                        break;
+                    }
+                }
+                if (!foundSelected) {
+                    Sounds.play(Sound.NEGATIVE_EFFECT);
+                }
+            }
+        });
 
         this.exit = new TextButton("EXIT", Risk.skin);
         this.exit.setVisible(false);
@@ -156,7 +274,11 @@ public class ReinforceScreen implements Screen {
         });
         this.exit.setBounds(525, 600, 150, 40);
 
-        this.stage.addActor(this.reinforce);
+        this.stage.addActor(this.reinforceStrongholds);
+        this.stage.addActor(this.reinforceTerritories);
+        this.stage.addActor(this.reinforceRegions);
+        this.stage.addActor(this.reinforceCards);
+
         this.stage.addActor(this.exit);
 
         this.stage.addListener(new EventListener() {
@@ -184,6 +306,7 @@ public class ReinforceScreen implements Screen {
 
     @Override
     public void show() {
+        Gdx.input.setInputProcessor(this.stage);
     }
 
     @Override
@@ -206,42 +329,37 @@ public class ReinforceScreen implements Screen {
             if (w.territory != null) {
                 renderer.getBatch().begin();
 
-                Risk.fontSmall.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
-
+                //Risk.fontSmall.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
                 ArmyType at = game.getOccupyingArmy(w.territory);
 
                 if (at == ArmyType.RED) {
-                    renderer.getBatch().draw(RED_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.red.leader1.territory || w.territory == game.red.leader2.territory) {
-                        renderer.getBatch().draw(RED_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
+                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
                     }
-                    renderer.getBatch().draw(RED_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
+                    renderer.getBatch().draw(RED_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
                 }
                 if (at == ArmyType.BLACK) {
-                    renderer.getBatch().draw(BLACK_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.black.leader1.territory || w.territory == game.black.leader2.territory) {
-                        renderer.getBatch().draw(BLACK_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
+                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
                     }
-                    renderer.getBatch().draw(BLACK_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
+                    renderer.getBatch().draw(BLACK_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
                 }
                 if (at == ArmyType.GREEN) {
-                    renderer.getBatch().draw(GREEN_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.green.leader1.territory || w.territory == game.green.leader2.territory) {
-                        renderer.getBatch().draw(GREEN_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
+                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
                     }
-                    renderer.getBatch().draw(GREEN_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
+                    renderer.getBatch().draw(GREEN_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
                 }
                 if (at == ArmyType.YELLOW) {
-                    renderer.getBatch().draw(YELLOW_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
                     if (w.territory == game.yellow.leader1.territory || w.territory == game.yellow.leader2.territory) {
-                        renderer.getBatch().draw(YELLOW_LEADER.getKeyFrame(time, true), w.battalionPosition.x - 48, w.battalionPosition.y - 0);
+                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
                     }
-                    renderer.getBatch().draw(YELLOW_CIRCLE, w.textPosition.x + 15, w.textPosition.y + 0);
+                    renderer.getBatch().draw(YELLOW_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
                 }
 
                 int bc = game.battalionCount(w.territory);
                 if (bc > 0) {
-                    Risk.fontSmall.draw(renderer.getBatch(), bc + "", w.textPosition.x + 24, w.textPosition.y + 17);
+                    Risk.font.draw(renderer.getBatch(), bc + "", w.textPosition.x + 0, w.textPosition.y + 0);
                 }
 
                 renderer.getBatch().end();
@@ -259,9 +377,21 @@ public class ReinforceScreen implements Screen {
             }
         }
 
-        this.batch.begin();
-        this.gameScreen.hud().render(this.batch, this.game);
-        this.batch.end();
+        this.hudbatch.begin();
+
+        int y = Risk.SCREEN_HEIGHT - 100;
+
+        Risk.font.draw(hudbatch, army.armyType.toString(), 400, Risk.SCREEN_HEIGHT - 50);
+
+        Risk.font.draw(hudbatch, "Stronghold Reinforcements " + strongholdReinforcements, 400, y);
+        Risk.font.draw(hudbatch, "Territory Reinforcements " + territoryReinforcements, 400, y - 20);
+        Risk.font.draw(hudbatch, "Region Reinforcements " + regionReinforcements, 400, y - 40);
+        Risk.font.draw(hudbatch, "Card Reinforcements " + cardReinforcements, 400, y - 60);
+        Risk.font.draw(hudbatch, "Cards with Eleven Archers " + sumArchers, 400, y - 100);
+        Risk.font.draw(hudbatch, "Cards with Dark Riders " + sumRiders, 400, y - 120);
+        Risk.font.draw(hudbatch, "Cards with Eagles " + sumEagles, 400, y - 140);
+
+        this.hudbatch.end();
 
         stage.act();
         stage.draw();
