@@ -1,10 +1,13 @@
 package lotr;
 
+import lotr.util.Sound;
+import lotr.util.Sounds;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapLayer;
@@ -78,6 +81,16 @@ public class ReinforceScreen implements Screen {
 
     private int strongholdReinforcements, territoryReinforcements, regionReinforcements, cardReinforcements;
     private int sumArchers = 0, sumRiders = 0, sumEagles = 0;
+
+    private final GlyphLayout layout = new GlyphLayout();
+    private static final List<String> TEXTS = new ArrayList<>();
+
+    static {
+        TEXTS.add("1. Reinforce Strongholds - Place 1 battalion into each territory with a stronghold you control.");
+        TEXTS.add("2. Count your Territories - Divide the total number of territories by 3.  The number of reinforcecments you recive can never be fewer than 3.");
+        TEXTS.add("3. Reinforcements from regions - If you control every teritory within the region, then you control the region.");
+        TEXTS.add("4. Turn in any card sets - when you have a set of 3 cards that show the same picture or 1 of each picture, turn them in for reinforcements.");
+    }
 
     public ReinforceScreen(Risk main, Game game, Army army, GameScreen gameScreen) {
 
@@ -314,11 +327,6 @@ public class ReinforceScreen implements Screen {
     }
 
     @Override
-    public void resize(int width, int height) {
-
-    }
-
-    @Override
     public void render(float delta) {
         time += delta;
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -382,23 +390,30 @@ public class ReinforceScreen implements Screen {
 
         this.hudbatch.begin();
 
-        int y = Risk.SCREEN_HEIGHT - 100;
+        int x = 15;
+        int y = Risk.SCREEN_HEIGHT - 15;
 
-        Risk.font.draw(hudbatch, army.armyType.toString(), 400, Risk.SCREEN_HEIGHT - 50);
+        for (String text : TEXTS) {
+            layout.setText(Risk.font, text, Color.WHITE, 320, Align.left, true);
+            Risk.font.draw(hudbatch, layout, 15, y);
+            y -= layout.height + 30;
+        }
 
-        Risk.font.draw(hudbatch, "Stronghold Reinforcements " + strongholdReinforcements, 400, y);
-        Risk.font.draw(hudbatch, "Territory Reinforcements " + territoryReinforcements, 400, y - 20);
-        Risk.font.draw(hudbatch, "Region Reinforcements " + regionReinforcements, 400, y - 40);
-        Risk.font.draw(hudbatch, "Card Reinforcements " + cardReinforcements, 400, y - 60);
-        Risk.font.draw(hudbatch, "Cards with Eleven Archers " + sumArchers, 400, y - 100);
-        Risk.font.draw(hudbatch, "Cards with Dark Riders " + sumRiders, 400, y - 120);
-        Risk.font.draw(hudbatch, "Cards with Eagles " + sumEagles, 400, y - 140);
+        Risk.font.draw(hudbatch, army.armyType.toString(), x, y -= 20);
+
+        Risk.font.draw(hudbatch, "Stronghold Reinforcements " + strongholdReinforcements, x, y -= 30);
+        Risk.font.draw(hudbatch, "Territory Reinforcements " + territoryReinforcements, x, y -= 20);
+        Risk.font.draw(hudbatch, "Region Reinforcements " + regionReinforcements, x, y -= 20);
+        Risk.font.draw(hudbatch, "Card Reinforcements " + cardReinforcements, x, y -= 20);
+        Risk.font.draw(hudbatch, "Cards with Eleven Archers " + sumArchers, x, y -= 40);
+        Risk.font.draw(hudbatch, "Cards with Dark Riders " + sumRiders, x, y -= 20);
+        Risk.font.draw(hudbatch, "Cards with Eagles " + sumEagles, x, y -= 20);
 
         this.hudbatch.end();
 
         stage.act();
         stage.draw();
-        
+
         if (strongholdReinforcements == 0 && territoryReinforcements == 0 && regionReinforcements == 0) {
             this.exit.setVisible(true);
         }
@@ -421,4 +436,8 @@ public class ReinforceScreen implements Screen {
     public void dispose() {
     }
 
+    @Override
+    public void resize(int width, int height) {
+
+    }
 }

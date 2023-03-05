@@ -19,7 +19,10 @@ public class Game {
     public final Army[] armies = new Army[4];
     
     @Expose
-    public final List<TerritoryCard> deck = new ArrayList<>();
+    public final List<TerritoryCard> territoryCards = new ArrayList<>();
+    
+    @Expose
+    public List<AdventureCard> adventureCards = new ArrayList<>();
 
     public Game() {
 

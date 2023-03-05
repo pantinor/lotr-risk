@@ -4,8 +4,6 @@ import java.util.List;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.utils.Align;
 import static lotr.Risk.GREEN_BATTALION;
 import static lotr.Risk.BLACK_BATTALION;
 import static lotr.Risk.BLACK_LEADER;
@@ -17,43 +15,7 @@ import static lotr.Risk.YELLOW_LEADER;
 
 public class Hud {
 
-    final List<String> logs = new FixedSizeArrayList<>(25);
-
-    static final int LOG_AREA_WIDTH = 270;
-    static final int LOG_AREA_TOP = 355;
-    static final int LOG_X = 735;
-    private final GlyphLayout layout = new GlyphLayout(Risk.font, "", Color.WHITE, LOG_AREA_WIDTH - 5, Align.left, true);
     private final Texture background = Risk.fillRectangle(300, 250, Color.GRAY, .5f);
-
-    public void append(String s) {
-        synchronized (logs) {
-            if (logs.isEmpty()) {
-                logs.add("");
-            }
-            String l = logs.get(logs.size() - 1);
-            l = l + s;
-            logs.remove(logs.size() - 1);
-            logs.add(l);
-        }
-    }
-
-    public void logDeleteLastChar() {
-        synchronized (logs) {
-            if (logs.isEmpty()) {
-                return;
-            }
-            String l = logs.get(logs.size() - 1);
-            l = l.substring(0, l.length() - 1);
-            logs.remove(logs.size() - 1);
-            logs.add(l);
-        }
-    }
-
-    public void add(String s) {
-        synchronized (logs) {
-            logs.add(s);
-        }
-    }
 
     public void render(Batch batch, Game game) {
 
@@ -111,19 +73,5 @@ public class Hud {
 
         Risk.regionLabelFont.setColor(Color.WHITE);
 
-        y = 28;
-
-        synchronized (logs) {
-            ReverseListIterator iter = new ReverseListIterator(logs);
-            while (iter.hasNext()) {
-                String next = (String) iter.next();
-                layout.setText(Risk.font, next);
-                y += layout.height + 4;
-                if (y > LOG_AREA_TOP) {
-                    break;
-                }
-                Risk.regionLabelFontSmall.draw(batch, layout, LOG_X, y);
-            }
-        }
     }
 }

@@ -46,7 +46,7 @@ public class FourPlayerGameTest {
         for (int i = 0; i < count; i++) {
             int r = rand.nextInt(temp.size());
             TerritoryCard c = temp.remove(r);
-            game.deck.add(c);
+            game.territoryCards.add(c);
         }
 
         //claim empty territories

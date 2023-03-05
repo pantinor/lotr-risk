@@ -1,5 +1,7 @@
 package lotr;
 
+import lotr.util.Sound;
+import lotr.util.Sounds;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
@@ -194,13 +196,30 @@ public class ClaimTerritoryScreen implements Screen {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
 
-                //deal 1 territory card to each player
+                List<AdventureCard> adventureCards = AdventureCard.shuffledCardsWithoutEvents();
+
+                //deal 1 territory card and 4 adventure cards to each player
                 for (Army a : game.armies) {
                     if (a != null) {
-                        TerritoryCard c = game.deck.remove(0);
+                        TerritoryCard c = game.territoryCards.remove(0);
                         a.addTerritoryCard(c);
+                        a.addAdventureCard(adventureCards.remove(0));
+                        a.addAdventureCard(adventureCards.remove(0));
+                        a.addAdventureCard(adventureCards.remove(0));
+                        a.addAdventureCard(adventureCards.remove(0));
                     }
                 }
+                
+                adventureCards = AdventureCard.shuffledCards();
+                for (Army a : game.armies) {
+                    if (a != null) {
+                        for (AdventureCard c : a.adventureCards) {
+                            adventureCards.remove(c);
+                        }
+                    }
+                }
+                
+                game.adventureCards.addAll(adventureCards);
 
                 try {
                     GsonBuilder builder = new GsonBuilder();
@@ -414,7 +433,7 @@ public class ClaimTerritoryScreen implements Screen {
 
     @Override
     public void show() {
-        new PlayerSelectionDialog(this.game, this).show(stage);
+        new NewGameDialog(this.game, this).show(stage);
     }
 
     @Override

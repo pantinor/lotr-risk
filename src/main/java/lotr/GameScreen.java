@@ -197,7 +197,7 @@ public class GameScreen implements Screen, InputProcessor {
 
                 int bc = game.battalionCount(w.territory);
                 if (bc > 0) {
-                    Risk.fontSmall.draw(renderer.getBatch(), bc + "", w.textPosition.x + 24, w.textPosition.y + 17);
+                    Risk.font.draw(renderer.getBatch(), bc + "", w.textPosition.x + 24, w.textPosition.y + 17);
                 }
 
                 renderer.getBatch().end();

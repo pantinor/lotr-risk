@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class PlayerSelectionDialog extends Window {
+public class NewGameDialog extends Window {
 
     Actor previousKeyboardFocus, previousScrollFocus;
     private final FocusListener focusListener;
@@ -33,7 +33,7 @@ public class PlayerSelectionDialog extends Window {
     private final ClaimTerritoryScreen screen;
     private final Game game;
 
-    public PlayerSelectionDialog(Game game, ClaimTerritoryScreen screen) {
+    public NewGameDialog(Game game, ClaimTerritoryScreen screen) {
         super("Army Selection", Risk.skin.get("dialog", Window.WindowStyle.class));
         this.screen = screen;
         this.game = game;
@@ -131,7 +131,7 @@ public class PlayerSelectionDialog extends Window {
                     while (!temp.isEmpty()) {
                         int r = rand.nextInt(temp.size());
                         TerritoryCard c = temp.remove(r);
-                        game.deck.add(c);
+                        game.territoryCards.add(c);
                     }
 
                     hide();
@@ -158,9 +158,9 @@ public class PlayerSelectionDialog extends Window {
 
             private void focusChanged(FocusListener.FocusEvent event) {
                 Stage stage = getStage();
-                if (isModal() && stage != null && stage.getRoot().getChildren().size > 0 && stage.getRoot().getChildren().peek() == PlayerSelectionDialog.this) {
+                if (isModal() && stage != null && stage.getRoot().getChildren().size > 0 && stage.getRoot().getChildren().peek() == NewGameDialog.this) {
                     Actor newFocusedActor = event.getRelatedActor();
-                    if (newFocusedActor != null && !newFocusedActor.isDescendantOf(PlayerSelectionDialog.this) && !(newFocusedActor.equals(previousKeyboardFocus) || newFocusedActor.equals(previousScrollFocus))) {
+                    if (newFocusedActor != null && !newFocusedActor.isDescendantOf(NewGameDialog.this) && !(newFocusedActor.equals(previousKeyboardFocus) || newFocusedActor.equals(previousScrollFocus))) {
                         event.cancel();
                     }
                 }

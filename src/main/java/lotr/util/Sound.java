@@ -1,4 +1,4 @@
-package lotr;
+package lotr.util;
 
 public enum Sound {
 

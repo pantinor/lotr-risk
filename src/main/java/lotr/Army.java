@@ -21,7 +21,9 @@ public class Army {
     public Leader leader2;
     @Expose
     public List<TerritoryCard> territoryCards = new ArrayList<>();
-
+    @Expose
+    public List<AdventureCard> adventureCards = new ArrayList<>();
+    
     public Army() {
 
     }
@@ -44,6 +46,14 @@ public class Army {
 
     public void removeTerritoryCard(TerritoryCard c) {
         this.territoryCards.remove(c);
+    }
+    
+    public void addAdventureCard(AdventureCard c) {
+        this.adventureCards.add(c);
+    }
+
+    public void removeAdventureCard(AdventureCard c) {
+        this.adventureCards.remove(c);
     }
 
     //set 1 battalion in each owned territories

@@ -22,7 +22,6 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.Gson;
@@ -43,7 +42,6 @@ public class Risk extends Game {
     public static BitmapFont fontSmall;
     public static BitmapFont fontSmallYellow;
     public static BitmapFont regionLabelFont;
-    public static BitmapFont regionLabelFontSmall;
 
     public static final int SCREEN_WIDTH = 1800;
     public static final int SCREEN_HEIGHT = 1050;
@@ -58,46 +56,30 @@ public class Risk extends Game {
     public static List<RingPathWrapper> RING_PATHS = new ArrayList<>();
 
     public static void main(String[] args) {
-
         LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
         cfg.title = "LOTR Risk";
         cfg.width = SCREEN_WIDTH;
         cfg.height = SCREEN_HEIGHT;
-        //cfg.fullscreen = true;
-        //cfg.vSyncEnabled = true;
         new LwjglApplication(new Risk(), cfg);
-
     }
 
     @Override
     public void create() {
 
-        FreeTypeFontGenerator generator2 = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/font2.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
 
+        FreeTypeFontGenerator generator1 = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/gnuolane.ttf"));
+        FreeTypeFontGenerator generator2 = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/font2.ttf"));
         parameter.size = 18;
         regionLabelFont = generator2.generateFont(parameter);
-        parameter.size = 16;
-        regionLabelFontSmall = generator2.generateFont(parameter);
         generator2.dispose();
-
-        FreeTypeFontGenerator generator1 = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/gnuolane.ttf"));
         parameter.size = 18;
         font = generator1.generateFont(parameter);
-        parameter.size = 16;
-        fontSmall = generator1.generateFont(parameter);
-        parameter.size = 16;
-        parameter.color = Color.YELLOW;
-        fontSmallYellow = generator1.generateFont(parameter);
         generator1.dispose();
 
         skin = new Skin(Gdx.files.classpath("assets/skin/uiskin.json"));
         skin.remove("default-font", BitmapFont.class);
         skin.add("default-font", font, BitmapFont.class);
-        skin.add("small-font", fontSmallYellow, BitmapFont.class);
-        Label.LabelStyle ls = new Label.LabelStyle();
-        skin.add("small-font", ls, Label.LabelStyle.class);
-        ls.font = fontSmallYellow;
 
         TerritoryCard.init();
 
@@ -168,9 +150,9 @@ public class Risk extends Game {
             game.setRed(game.red);
 
             GameScreen gameScreen = new GameScreen(game);
-            setScreen(gameScreen);
-            //ReinforceScreen rsc = new ReinforceScreen(this, game, game.green, gameScreen);
-            //setScreen(rsc);
+            //setScreen(gameScreen);
+            ReinforceScreen rsc = new ReinforceScreen(this, game, game.green, gameScreen);
+            setScreen(rsc);
         }
 
     }
