@@ -4,6 +4,7 @@ import java.util.Random;
 
 public class Dice {
 
+    Random r = new Random();
     int num;
     int sides;
 
@@ -23,7 +24,6 @@ public class Dice {
     }
 
     public int roll() {
-        Random r = new Random();
         int sum = 0;
         for (int i = 0; i < num; i++) {
             sum += r.nextInt(sides) + 1;

@@ -33,6 +33,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import lotr.util.Dice;
+import lotr.util.Sound;
+import lotr.util.Sounds;
 import org.apache.commons.io.IOUtils;
 
 public class Risk extends Game {
@@ -53,6 +56,11 @@ public class Risk extends Game {
     public static Animation<TextureRegion> FRODO, SAM;
     public static Texture RED_CIRCLE, GREEN_CIRCLE, BLACK_CIRCLE, YELLOW_CIRCLE, LEADER_CIRCLE;
 
+    public static TextureRegion[][] DICE_TEXTURES;
+    public static final Dice DICE = new Dice(1, 6);
+    public static TextureRegion rolledDiceImageLeft;
+    public static TextureRegion rolledDiceImageRight;
+    
     public static List<RingPathWrapper> RING_PATHS = new ArrayList<>();
 
     public static void main(String[] args) {
@@ -121,6 +129,8 @@ public class Risk extends Game {
         YELLOW_CIRCLE = fillCircle(Color.GOLDENROD, 24);
         LEADER_CIRCLE = fillCircle(Color.BLUE, 28);
 
+        DICE_TEXTURES = TextureRegion.split(new Texture(Gdx.files.classpath("assets/data/DiceSheet.png")), 56, 56);
+        
         lotr.Game game = null;
 
         InputStream is = null;
@@ -149,24 +159,35 @@ public class Risk extends Game {
             game.setYellow(game.yellow);
             game.setRed(game.red);
 
-            GameScreen gameScreen = new GameScreen(game);
-            //setScreen(gameScreen);
-            ReinforceScreen rsc = new ReinforceScreen(this, game, game.green, gameScreen);
-            setScreen(rsc);
+            GameScreen gameScreen = new GameScreen(this, game);
+            setScreen(gameScreen);
         }
 
     }
 
-    public static Texture fillRectangle(int width, int height, Color color, float alpha) {
+    public static Vector2 rollDice() {
+
+        int roll1 = DICE.roll();
+        int roll2 = DICE.roll();
+
+        Sounds.play(Sound.DICE);
+
+        rolledDiceImageLeft = DICE_TEXTURES[0][roll1 - 1];
+        rolledDiceImageRight = DICE_TEXTURES[0][roll2 - 1];
+
+        return new Vector2(roll1, roll2);
+    }
+
+    public static Texture fillRectangle(int width, int height, Color color) {
         Pixmap pix = new Pixmap(width, height, Pixmap.Format.RGBA8888);
-        pix.setColor(color.r, color.g, color.b, alpha);
+        pix.setColor(color);
         pix.fillRectangle(0, 0, width, height);
         Texture t = new Texture(pix);
         pix.dispose();
         return t;
     }
 
-    private static Texture fillCircle(Color color, int size) {
+    public static Texture fillCircle(Color color, int size) {
         Pixmap px = new Pixmap(size, size, Pixmap.Format.RGBA8888);
         px.setColor(color);
         px.fillCircle(size / 2, size / 2, size / 2 - 2);
@@ -184,7 +205,6 @@ public class Risk extends Game {
 
     public static class RegionWrapper {
 
-        boolean selected;
         float[] vertices;
         Polygon polygon;
         String name;

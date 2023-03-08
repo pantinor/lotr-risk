@@ -15,7 +15,7 @@ import static lotr.Risk.YELLOW_LEADER;
 
 public class Hud {
 
-    private final Texture background = Risk.fillRectangle(300, 250, Color.GRAY, .5f);
+    private final Texture background = Risk.fillRectangle(300, 250, new Color(.5f, .5f, .5f, .5f));
 
     public void render(Batch batch, Game game) {
 

@@ -27,6 +27,13 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+        
+        <repository>
+            <name>piemenu</name>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+        
     </repositories>
 
     <dependencies>
@@ -72,6 +79,11 @@
             <artifactId>gdx-ai</artifactId>
             <version>1.8.2</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.github.payne911</groupId>
+            <artifactId>PieMenu</artifactId>
+            <version>5.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.badlogicgames.gdx</groupId>

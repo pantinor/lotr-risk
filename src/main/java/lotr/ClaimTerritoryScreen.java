@@ -63,6 +63,7 @@ public class ClaimTerritoryScreen implements Screen {
 
     private final float unitScale = 0.35f;
     private final List<RegionWrapper> regions = new ArrayList<>();
+    private RegionWrapper selectedTerritory;
 
     private final SpriteBatch batch = new SpriteBatch();
     private final Viewport mapViewport;
@@ -133,47 +134,41 @@ public class ClaimTerritoryScreen implements Screen {
         this.claim.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                boolean foundSelected = false;
-                for (RegionWrapper w : regions) {
-                    if (w.selected) {
-                        foundSelected = true;
-                        if (!game.isClaimed(w.territory)) {
 
-                            addBattalion(w, false);
+                if (selectedTerritory != null) {
 
-                        } else if (claim.getText().toString().equals("REINFORCE")) {
+                    if (!game.isClaimed(selectedTerritory.territory)) {
+                        addBattalion(selectedTerritory, false);
+                    } else if (claim.getText().toString().equals("REINFORCE")) {
 
-                            if (game.getOccupyingArmy(w.territory) == game.armies[turnIndex].armyType) {
-                                addBattalion(w, false);
-                            } else {
-                                Sounds.play(Sound.NEGATIVE_EFFECT);
-                            }
-
-                        } else if (claim.getText().toString().equals("PLACE LEADERS")) {
-
-                            if (game.getOccupyingArmy(w.territory) == game.armies[turnIndex].armyType) {
-                                if (game.armies[turnIndex].leader1.territory == null) {
-                                    game.armies[turnIndex].leader1.territory = w.territory;
-                                    Sounds.play(Sound.TRIGGER);
-                                    addBattalion(w, false); //just to advance the next player
-                                } else if (game.armies[turnIndex].leader2.territory == null && game.armies[turnIndex].leader1.territory != w.territory) {
-                                    game.armies[turnIndex].leader2.territory = w.territory;
-                                    Sounds.play(Sound.TRIGGER);
-                                    addBattalion(w, false); //just to advance the next player
-                                } else {
-                                    Sounds.play(Sound.NEGATIVE_EFFECT);
-                                }
-                            } else {
-                                Sounds.play(Sound.NEGATIVE_EFFECT);
-                            }
-
+                        if (game.getOccupyingArmy(selectedTerritory.territory) == game.armies[turnIndex].armyType) {
+                            addBattalion(selectedTerritory, false);
                         } else {
                             Sounds.play(Sound.NEGATIVE_EFFECT);
                         }
-                        break;
+
+                    } else if (claim.getText().toString().equals("PLACE LEADERS")) {
+
+                        if (game.getOccupyingArmy(selectedTerritory.territory) == game.armies[turnIndex].armyType) {
+                            if (game.armies[turnIndex].leader1.territory == null) {
+                                game.armies[turnIndex].leader1.territory = selectedTerritory.territory;
+                                Sounds.play(Sound.TRIGGER);
+                                addBattalion(selectedTerritory, false); //just to advance the next player
+                            } else if (game.armies[turnIndex].leader2.territory == null && game.armies[turnIndex].leader1.territory != selectedTerritory.territory) {
+                                game.armies[turnIndex].leader2.territory = selectedTerritory.territory;
+                                Sounds.play(Sound.TRIGGER);
+                                addBattalion(selectedTerritory, false); //just to advance the next player
+                            } else {
+                                Sounds.play(Sound.NEGATIVE_EFFECT);
+                            }
+                        } else {
+                            Sounds.play(Sound.NEGATIVE_EFFECT);
+                        }
+
+                    } else {
+                        Sounds.play(Sound.NEGATIVE_EFFECT);
                     }
-                }
-                if (!foundSelected) {
+                } else {
                     Sounds.play(Sound.NEGATIVE_EFFECT);
                 }
             }
@@ -209,7 +204,7 @@ public class ClaimTerritoryScreen implements Screen {
                         a.addAdventureCard(adventureCards.remove(0));
                     }
                 }
-                
+
                 adventureCards = AdventureCard.shuffledCards();
                 for (Army a : game.armies) {
                     if (a != null) {
@@ -218,7 +213,7 @@ public class ClaimTerritoryScreen implements Screen {
                         }
                     }
                 }
-                
+
                 game.adventureCards.addAll(adventureCards);
 
                 try {
@@ -232,7 +227,7 @@ public class ClaimTerritoryScreen implements Screen {
                     t.printStackTrace();
                 }
 
-                GameScreen gameScreen = new GameScreen(game);
+                GameScreen gameScreen = new GameScreen(main, game);
                 main.setScreen(gameScreen);
 
             }
@@ -254,10 +249,7 @@ public class ClaimTerritoryScreen implements Screen {
                         Vector2 v = new Vector2(tmp.x, MAP_VIEWPORT_HEIGHT - tmp.y - 32);
                         for (RegionWrapper w : regions) {
                             if (w.polygon.contains(v)) {
-                                //System.out.printf("%s\n", w.name);
-                                w.selected = true;
-                            } else {
-                                w.selected = false;
+                                selectedTerritory = w;
                             }
                         }
                     }
@@ -340,8 +332,8 @@ public class ClaimTerritoryScreen implements Screen {
         claim.setVisible(true);
 
         boolean foundEmpty = false;
+        selectedTerritory = null;
         for (RegionWrapper w : regions) {
-            w.selected = false;
             if (game.getOccupyingArmy(w.territory) == null) {
                 foundEmpty = true;
             }
@@ -493,14 +485,12 @@ public class ClaimTerritoryScreen implements Screen {
 
         }
 
-        for (RegionWrapper w : regions) {
-            if (w.selected) {
-                Gdx.gl.glLineWidth(6);
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-                shapeRenderer.setColor(Color.RED);
-                shapeRenderer.polygon(w.vertices);
-                shapeRenderer.end();
-            }
+        if (selectedTerritory != null) {
+            Gdx.gl.glLineWidth(6);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            shapeRenderer.setColor(Color.RED);
+            shapeRenderer.polygon(selectedTerritory.vertices);
+            shapeRenderer.end();
         }
 
         stage.act();

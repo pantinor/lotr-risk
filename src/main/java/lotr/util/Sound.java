@@ -1,7 +1,7 @@
 package lotr.util;
 
 public enum Sound {
-
+    DICE("dice.wav", false, 0.3f),
     BLOCKED("blocked.ogg", false, 0.3f),
     FLEE("flee.ogg", false, 0.3f),
     ERROR("error.ogg", false, 0.3f),

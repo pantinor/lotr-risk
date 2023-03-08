@@ -1,8 +1,8 @@
 package lotr;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
@@ -19,9 +19,14 @@ import com.badlogic.gdx.maps.tiled.renderers.HexagonalTiledMapRenderer;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.payne.games.piemenu.AnimatedPieMenu;
+import com.payne.games.piemenu.PieMenu;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -51,8 +56,9 @@ public class GameScreen implements Screen, InputProcessor {
 
     protected float time = 0;
 
-    private final Stage stage;
+    private final Stage mapStage, widgetStage;
     private final Batch batch = new SpriteBatch();
+    private final InputMultiplexer input;
 
     private final HexagonalTiledMapRenderer renderer;
     private final OrthographicCamera camera;
@@ -60,16 +66,23 @@ public class GameScreen implements Screen, InputProcessor {
     private final Viewport viewport;
 
     private final Game game;
+    private final Risk main;
+
     private final Hud hud = new Hud();
+    private final TurnWidget turnWidget;
 
     private final List<RegionWrapper> regions = new ArrayList<>();
+    private RegionWrapper selectedTerritory;
 
-    public GameScreen(Game game) {
+    private AnimatedPieMenu attackPieMenu;
+    private final Label[] pieLabels = new Label[40];
+
+    public GameScreen(Risk main, Game game) {
 
         this.camera = new OrthographicCamera(SCREEN_WIDTH, SCREEN_HEIGHT);
         this.viewport = new ScreenViewport(this.camera);
         this.renderer = new HexagonalTiledMapRenderer(TMX_MAP, 1f);
-        this.stage = new Stage(this.viewport, this.renderer.getBatch());
+        this.mapStage = new Stage(this.viewport, this.renderer.getBatch());
 
         MapLayer regionsLayer = TMX_MAP.getLayers().get("regions");
         Iterator<MapObject> iter = regionsLayer.getObjects().iterator();
@@ -95,12 +108,40 @@ public class GameScreen implements Screen, InputProcessor {
         Risk.setPoints(iconLayer, regions, 1f);
 
         this.game = game;
+        this.main = main;
 
-    }
+        this.widgetStage = new Stage();
+        this.turnWidget = new TurnWidget(main, this, game);
+        this.widgetStage.addActor(turnWidget);
 
-    @Override
-    public void show() {
-        Gdx.input.setInputProcessor(new InputAdapter() {
+        PieMenu.PieMenuStyle style = new PieMenu.PieMenuStyle();
+        style.backgroundColor = new Color(1, 1, 1, .3f);
+        style.selectedColor = new Color(.7f, .3f, .5f, 1);
+        style.sliceColor = new Color(0, .7f, 0, 1);
+        style.alternateSliceColor = new Color(.7f, 0, 0, 1);
+
+        attackPieMenu = new AnimatedPieMenu(Risk.skin.getRegion("white"), style, 75, .3f, 180, 320);
+        attackPieMenu.setInfiniteSelectionRange(true);
+        attackPieMenu.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                attackPieMenu.transitionToClosing(.4f);
+                int index = attackPieMenu.getSelectedIndex();
+                if (!attackPieMenu.isValidIndex(index)) {
+                    return;
+                }
+                Actor child = attackPieMenu.getChild(index);
+                //textButton.setText(((Label) child).getText().toString());
+            }
+        });
+
+        for (int i = 0; i < pieLabels.length; i++) {
+            pieLabels[i] = new Label(Integer.toString(i), Risk.skin);
+        }
+
+        this.widgetStage.addActor(attackPieMenu);
+
+        this.input = new InputMultiplexer(new InputAdapter() {
 
             Vector3 curr = new Vector3();
             Vector3 last = new Vector3(-1, -1, -1);
@@ -119,6 +160,25 @@ public class GameScreen implements Screen, InputProcessor {
             }
 
             @Override
+            public boolean touchDown(int x, int y, int pointer, int button) {
+                if (button == 1) {
+
+                    for (int i = 0; i < pieLabels.length; i++) {
+                        pieLabels[i].remove();
+                    }
+
+                    for (int i = 1; i < 7; i++) {
+                        attackPieMenu.addActor(pieLabels[i]);
+                    }
+
+                    attackPieMenu.resetSelection();
+                    attackPieMenu.centerOnMouse();
+                    attackPieMenu.animateOpening(.4f);
+                }
+                return false;
+            }
+
+            @Override
             public boolean touchUp(int x, int y, int pointer, int button) {
                 last.set(-1, -1, -1);
 
@@ -126,20 +186,22 @@ public class GameScreen implements Screen, InputProcessor {
                 Vector2 v = new Vector2(tmp.x, tmp.y - 0);
                 for (RegionWrapper w : regions) {
                     if (w.polygon.contains(v)) {
-                        w.selected = true;
-                    } else {
-                        w.selected = false;
+                        selectedTerritory = w;
                     }
                 }
-
                 return false;
             }
-        });
+        }, widgetStage);
+    }
+
+    @Override
+    public void show() {
+        Gdx.input.setInputProcessor(input);
     }
 
     @Override
     public void resize(int width, int height) {
-
+        viewport.update(width, height, false);
     }
 
     @Override
@@ -205,14 +267,12 @@ public class GameScreen implements Screen, InputProcessor {
 
         }
 
-        for (RegionWrapper w : regions) {
-            if (w.selected) {
-                Gdx.gl.glLineWidth(8);
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-                shapeRenderer.setColor(Color.RED);
-                shapeRenderer.polygon(w.vertices);
-                shapeRenderer.end();
-            }
+        if (selectedTerritory != null) {
+            Gdx.gl.glLineWidth(8);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            shapeRenderer.setColor(Color.RED);
+            shapeRenderer.polygon(selectedTerritory.vertices);
+            shapeRenderer.end();
         }
 
         for (RingPathWrapper rw : RING_PATHS) {
@@ -225,21 +285,23 @@ public class GameScreen implements Screen, InputProcessor {
         }
 
         this.batch.begin();
+
+        if (Risk.rolledDiceImageLeft != null) {
+            batch.draw(Risk.rolledDiceImageLeft, 5, 520);
+        }
+        if (Risk.rolledDiceImageRight != null) {
+            batch.draw(Risk.rolledDiceImageRight, 60, 520);
+        }
+
         this.hud.render(this.batch, this.game);
         this.batch.end();
 
-        stage.act();
-        stage.draw();
-
+        this.widgetStage.act();
+        this.widgetStage.draw();
     }
 
     @Override
     public boolean keyUp(int keycode) {
-
-        if (keycode == Input.Keys.TAB) {
-
-        }
-
         return false;
     }
 
@@ -250,7 +312,6 @@ public class GameScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-
         return false;
     }
 

@@ -59,6 +59,7 @@ public class ReinforceScreen implements Screen {
 
     private final float unitScale = 0.35f;
     private final List<RegionWrapper> regions = new ArrayList<>();
+    private RegionWrapper selectedTerritory;
 
     private final SpriteBatch hudbatch = new SpriteBatch();
     private final SpriteBatch batch = new SpriteBatch();
@@ -154,9 +155,11 @@ public class ReinforceScreen implements Screen {
             String name = obj.getName();
 
             RegionWrapper w = new RegionWrapper();
+
             w.polygon = poly;
             poly.setScale(unitScale, unitScale);
             poly.setPosition(poly.getX() * unitScale, poly.getY() * unitScale);
+
             w.vertices = poly.getTransformedVertices();
             w.name = name;
             w.territory = TerritoryCard.getTerritory(name);
@@ -191,23 +194,17 @@ public class ReinforceScreen implements Screen {
         this.reinforceStrongholds.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                boolean foundSelected = false;
-                for (RegionWrapper w : regions) {
-                    if (w.selected) {
-                        foundSelected = true;
-                        if (strongholdReinforcements > 0 && claimedTerritories.contains(w.territory)
-                                && Location.getStronghold(w.territory) != null && !reinforcedStrongholds.contains(w.territory)) {
-                            army.addBattalion(w.territory);
-                            reinforcedStrongholds.add(w.territory);
-                            strongholdReinforcements--;
-                            Sounds.play(Sound.TRIGGER);
-                        } else {
-                            Sounds.play(Sound.NEGATIVE_EFFECT);
-                        }
-                        break;
+                if (selectedTerritory != null) {
+                    if (strongholdReinforcements > 0 && claimedTerritories.contains(selectedTerritory.territory)
+                            && Location.getStronghold(selectedTerritory.territory) != null && !reinforcedStrongholds.contains(selectedTerritory.territory)) {
+                        army.addBattalion(selectedTerritory.territory);
+                        reinforcedStrongholds.add(selectedTerritory.territory);
+                        strongholdReinforcements--;
+                        Sounds.play(Sound.TRIGGER);
+                    } else {
+                        Sounds.play(Sound.NEGATIVE_EFFECT);
                     }
-                }
-                if (!foundSelected) {
+                } else {
                     Sounds.play(Sound.NEGATIVE_EFFECT);
                 }
             }
@@ -215,21 +212,15 @@ public class ReinforceScreen implements Screen {
         this.reinforceTerritories.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                boolean foundSelected = false;
-                for (RegionWrapper w : regions) {
-                    if (w.selected) {
-                        foundSelected = true;
-                        if (territoryReinforcements > 0 && claimedTerritories.contains(w.territory)) {
-                            army.addBattalion(w.territory);
-                            territoryReinforcements--;
-                            Sounds.play(Sound.TRIGGER);
-                        } else {
-                            Sounds.play(Sound.NEGATIVE_EFFECT);
-                        }
-                        break;
+                if (selectedTerritory != null) {
+                    if (territoryReinforcements > 0 && claimedTerritories.contains(selectedTerritory.territory)) {
+                        army.addBattalion(selectedTerritory.territory);
+                        territoryReinforcements--;
+                        Sounds.play(Sound.TRIGGER);
+                    } else {
+                        Sounds.play(Sound.NEGATIVE_EFFECT);
                     }
-                }
-                if (!foundSelected) {
+                } else {
                     Sounds.play(Sound.NEGATIVE_EFFECT);
                 }
             }
@@ -237,21 +228,15 @@ public class ReinforceScreen implements Screen {
         this.reinforceRegions.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                boolean foundSelected = false;
-                for (RegionWrapper w : regions) {
-                    if (w.selected) {
-                        foundSelected = true;
-                        if (regionReinforcements > 0 && claimedTerritories.contains(w.territory)) {
-                            army.addBattalion(w.territory);
-                            regionReinforcements--;
-                            Sounds.play(Sound.TRIGGER);
-                        } else {
-                            Sounds.play(Sound.NEGATIVE_EFFECT);
-                        }
-                        break;
+                if (selectedTerritory != null) {
+                    if (regionReinforcements > 0 && claimedTerritories.contains(selectedTerritory.territory)) {
+                        army.addBattalion(selectedTerritory.territory);
+                        regionReinforcements--;
+                        Sounds.play(Sound.TRIGGER);
+                    } else {
+                        Sounds.play(Sound.NEGATIVE_EFFECT);
                     }
-                }
-                if (!foundSelected) {
+                } else {
                     Sounds.play(Sound.NEGATIVE_EFFECT);
                 }
             }
@@ -259,19 +244,13 @@ public class ReinforceScreen implements Screen {
         this.reinforceCards.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                boolean foundSelected = false;
-                for (RegionWrapper w : regions) {
-                    if (w.selected) {
-                        foundSelected = true;
-                        if (false) {
-
-                        } else {
-                            Sounds.play(Sound.NEGATIVE_EFFECT);
-                        }
-                        break;
+                if (selectedTerritory != null) {
+                    if (false) {
+                        //TODO
+                    } else {
+                        Sounds.play(Sound.NEGATIVE_EFFECT);
                     }
-                }
-                if (!foundSelected) {
+                } else {
                     Sounds.play(Sound.NEGATIVE_EFFECT);
                 }
             }
@@ -308,9 +287,7 @@ public class ReinforceScreen implements Screen {
                         Vector2 v = new Vector2(tmp.x, MAP_VIEWPORT_HEIGHT - tmp.y - 32);
                         for (RegionWrapper w : regions) {
                             if (w.polygon.contains(v)) {
-                                w.selected = true;
-                            } else {
-                                w.selected = false;
+                                selectedTerritory = w;
                             }
                         }
                     }
@@ -324,6 +301,11 @@ public class ReinforceScreen implements Screen {
     @Override
     public void show() {
         Gdx.input.setInputProcessor(this.stage);
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        viewport.update(width, height, false);
     }
 
     @Override
@@ -378,14 +360,12 @@ public class ReinforceScreen implements Screen {
 
         }
 
-        for (RegionWrapper w : regions) {
-            if (w.selected) {
-                Gdx.gl.glLineWidth(6);
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-                shapeRenderer.setColor(Color.RED);
-                shapeRenderer.polygon(w.vertices);
-                shapeRenderer.end();
-            }
+        if (selectedTerritory != null) {
+            Gdx.gl.glLineWidth(6);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            shapeRenderer.setColor(Color.RED);
+            shapeRenderer.polygon(selectedTerritory.vertices);
+            shapeRenderer.end();
         }
 
         this.hudbatch.begin();
@@ -436,8 +416,4 @@ public class ReinforceScreen implements Screen {
     public void dispose() {
     }
 
-    @Override
-    public void resize(int width, int height) {
-
-    }
 }
