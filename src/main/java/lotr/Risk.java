@@ -42,9 +42,6 @@ public class Risk extends Game {
 
     public static Skin skin;
     public static BitmapFont font;
-    public static BitmapFont fontSmall;
-    public static BitmapFont fontSmallYellow;
-    public static BitmapFont regionLabelFont;
 
     public static final int SCREEN_WIDTH = 1800;
     public static final int SCREEN_HEIGHT = 1050;
@@ -60,7 +57,7 @@ public class Risk extends Game {
     public static final Dice DICE = new Dice(1, 6);
     public static TextureRegion rolledDiceImageLeft;
     public static TextureRegion rolledDiceImageRight;
-    
+
     public static List<RingPathWrapper> RING_PATHS = new ArrayList<>();
 
     public static void main(String[] args) {
@@ -74,20 +71,9 @@ public class Risk extends Game {
     @Override
     public void create() {
 
-        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-
-        FreeTypeFontGenerator generator1 = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/gnuolane.ttf"));
-        FreeTypeFontGenerator generator2 = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/font2.ttf"));
-        parameter.size = 18;
-        regionLabelFont = generator2.generateFont(parameter);
-        generator2.dispose();
-        parameter.size = 18;
-        font = generator1.generateFont(parameter);
-        generator1.dispose();
-
         skin = new Skin(Gdx.files.classpath("assets/skin/uiskin.json"));
-        skin.remove("default-font", BitmapFont.class);
-        skin.add("default-font", font, BitmapFont.class);
+
+        font = skin.get("default-font", BitmapFont.class);
 
         TerritoryCard.init();
 
@@ -130,7 +116,7 @@ public class Risk extends Game {
         LEADER_CIRCLE = fillCircle(Color.BLUE, 28);
 
         DICE_TEXTURES = TextureRegion.split(new Texture(Gdx.files.classpath("assets/data/DiceSheet.png")), 56, 56);
-        
+
         lotr.Game game = null;
 
         InputStream is = null;

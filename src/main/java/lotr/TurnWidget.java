@@ -22,8 +22,9 @@ public class TurnWidget extends Table {
         reinforce.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                ReinforceScreen rsc = new ReinforceScreen(main, game, game.green, gameScreen);
-                main.setScreen(rsc);
+                game.next();
+                //ReinforceScreen rsc = new ReinforceScreen(main, game, game.green, gameScreen);
+                //main.setScreen(rsc);
             }
         });
 

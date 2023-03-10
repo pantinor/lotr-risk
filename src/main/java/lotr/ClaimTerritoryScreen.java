@@ -82,7 +82,6 @@ public class ClaimTerritoryScreen implements Screen {
     private final Label yellowLabel = new Label("-", Risk.skin);
     private final Label blackLabel = new Label("-", Risk.skin);
 
-    private int turnIndex = 0;
     private final Random rand = new Random();
 
     public ClaimTerritoryScreen(Risk main, Game game) {
@@ -137,11 +136,11 @@ public class ClaimTerritoryScreen implements Screen {
 
                 if (selectedTerritory != null) {
 
-                    if (!game.isClaimed(selectedTerritory.territory)) {
+                    if (game.isClaimed(selectedTerritory.territory) == null) {
                         addBattalion(selectedTerritory, false);
                     } else if (claim.getText().toString().equals("REINFORCE")) {
 
-                        if (game.getOccupyingArmy(selectedTerritory.territory) == game.armies[turnIndex].armyType) {
+                        if (game.getOccupyingArmy(selectedTerritory.territory) == game.current().armyType) {
                             addBattalion(selectedTerritory, false);
                         } else {
                             Sounds.play(Sound.NEGATIVE_EFFECT);
@@ -149,13 +148,13 @@ public class ClaimTerritoryScreen implements Screen {
 
                     } else if (claim.getText().toString().equals("PLACE LEADERS")) {
 
-                        if (game.getOccupyingArmy(selectedTerritory.territory) == game.armies[turnIndex].armyType) {
-                            if (game.armies[turnIndex].leader1.territory == null) {
-                                game.armies[turnIndex].leader1.territory = selectedTerritory.territory;
+                        if (game.getOccupyingArmy(selectedTerritory.territory) == game.current().armyType) {
+                            if (game.current().leader1.territory == null) {
+                                game.current().leader1.territory = selectedTerritory.territory;
                                 Sounds.play(Sound.TRIGGER);
                                 addBattalion(selectedTerritory, false); //just to advance the next player
-                            } else if (game.armies[turnIndex].leader2.territory == null && game.armies[turnIndex].leader1.territory != selectedTerritory.territory) {
-                                game.armies[turnIndex].leader2.territory = selectedTerritory.territory;
+                            } else if (game.current().leader2.territory == null && game.current().leader1.territory != selectedTerritory.territory) {
+                                game.current().leader2.territory = selectedTerritory.territory;
                                 Sounds.play(Sound.TRIGGER);
                                 addBattalion(selectedTerritory, false); //just to advance the next player
                             } else {
@@ -266,9 +265,9 @@ public class ClaimTerritoryScreen implements Screen {
         armyCell(this.table, ArmyType.BLACK, blackLabel);
         if (this.game.yellow != null) {
             armyCell(this.table, ArmyType.YELLOW, yellowLabel);
-            this.turnIndex = rand.nextInt(4);
+            this.game.turnIndex = rand.nextInt(4);
         } else {
-            this.turnIndex = rand.nextInt(3);
+            this.game.turnIndex = rand.nextInt(3);
         }
         setActiveArmy();
     }
@@ -314,7 +313,7 @@ public class ClaimTerritoryScreen implements Screen {
             yellowLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
         }
 
-        Army a = this.game.armies[turnIndex];
+        Army a = this.game.current();
 
         if (a.armyType == ArmyType.RED) {
             redLabel.setStyle(Risk.skin.get("default-yellow", Label.LabelStyle.class));
@@ -346,7 +345,7 @@ public class ClaimTerritoryScreen implements Screen {
 
     private void addBattalion(RegionWrapper w, boolean isAuto) {
 
-        boolean assigned = game.armies[turnIndex].assignTerritory(w.territory);
+        boolean assigned = game.current().assignTerritory(w.territory);
 
         if (assigned && !isAuto) {
             Sounds.play(Sound.TRIGGER);
@@ -354,10 +353,7 @@ public class ClaimTerritoryScreen implements Screen {
 
         claim.setVisible(false);
 
-        turnIndex++;
-        if (turnIndex > 3 || (turnIndex == 3 && game.yellow == null)) {
-            turnIndex = 0;
-        }
+        this.game.next();
 
         setActiveArmy();
 
@@ -389,7 +385,7 @@ public class ClaimTerritoryScreen implements Screen {
 
         while (true) {
 
-            Army army = this.game.armies[turnIndex];
+            Army army = this.game.current();
 
             boolean done = true;
             for (Army a : this.game.armies) {

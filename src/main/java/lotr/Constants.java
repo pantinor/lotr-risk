@@ -1,9 +1,21 @@
 package lotr;
 
+import com.badlogic.gdx.graphics.Color;
+
 public class Constants {
 
     public static enum ArmyType {
-        RED, GREEN, BLACK, YELLOW;
+        RED(Color.RED), GREEN(Color.GREEN), BLACK(Color.GRAY), YELLOW(Color.YELLOW);
+        private Color color;
+
+        private ArmyType(Color c) {
+            this.color = c;
+        }
+
+        public Color color() {
+            return color;
+        }
+
     }
 
     public static enum BattalionType {

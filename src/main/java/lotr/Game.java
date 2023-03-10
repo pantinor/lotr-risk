@@ -17,15 +17,30 @@ public class Game {
     public Army yellow;
 
     public final Army[] armies = new Army[4];
-    
+
+    @Expose
+    public int turnIndex = 0;
+
     @Expose
     public final List<TerritoryCard> territoryCards = new ArrayList<>();
-    
+
     @Expose
     public List<AdventureCard> adventureCards = new ArrayList<>();
 
     public Game() {
 
+    }
+
+    public Army current() {
+        return armies[turnIndex];
+    }
+
+    public Army next() {
+        this.turnIndex++;
+        if (this.turnIndex > 3 || (this.turnIndex == 3 && this.yellow == null)) {
+            this.turnIndex = 0;
+        }
+        return armies[turnIndex];
     }
 
     public Army getRed() {
@@ -64,39 +79,39 @@ public class Game {
         this.yellow = a;
     }
 
-    public boolean isClaimed(TerritoryCard tc) {
+    public Army isClaimed(TerritoryCard tc) {
 
         if (this.red == null) {
-            return false;
+            return null;
         }
 
         for (Battalion b : this.red.getBattalions()) {
             if (b.territory == tc) {
-                return true;
+                return this.red;
             }
         }
 
         for (Battalion b : this.black.getBattalions()) {
             if (b.territory == tc) {
-                return true;
+                return this.black;
             }
         }
 
         for (Battalion b : this.green.getBattalions()) {
             if (b.territory == tc) {
-                return true;
+                return this.green;
             }
         }
 
         if (this.yellow != null) {
             for (Battalion b : this.yellow.getBattalions()) {
                 if (b.territory == tc) {
-                    return true;
+                    return this.yellow;
                 }
             }
         }
 
-        return false;
+        return null;
     }
 
     public int battalionCount(TerritoryCard tc) {

@@ -23,6 +23,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.payne.games.piemenu.AnimatedPieMenu;
@@ -74,8 +75,7 @@ public class GameScreen implements Screen, InputProcessor {
     private final List<RegionWrapper> regions = new ArrayList<>();
     private RegionWrapper selectedTerritory;
 
-    private AnimatedPieMenu attackPieMenu;
-    private final Label[] pieLabels = new Label[40];
+    private AnimatedPieMenu invasionRadial;
 
     public GameScreen(Risk main, Game game) {
 
@@ -120,26 +120,22 @@ public class GameScreen implements Screen, InputProcessor {
         style.sliceColor = new Color(0, .7f, 0, 1);
         style.alternateSliceColor = new Color(.7f, 0, 0, 1);
 
-        attackPieMenu = new AnimatedPieMenu(Risk.skin.getRegion("white"), style, 75, .3f, 180, 320);
-        attackPieMenu.setInfiniteSelectionRange(true);
-        attackPieMenu.addListener(new ChangeListener() {
+        invasionRadial = new AnimatedPieMenu(Risk.skin.getRegion("white"), style, 75, .3f, 180, 320);
+        invasionRadial.setInfiniteSelectionRange(true);
+        invasionRadial.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                attackPieMenu.transitionToClosing(.4f);
-                int index = attackPieMenu.getSelectedIndex();
-                if (!attackPieMenu.isValidIndex(index)) {
+                invasionRadial.transitionToClosing(.4f);
+                int index = invasionRadial.getSelectedIndex();
+                if (!invasionRadial.isValidIndex(index)) {
                     return;
                 }
-                Actor child = attackPieMenu.getChild(index);
+                Actor child = invasionRadial.getChild(index);
                 //textButton.setText(((Label) child).getText().toString());
             }
         });
 
-        for (int i = 0; i < pieLabels.length; i++) {
-            pieLabels[i] = new Label(Integer.toString(i), Risk.skin);
-        }
-
-        this.widgetStage.addActor(attackPieMenu);
+        this.widgetStage.addActor(invasionRadial);
 
         this.input = new InputMultiplexer(new InputAdapter() {
 
@@ -161,25 +157,6 @@ public class GameScreen implements Screen, InputProcessor {
 
             @Override
             public boolean touchDown(int x, int y, int pointer, int button) {
-                if (button == 1) {
-
-                    for (int i = 0; i < pieLabels.length; i++) {
-                        pieLabels[i].remove();
-                    }
-
-                    for (int i = 1; i < 7; i++) {
-                        attackPieMenu.addActor(pieLabels[i]);
-                    }
-
-                    attackPieMenu.resetSelection();
-                    attackPieMenu.centerOnMouse();
-                    attackPieMenu.animateOpening(.4f);
-                }
-                return false;
-            }
-
-            @Override
-            public boolean touchUp(int x, int y, int pointer, int button) {
                 last.set(-1, -1, -1);
 
                 Vector3 tmp = camera.unproject(new Vector3(x, y, 0));
@@ -191,6 +168,26 @@ public class GameScreen implements Screen, InputProcessor {
                 }
                 return false;
             }
+
+            @Override
+            public boolean touchUp(int x, int y, int pointer, int button) {
+                if (button == 1 && selectedTerritory != null) {
+                    int count = game.battalionCount(selectedTerritory.territory) - 1;
+                    if (count > 0 && game.isClaimed(selectedTerritory.territory) == game.current()) {
+                        invasionRadial.resetSelection();
+                        invasionRadial.clearChildren();
+                        for (int i = 0; i < count; i++) {
+                            Label l = new Label(Integer.toString(i + 1), Risk.skin);
+                            l.setUserObject(i + 1);
+                            invasionRadial.addActor(l);
+                        }
+                        invasionRadial.centerOnMouse();
+                        invasionRadial.animateOpening(.4f);
+                    }
+                }
+                return false;
+            }
+
         }, widgetStage);
     }
 
@@ -224,7 +221,7 @@ public class GameScreen implements Screen, InputProcessor {
             if (w.territory != null) {
                 renderer.getBatch().begin();
 
-                Risk.regionLabelFont.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
+                Risk.font.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
 
                 ArmyType at = game.getOccupyingArmy(w.territory);
 
@@ -259,7 +256,7 @@ public class GameScreen implements Screen, InputProcessor {
 
                 int bc = game.battalionCount(w.territory);
                 if (bc > 0) {
-                    Risk.font.draw(renderer.getBatch(), bc + "", w.textPosition.x + 24, w.textPosition.y + 17);
+                    Risk.font.draw(renderer.getBatch(), bc + "", w.textPosition.x + 20, w.textPosition.y + 19);
                 }
 
                 renderer.getBatch().end();
