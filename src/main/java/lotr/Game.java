@@ -163,26 +163,26 @@ public class Game {
         return count;
     }
 
-    public ArmyType getOccupyingArmy(TerritoryCard tc) {
+    public Army getOccupyingArmy(TerritoryCard tc) {
 
         if (this.red != null) {
             for (Battalion b : this.red.getBattalions()) {
                 if (b.territory == tc) {
-                    return ArmyType.RED;
+                    return this.red;
                 }
             }
         }
         if (this.black != null) {
             for (Battalion b : this.black.getBattalions()) {
                 if (b.territory == tc) {
-                    return ArmyType.BLACK;
+                    return this.black;
                 }
             }
         }
         if (this.green != null) {
             for (Battalion b : this.green.getBattalions()) {
                 if (b.territory == tc) {
-                    return ArmyType.GREEN;
+                    return this.green;
                 }
             }
         }
@@ -190,7 +190,7 @@ public class Game {
             if (this.yellow != null) {
                 for (Battalion b : this.yellow.getBattalions()) {
                     if (b.territory == tc) {
-                        return ArmyType.YELLOW;
+                        return this.yellow;
                     }
                 }
             }

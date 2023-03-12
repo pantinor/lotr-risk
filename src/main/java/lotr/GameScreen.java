@@ -23,7 +23,6 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.payne.games.piemenu.AnimatedPieMenu;
@@ -52,6 +51,7 @@ import static lotr.Risk.BLACK_CIRCLE;
 import static lotr.Risk.YELLOW_CIRCLE;
 import lotr.Risk.RegionWrapper;
 import lotr.Risk.RingPathWrapper;
+import lotr.TurnWidget.Step;
 
 public class GameScreen implements Screen, InputProcessor {
 
@@ -73,8 +73,8 @@ public class GameScreen implements Screen, InputProcessor {
     private final TurnWidget turnWidget;
 
     private final List<RegionWrapper> regions = new ArrayList<>();
-    private RegionWrapper selectedTerritory;
-
+    private RegionWrapper selectedAttackingTerritory, selectedDefendingTerritory;
+    private Integer attackingCount, defendingCount;
     private AnimatedPieMenu invasionRadial;
 
     public GameScreen(Risk main, Game game) {
@@ -131,13 +131,18 @@ public class GameScreen implements Screen, InputProcessor {
                     return;
                 }
                 Actor child = invasionRadial.getChild(index);
-                //textButton.setText(((Label) child).getText().toString());
+                Object tmp = child.getUserObject();
+                if (tmp != null) {
+                    attackingCount = (Integer) tmp;
+                } else {
+                    attackingCount = null;
+                }
             }
         });
 
         this.widgetStage.addActor(invasionRadial);
 
-        this.input = new InputMultiplexer(new InputAdapter() {
+        this.input = new InputMultiplexer(widgetStage, new InputAdapter() {
 
             Vector3 curr = new Vector3();
             Vector3 last = new Vector3(-1, -1, -1);
@@ -163,17 +168,35 @@ public class GameScreen implements Screen, InputProcessor {
                 Vector2 v = new Vector2(tmp.x, tmp.y - 0);
                 for (RegionWrapper w : regions) {
                     if (w.polygon.contains(v)) {
-                        selectedTerritory = w;
+                        if (attackingCount != null) {
+                            Army occupyingArmy = game.getOccupyingArmy(w.territory);
+                            if (selectedAttackingTerritory.adjacents.containsKey(w.territory) && occupyingArmy != game.current()) {
+                                selectedDefendingTerritory = w;
+                                int dc = game.battalionCount(w.territory);
+                                if (dc > 2) {
+                                    dc = 2;
+                                }
+                                turnWidget.setAttackButtonListener(game.current(), occupyingArmy, selectedAttackingTerritory.territory, w.territory, attackingCount, dc);
+                                break;
+                            } else {
+                                attackingCount = null;
+                                selectedDefendingTerritory = null;
+                            }
+                        } else {
+                            selectedAttackingTerritory = w;
+                            break;
+                        }
                     }
                 }
+
                 return false;
             }
 
             @Override
             public boolean touchUp(int x, int y, int pointer, int button) {
-                if (button == 1 && selectedTerritory != null) {
-                    int count = game.battalionCount(selectedTerritory.territory) - 1;
-                    if (count > 0 && game.isClaimed(selectedTerritory.territory) == game.current()) {
+                if (button == 1 && selectedAttackingTerritory != null && selectedDefendingTerritory == null) {
+                    int count = game.battalionCount(selectedAttackingTerritory.territory) - 1;
+                    if (count > 0 && game.isClaimed(selectedAttackingTerritory.territory) == game.current()) {
                         invasionRadial.resetSelection();
                         invasionRadial.clearChildren();
                         for (int i = 0; i < count; i++) {
@@ -188,7 +211,7 @@ public class GameScreen implements Screen, InputProcessor {
                 return false;
             }
 
-        }, widgetStage);
+        });
     }
 
     @Override
@@ -223,7 +246,7 @@ public class GameScreen implements Screen, InputProcessor {
 
                 Risk.font.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
 
-                ArmyType at = game.getOccupyingArmy(w.territory);
+                ArmyType at = game.getOccupyingArmy(w.territory).armyType;
 
                 if (at == ArmyType.RED) {
                     renderer.getBatch().draw(RED_BATTALION.getKeyFrame(time, true), w.battalionPosition.x, w.battalionPosition.y);
@@ -264,11 +287,23 @@ public class GameScreen implements Screen, InputProcessor {
 
         }
 
-        if (selectedTerritory != null) {
+        if (selectedAttackingTerritory != null) {
             Gdx.gl.glLineWidth(8);
             shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            if (selectedDefendingTerritory == null) {
+                shapeRenderer.setColor(Color.YELLOW);
+                for (TerritoryCard adj : selectedAttackingTerritory.territory.adjacents()) {
+                    shapeRenderer.polygon(selectedAttackingTerritory.adjacents.get(adj).vertices);
+                }
+            } else {
+                shapeRenderer.setColor(Color.GREEN);
+                shapeRenderer.polygon(selectedDefendingTerritory.vertices);
+                
+                //shapeRenderer.setColor(Color.WHITE);
+                //shapeRenderer.curve(0.0f, 0.25f, 0.2f, 0.3f, 0.3f, 0.6f, 0.1f, 0.5f, 30);
+            }
             shapeRenderer.setColor(Color.RED);
-            shapeRenderer.polygon(selectedTerritory.vertices);
+            shapeRenderer.polygon(selectedAttackingTerritory.vertices);
             shapeRenderer.end();
         }
 
@@ -283,14 +318,7 @@ public class GameScreen implements Screen, InputProcessor {
 
         this.batch.begin();
 
-        if (Risk.rolledDiceImageLeft != null) {
-            batch.draw(Risk.rolledDiceImageLeft, 5, 520);
-        }
-        if (Risk.rolledDiceImageRight != null) {
-            batch.draw(Risk.rolledDiceImageRight, 60, 520);
-        }
-
-        this.hud.render(this.batch, this.game);
+        this.hud.render(this.batch, this.game, delta);
         this.batch.end();
 
         this.widgetStage.act();

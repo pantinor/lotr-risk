@@ -12,7 +12,6 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.objects.RectangleMapObject;
@@ -22,6 +21,13 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.moveTo;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.Gson;
@@ -31,11 +37,10 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import lotr.util.Dice;
-import lotr.util.Sound;
-import lotr.util.Sounds;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
 
 public class Risk extends Game {
@@ -52,12 +57,8 @@ public class Risk extends Game {
     public static Animation<TextureRegion> RED_LEADER, BLACK_LEADER, GREEN_LEADER, YELLOW_LEADER;
     public static Animation<TextureRegion> FRODO, SAM;
     public static Texture RED_CIRCLE, GREEN_CIRCLE, BLACK_CIRCLE, YELLOW_CIRCLE, LEADER_CIRCLE;
-
+    
     public static TextureRegion[][] DICE_TEXTURES;
-    public static final Dice DICE = new Dice(1, 6);
-    public static TextureRegion rolledDiceImageLeft;
-    public static TextureRegion rolledDiceImageRight;
-
     public static List<RingPathWrapper> RING_PATHS = new ArrayList<>();
 
     public static void main(String[] args) {
@@ -115,7 +116,7 @@ public class Risk extends Game {
         YELLOW_CIRCLE = fillCircle(Color.GOLDENROD, 24);
         LEADER_CIRCLE = fillCircle(Color.BLUE, 28);
 
-        DICE_TEXTURES = TextureRegion.split(new Texture(Gdx.files.classpath("assets/data/DiceSheet.png")), 56, 56);
+        DICE_TEXTURES = TextureRegion.split(new Texture(Gdx.files.classpath("assets/data/dice-sheet.png")), 64, 64);
 
         lotr.Game game = null;
 
@@ -151,19 +152,6 @@ public class Risk extends Game {
 
     }
 
-    public static Vector2 rollDice() {
-
-        int roll1 = DICE.roll();
-        int roll2 = DICE.roll();
-
-        Sounds.play(Sound.DICE);
-
-        rolledDiceImageLeft = DICE_TEXTURES[0][roll1 - 1];
-        rolledDiceImageRight = DICE_TEXTURES[0][roll2 - 1];
-
-        return new Vector2(roll1, roll2);
-    }
-
     public static Texture fillRectangle(int width, int height, Color color) {
         Pixmap pix = new Pixmap(width, height, Pixmap.Format.RGBA8888);
         pix.setColor(color);
@@ -195,9 +183,10 @@ public class Risk extends Game {
         Polygon polygon;
         String name;
         TerritoryCard territory;
-        Vector2 battalionPosition;
-        Vector2 textPosition;
-        Vector2 namePosition;
+        Map<TerritoryCard, RegionWrapper> adjacents = new HashMap<>();
+        Vector3 battalionPosition;
+        Vector3 textPosition;
+        Vector3 namePosition;
     }
 
     public static class RingPathWrapper implements Comparable {
@@ -259,11 +248,11 @@ public class Risk extends Game {
                     for (RegionWrapper w : regions) {
                         if (w.polygon.contains(v)) {
                             if (iconId == 7) {
-                                w.textPosition = new Vector2(v);
+                                w.textPosition = new Vector3(x, y, 0);
                             } else if (iconId == 44) {
-                                w.namePosition = new Vector2(v);
+                                w.namePosition = new Vector3(x, y, 0);
                             } else {
-                                w.battalionPosition = new Vector2(v);
+                                w.battalionPosition = new Vector3(x, y, 0);
                             }
                         }
                     }
@@ -279,12 +268,24 @@ public class Risk extends Game {
                     for (RegionWrapper w : regions) {
                         if (w.polygon.contains(v)) {
                             if (iconId == 7) {
-                                w.textPosition = new Vector2(v);
+                                w.textPosition = new Vector3(x, y, 0);
                             } else if (iconId == 44) {
-                                w.namePosition = new Vector2(v);
+                                w.namePosition = new Vector3(x, y, 0);
                             } else {
-                                w.battalionPosition = new Vector2(v);
+                                w.battalionPosition = new Vector3(x, y, 0);
                             }
+                        }
+                    }
+                }
+            }
+        }
+        for (RegionWrapper w : regions) {
+            for (TerritoryCard ac : w.territory.adjacents()) {
+                if (ac != null) {
+                    for (RegionWrapper t : regions) {
+                        if (t.territory == ac) {
+                            w.adjacents.put(ac, t);
+                            break;
                         }
                     }
                 }
@@ -303,5 +304,12 @@ public class Risk extends Game {
 
         Animation<TextureRegion> anim = new Animation(.4f, arr);
         return anim;
+    }
+
+    public static void animateAddedBattalion(Stage stage, int value, float sx, float sy, float dx, float dy) {
+        Label label = new Label("+ " + value, Risk.skin);
+        label.setPosition(sx - 3, sy);
+        stage.addActor(label);
+        label.addAction(sequence(moveTo(dx - 3, dy, 3), fadeOut(1), removeActor(label)));
     }
 }

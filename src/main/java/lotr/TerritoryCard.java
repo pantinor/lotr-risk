@@ -119,10 +119,10 @@ public enum TerritoryCard {
 
             switch (c) {
                 case WILD_CARD_1:
-                    c.adjacents = new TerritoryCard[]{};
+                    c.adjacents = null;
                     break;
                 case WILD_CARD_2:
-                    c.adjacents = new TerritoryCard[]{};
+                    c.adjacents = null;
                     break;
                 case ESGAROTH:
                     c.adjacents = new TerritoryCard[]{WITHERED_HEATH, NORTH_MIRKWOOD};

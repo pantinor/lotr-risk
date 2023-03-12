@@ -65,6 +65,7 @@ public class ClaimTerritoryScreen implements Screen {
     private final List<RegionWrapper> regions = new ArrayList<>();
     private RegionWrapper selectedTerritory;
 
+    private final SpriteBatch hudbatch = new SpriteBatch();
     private final SpriteBatch batch = new SpriteBatch();
     private final Viewport mapViewport;
     private final OrthographicCamera camera;
@@ -140,7 +141,7 @@ public class ClaimTerritoryScreen implements Screen {
                         addBattalion(selectedTerritory, false);
                     } else if (claim.getText().toString().equals("REINFORCE")) {
 
-                        if (game.getOccupyingArmy(selectedTerritory.territory) == game.current().armyType) {
+                        if (game.getOccupyingArmy(selectedTerritory.territory).armyType == game.current().armyType) {
                             addBattalion(selectedTerritory, false);
                         } else {
                             Sounds.play(Sound.NEGATIVE_EFFECT);
@@ -148,7 +149,7 @@ public class ClaimTerritoryScreen implements Screen {
 
                     } else if (claim.getText().toString().equals("PLACE LEADERS")) {
 
-                        if (game.getOccupyingArmy(selectedTerritory.territory) == game.current().armyType) {
+                        if (game.getOccupyingArmy(selectedTerritory.territory).armyType == game.current().armyType) {
                             if (game.current().leader1.territory == null) {
                                 game.current().leader1.territory = selectedTerritory.territory;
                                 Sounds.play(Sound.TRIGGER);
@@ -389,9 +390,11 @@ public class ClaimTerritoryScreen implements Screen {
 
             boolean done = true;
             for (Army a : this.game.armies) {
-                for (Battalion b : a.battalions) {
-                    if (b.territory == null) {
-                        done = false;
+                if (a != null) {
+                    for (Battalion b : a.battalions) {
+                        if (b.territory == null) {
+                            done = false;
+                        }
                     }
                 }
             }
@@ -429,6 +432,9 @@ public class ClaimTerritoryScreen implements Screen {
 
     }
 
+    Vector3 tmpb = new Vector3();
+    Vector3 tmpt = new Vector3();
+
     @Override
     public void render(float delta) {
         time += delta;
@@ -439,47 +445,56 @@ public class ClaimTerritoryScreen implements Screen {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
 
+        hudbatch.begin();
         for (RegionWrapper w : regions) {
-
             if (w.territory != null) {
-                renderer.getBatch().begin();
 
-                ArmyType at = game.getOccupyingArmy(w.territory);
+                ArmyType at = game.getOccupyingArmy(w.territory) != null ? game.getOccupyingArmy(w.territory).armyType : null;
+
+                tmpb.set(w.battalionPosition);
+                tmpt.set(w.textPosition);
+
+                Vector3 bp = this.camera.project(tmpb);
+                Vector3 tp = this.camera.project(tmpt);
+
+                float bx = bp.x - 12;
+                float by = bp.y - 12;
+                float tx = tp.x - 12;
+                float ty = tp.y - 12;
 
                 if (at == ArmyType.RED) {
                     if (w.territory == game.red.leader1.territory || w.territory == game.red.leader2.territory) {
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
+                        hudbatch.draw(LEADER_CIRCLE, bx, by);
                     }
-                    renderer.getBatch().draw(RED_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
+                    hudbatch.draw(RED_CIRCLE, tx, ty);
                 }
                 if (at == ArmyType.BLACK) {
                     if (w.territory == game.black.leader1.territory || w.territory == game.black.leader2.territory) {
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
+                        hudbatch.draw(LEADER_CIRCLE, bx, by);
                     }
-                    renderer.getBatch().draw(BLACK_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
+                    hudbatch.draw(BLACK_CIRCLE, tx, ty);
                 }
                 if (at == ArmyType.GREEN) {
                     if (w.territory == game.green.leader1.territory || w.territory == game.green.leader2.territory) {
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
+                        hudbatch.draw(LEADER_CIRCLE, bx, by);
                     }
-                    renderer.getBatch().draw(GREEN_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
+                    hudbatch.draw(GREEN_CIRCLE, tx, ty);
                 }
                 if (at == ArmyType.YELLOW) {
                     if (w.territory == game.yellow.leader1.territory || w.territory == game.yellow.leader2.territory) {
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
+                        hudbatch.draw(LEADER_CIRCLE, bx, by);
                     }
-                    renderer.getBatch().draw(YELLOW_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
+                    hudbatch.draw(YELLOW_CIRCLE, tx, ty);
                 }
 
                 int bc = game.battalionCount(w.territory);
                 if (bc > 0) {
-                    Risk.font.draw(renderer.getBatch(), bc + "", w.textPosition.x + 0, w.textPosition.y + 0);
+                    Risk.font.draw(hudbatch, bc + "", tp.x - 8, tp.y + 6);
                 }
 
-                renderer.getBatch().end();
             }
-
         }
+        hudbatch.end();
 
         if (selectedTerritory != null) {
             Gdx.gl.glLineWidth(6);

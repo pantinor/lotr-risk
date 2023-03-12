@@ -17,10 +17,13 @@ import static lotr.Risk.YELLOW_LEADER;
 public class Hud {
 
     private final Texture frame = new Texture(Gdx.files.classpath("assets/data/hud-frame.png"));
-    private final Texture background = Risk.fillRectangle(300, 62 * 4, new Color(.5f, .5f, .5f, .5f));
+    private final Texture background = Risk.fillRectangle(300, 62 * 4, new Color(0, 0, .62f, .8f));
     private final Texture highlighter = Risk.fillRectangle(296, 58, new Color(.7f, .3f, .5f, .7f));
+    protected float time = 0;
 
-    public void render(Batch batch, Game game) {
+    public void render(Batch batch, Game game, float delta) {
+
+        time += delta;
 
         int y = Risk.SCREEN_HEIGHT - 815;
         int py = Risk.SCREEN_HEIGHT - 855;
@@ -42,20 +45,20 @@ public class Hud {
 
             switch (a.armyType) {
                 case RED:
-                    batch.draw(RED_BATTALION.getKeyFrame(0), 0, py);
-                    batch.draw(RED_LEADER.getKeyFrame(0), 250, py);
+                    batch.draw(RED_BATTALION.getKeyFrame(time, true), 0, py);
+                    batch.draw(RED_LEADER.getKeyFrame(time, true), 250, py);
                     break;
                 case GREEN:
-                    batch.draw(GREEN_BATTALION.getKeyFrame(0), 0, py);
-                    batch.draw(GREEN_LEADER.getKeyFrame(0), 250, py);
+                    batch.draw(GREEN_BATTALION.getKeyFrame(time, true), 0, py);
+                    batch.draw(GREEN_LEADER.getKeyFrame(time, true), 250, py);
                     break;
                 case BLACK:
-                    batch.draw(BLACK_BATTALION.getKeyFrame(0), 0, py);
-                    batch.draw(BLACK_LEADER.getKeyFrame(0), 250, py);
+                    batch.draw(BLACK_BATTALION.getKeyFrame(time, true), 0, py);
+                    batch.draw(BLACK_LEADER.getKeyFrame(time, true), 250, py);
                     break;
                 case YELLOW:
-                    batch.draw(YELLOW_BATTALION.getKeyFrame(0), 0, py);
-                    batch.draw(YELLOW_LEADER.getKeyFrame(0), 250, py);
+                    batch.draw(YELLOW_BATTALION.getKeyFrame(time, true), 0, py);
+                    batch.draw(YELLOW_LEADER.getKeyFrame(time, true), 250, py);
                     break;
             }
 

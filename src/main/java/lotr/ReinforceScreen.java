@@ -56,6 +56,7 @@ public class ReinforceScreen implements Screen {
     private final Risk main;
     private final Army army;
     private final GameScreen gameScreen;
+    private final TurnWidget turnWidget;
 
     private final float unitScale = 0.35f;
     private final List<RegionWrapper> regions = new ArrayList<>();
@@ -78,6 +79,8 @@ public class ReinforceScreen implements Screen {
     private final TextButton reinforceStrongholds, reinforceTerritories, reinforceRegions, reinforceCards, exit;
 
     private final List<TerritoryCard> claimedTerritories;
+    private final List<Location> strongholds;
+    private final List<Region> ownedRegions = new ArrayList<>();
     private final List<TerritoryCard> reinforcedStrongholds = new ArrayList<>();
 
     private int strongholdReinforcements, territoryReinforcements, regionReinforcements, cardReinforcements;
@@ -93,21 +96,24 @@ public class ReinforceScreen implements Screen {
         TEXTS.add("4. Turn in any card sets - when you have a set of 3 cards that show the same picture or 1 of each picture, turn them in for reinforcements.");
     }
 
-    public ReinforceScreen(Risk main, Game game, Army army, GameScreen gameScreen) {
+    public ReinforceScreen(Risk main, Game game, Army army, GameScreen gameScreen, TurnWidget turnWidget) {
 
         this.game = game;
         this.main = main;
         this.army = army;
         this.gameScreen = gameScreen;
+        this.turnWidget = turnWidget;
 
         this.claimedTerritories = army.claimedTerritories();
 
-        strongholdReinforcements = army.ownedStrongholds(claimedTerritories).size();
+        strongholds = army.ownedStrongholds(claimedTerritories);
+        strongholdReinforcements = strongholds.size();
         territoryReinforcements = claimedTerritories.size() / 3 < 3 ? 3 : claimedTerritories.size() / 3;
 
         for (Region r : Region.values()) {
             if (claimedTerritories.containsAll(r.territories())) {
                 regionReinforcements += r.reinforcements();
+                ownedRegions.add(r);
             }
         }
 
@@ -169,12 +175,12 @@ public class ReinforceScreen implements Screen {
         TiledMapTileLayer iconLayer = (TiledMapTileLayer) TMX_MAP.getLayers().get("icons");
         Risk.setPoints(iconLayer, regions, unitScale);
 
-        this.table.align(Align.left | Align.top).pad(5);
+        table.align(Align.left | Align.top).pad(5);
         table.columnDefaults(0).expandX().left().uniformX();
         table.columnDefaults(1).expandX().left().uniformX();
 
         ScrollPane sp = new ScrollPane(table, Risk.skin);
-        sp.setBounds(300, 50, 300, 500);
+        sp.setBounds(400, 50, 280, 500);
         this.stage.addActor(sp);
 
         for (TerritoryCard c : army.territoryCards) {
@@ -186,10 +192,10 @@ public class ReinforceScreen implements Screen {
             this.table.row();
         }
 
-        this.reinforceStrongholds = new TextButton("REINFORCE STRONGHOLDS", Risk.skin);
-        this.reinforceTerritories = new TextButton("REINFORCE TERRITORIES", Risk.skin);
-        this.reinforceRegions = new TextButton("REINFORCE REGIONS", Risk.skin);
-        this.reinforceCards = new TextButton("REINFORCE CARDS", Risk.skin);
+        this.reinforceStrongholds = new TextButton("REINFORCE STRONGHOLDS", Risk.skin, "blue");
+        this.reinforceTerritories = new TextButton("REINFORCE TERRITORIES", Risk.skin, "blue");
+        this.reinforceRegions = new TextButton("REINFORCE REGIONS", Risk.skin, "blue");
+        this.reinforceCards = new TextButton("REINFORCE CARDS", Risk.skin, "blue");
 
         this.reinforceStrongholds.addListener(new ChangeListener() {
             @Override
@@ -256,11 +262,12 @@ public class ReinforceScreen implements Screen {
             }
         });
 
-        this.exit = new TextButton("DONE", Risk.skin);
+        this.exit = new TextButton("DONE", Risk.skin, "blue");
         this.exit.setVisible(false);
         this.exit.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                turnWidget.setNextStep(TurnWidget.Step.ATTACK);
                 main.setScreen(ReinforceScreen.this.gameScreen);
             }
         });
@@ -308,6 +315,9 @@ public class ReinforceScreen implements Screen {
         viewport.update(width, height, false);
     }
 
+    Vector3 tmpb = new Vector3();
+    Vector3 tmpt = new Vector3();
+
     @Override
     public void render(float delta) {
         time += delta;
@@ -318,47 +328,56 @@ public class ReinforceScreen implements Screen {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
 
+        hudbatch.begin();
         for (RegionWrapper w : regions) {
-
             if (w.territory != null) {
-                renderer.getBatch().begin();
 
-                ArmyType at = game.getOccupyingArmy(w.territory);
+                ArmyType at = game.getOccupyingArmy(w.territory).armyType;
+
+                tmpb.set(w.battalionPosition);
+                tmpt.set(w.textPosition);
+
+                Vector3 bp = this.camera.project(tmpb);
+                Vector3 tp = this.camera.project(tmpt);
+
+                float bx = bp.x - 12;
+                float by = bp.y - 12;
+                float tx = tp.x - 12;
+                float ty = tp.y - 12;
 
                 if (at == ArmyType.RED) {
                     if (w.territory == game.red.leader1.territory || w.territory == game.red.leader2.territory) {
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
+                        hudbatch.draw(LEADER_CIRCLE, bx, by);
                     }
-                    renderer.getBatch().draw(RED_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
+                    hudbatch.draw(RED_CIRCLE, tx, ty);
                 }
                 if (at == ArmyType.BLACK) {
                     if (w.territory == game.black.leader1.territory || w.territory == game.black.leader2.territory) {
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
+                        hudbatch.draw(LEADER_CIRCLE, bx, by);
                     }
-                    renderer.getBatch().draw(BLACK_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
+                    hudbatch.draw(BLACK_CIRCLE, tx, ty);
                 }
                 if (at == ArmyType.GREEN) {
                     if (w.territory == game.green.leader1.territory || w.territory == game.green.leader2.territory) {
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
+                        hudbatch.draw(LEADER_CIRCLE, bx, by);
                     }
-                    renderer.getBatch().draw(GREEN_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
+                    hudbatch.draw(GREEN_CIRCLE, tx, ty);
                 }
                 if (at == ArmyType.YELLOW) {
                     if (w.territory == game.yellow.leader1.territory || w.territory == game.yellow.leader2.territory) {
-                        renderer.getBatch().draw(LEADER_CIRCLE, w.battalionPosition.x - 0, w.battalionPosition.y - 10);
+                        hudbatch.draw(LEADER_CIRCLE, bx, by);
                     }
-                    renderer.getBatch().draw(YELLOW_CIRCLE, w.textPosition.x - 8, w.textPosition.y - 17);
+                    hudbatch.draw(YELLOW_CIRCLE, tx, ty);
                 }
 
                 int bc = game.battalionCount(w.territory);
                 if (bc > 0) {
-                    Risk.font.draw(renderer.getBatch(), bc + "", w.textPosition.x + 0, w.textPosition.y + 0);
+                    Risk.font.draw(hudbatch, bc + "", tp.x - 8, tp.y + 6);
                 }
 
-                renderer.getBatch().end();
             }
-
         }
+        hudbatch.end();
 
         if (selectedTerritory != null) {
             Gdx.gl.glLineWidth(6);
@@ -385,6 +404,16 @@ public class ReinforceScreen implements Screen {
         Risk.font.draw(hudbatch, "Territory Reinforcements " + territoryReinforcements, x, y -= 20);
         Risk.font.draw(hudbatch, "Region Reinforcements " + regionReinforcements, x, y -= 20);
         Risk.font.draw(hudbatch, "Card Reinforcements " + cardReinforcements, x, y -= 20);
+
+        Risk.font.draw(hudbatch, "Strongholds", x, y -= 40);
+        for (Location s : strongholds) {
+            Risk.font.draw(hudbatch, "    " + s.toString().replace("_", " "), x, y -= 20);
+        }
+        Risk.font.draw(hudbatch, "Regions", x, y -= 40);
+        for (Region r : ownedRegions) {
+            Risk.font.draw(hudbatch, "    " + r.toString().replace("_", " "), x, y -= 20);
+        }
+
         Risk.font.draw(hudbatch, "Cards with Eleven Archers " + sumArchers, x, y -= 40);
         Risk.font.draw(hudbatch, "Cards with Dark Riders " + sumRiders, x, y -= 20);
         Risk.font.draw(hudbatch, "Cards with Eagles " + sumEagles, x, y -= 20);
@@ -395,6 +424,11 @@ public class ReinforceScreen implements Screen {
         stage.draw();
 
         if (strongholdReinforcements == 0 && territoryReinforcements == 0 && regionReinforcements == 0) {
+            this.reinforceStrongholds.setVisible(false);
+            this.reinforceTerritories.setVisible(false);
+            this.reinforceRegions.setVisible(false);
+            this.reinforceCards.setVisible(false);
+
             this.exit.setVisible(true);
         }
 
