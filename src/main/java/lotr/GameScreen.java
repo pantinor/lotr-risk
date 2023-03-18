@@ -21,6 +21,9 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.delay;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -51,7 +54,6 @@ import static lotr.Risk.BLACK_CIRCLE;
 import static lotr.Risk.YELLOW_CIRCLE;
 import lotr.Risk.RegionWrapper;
 import lotr.Risk.RingPathWrapper;
-import lotr.TurnWidget.Step;
 
 public class GameScreen implements Screen, InputProcessor {
 
@@ -195,17 +197,28 @@ public class GameScreen implements Screen, InputProcessor {
             @Override
             public boolean touchUp(int x, int y, int pointer, int button) {
                 if (button == 1 && selectedAttackingTerritory != null && selectedDefendingTerritory == null) {
-                    int count = game.battalionCount(selectedAttackingTerritory.territory) - 1;
-                    if (count > 0 && game.isClaimed(selectedAttackingTerritory.territory) == game.current()) {
+                    int count = game.battalionCount(selectedAttackingTerritory.territory);
+                    count = count > 4 ? 4 : count;
+                    if (count > 1 && game.isClaimed(selectedAttackingTerritory.territory) == game.current()) {
                         invasionRadial.resetSelection();
                         invasionRadial.clearChildren();
-                        for (int i = 0; i < count; i++) {
-                            Label l = new Label(Integer.toString(i + 1), Risk.skin);
-                            l.setUserObject(i + 1);
+                        for (int i = 1; i < count; i++) {
+                            Label l = new Label(Integer.toString(i), Risk.skin);
+                            l.setUserObject(i);
                             invasionRadial.addActor(l);
                         }
                         invasionRadial.centerOnMouse();
                         invasionRadial.animateOpening(.4f);
+
+                        for (RegionWrapper adj : selectedAttackingTerritory.adjacents.values()) {
+                            if (game.isClaimed(adj.territory) != game.current()) {
+                                Vector3 start = new Vector3(selectedAttackingTerritory.textPosition);
+                                Vector3 end = new Vector3(adj.textPosition);
+                                InvasionPointerActor arrow = new InvasionPointerActor(shapeRenderer, start, end);
+                                mapStage.addActor(arrow);
+                                arrow.addAction(sequence(delay(5, removeActor(arrow))));
+                            }
+                        }
                     }
                 }
                 return false;
@@ -236,8 +249,27 @@ public class GameScreen implements Screen, InputProcessor {
 
         renderer.render();
 
-        Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(camera.combined);
+
+        if (selectedAttackingTerritory != null) {
+            Gdx.gl.glLineWidth(8);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            if (selectedDefendingTerritory == null) {
+                shapeRenderer.setColor(Color.YELLOW);
+                for (TerritoryCard adj : selectedAttackingTerritory.territory.adjacents()) {
+                    shapeRenderer.polygon(selectedAttackingTerritory.adjacents.get(adj).vertices);
+                }
+            } else {
+                shapeRenderer.setColor(Color.GREEN);
+                shapeRenderer.polygon(selectedDefendingTerritory.vertices);
+            }
+            shapeRenderer.setColor(Color.RED);
+            shapeRenderer.polygon(selectedAttackingTerritory.vertices);
+            shapeRenderer.end();
+        }
+
+        this.mapStage.act();
+        this.mapStage.draw();
 
         for (RegionWrapper w : regions) {
 
@@ -287,26 +319,6 @@ public class GameScreen implements Screen, InputProcessor {
 
         }
 
-        if (selectedAttackingTerritory != null) {
-            Gdx.gl.glLineWidth(8);
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-            if (selectedDefendingTerritory == null) {
-                shapeRenderer.setColor(Color.YELLOW);
-                for (TerritoryCard adj : selectedAttackingTerritory.territory.adjacents()) {
-                    shapeRenderer.polygon(selectedAttackingTerritory.adjacents.get(adj).vertices);
-                }
-            } else {
-                shapeRenderer.setColor(Color.GREEN);
-                shapeRenderer.polygon(selectedDefendingTerritory.vertices);
-                
-                //shapeRenderer.setColor(Color.WHITE);
-                //shapeRenderer.curve(0.0f, 0.25f, 0.2f, 0.3f, 0.3f, 0.6f, 0.1f, 0.5f, 30);
-            }
-            shapeRenderer.setColor(Color.RED);
-            shapeRenderer.polygon(selectedAttackingTerritory.vertices);
-            shapeRenderer.end();
-        }
-
         for (RingPathWrapper rw : RING_PATHS) {
             if (rw.selected) {
                 renderer.getBatch().begin();
@@ -317,12 +329,12 @@ public class GameScreen implements Screen, InputProcessor {
         }
 
         this.batch.begin();
-
         this.hud.render(this.batch, this.game, delta);
         this.batch.end();
 
         this.widgetStage.act();
         this.widgetStage.draw();
+
     }
 
     @Override

@@ -3,6 +3,7 @@ package lotr;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
@@ -16,6 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import lotr.util.Dice;
 import lotr.util.Sound;
 import lotr.util.Sounds;
@@ -36,6 +38,8 @@ public class AttackScreen implements Screen {
 
     private final int attackingCount, defendingCount;
 
+    Texture background;
+
     public AttackScreen(Risk main, GameScreen parent, Game game, Army invader, Army defender, TerritoryCard from, TerritoryCard to, int attackingCount, int defendingCount) {
         this.main = main;
         this.parent = parent;
@@ -46,6 +50,9 @@ public class AttackScreen implements Screen {
         this.to = to;
         this.attackingCount = attackingCount;
         this.defendingCount = defendingCount;
+
+        int ind = new Random().nextInt(4) + 1;
+        background = new Texture(Gdx.files.classpath("assets/backgrounds/battle" + ind + ".jpg"));
 
         TextButton attack = new TextButton("ATTACK", Risk.skin);
         attack.addListener(new ChangeListener() {
@@ -128,6 +135,8 @@ public class AttackScreen implements Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         this.stage.getBatch().begin();
+
+        this.stage.getBatch().draw(this.background, Risk.SCREEN_WIDTH / 2 - (background.getWidth() / 2), Risk.SCREEN_HEIGHT / 2 - (background.getHeight() / 2));
 
         int y = 500;
 

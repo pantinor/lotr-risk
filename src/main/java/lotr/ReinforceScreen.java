@@ -81,7 +81,6 @@ public class ReinforceScreen implements Screen {
     private final List<TerritoryCard> claimedTerritories;
     private final List<Location> strongholds;
     private final List<Region> ownedRegions = new ArrayList<>();
-    private final List<TerritoryCard> reinforcedStrongholds = new ArrayList<>();
 
     private int strongholdReinforcements, territoryReinforcements, regionReinforcements, cardReinforcements;
     private int sumArchers = 0, sumRiders = 0, sumEagles = 0;
@@ -200,16 +199,14 @@ public class ReinforceScreen implements Screen {
         this.reinforceStrongholds.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                if (selectedTerritory != null) {
-                    if (strongholdReinforcements > 0 && claimedTerritories.contains(selectedTerritory.territory)
-                            && Location.getStronghold(selectedTerritory.territory) != null && !reinforcedStrongholds.contains(selectedTerritory.territory)) {
-                        army.addBattalion(selectedTerritory.territory);
-                        reinforcedStrongholds.add(selectedTerritory.territory);
-                        strongholdReinforcements--;
-                        Sounds.play(Sound.TRIGGER);
-                    } else {
-                        Sounds.play(Sound.NEGATIVE_EFFECT);
+                if (strongholdReinforcements > 0) {
+                    for (TerritoryCard c : TerritoryCard.values()) {
+                        if (claimedTerritories.contains(c) && Location.getStronghold(c) != null) {
+                            army.addBattalion(c);
+                            strongholdReinforcements--;
+                        }
                     }
+                    Sounds.play(Sound.TRIGGER);
                 } else {
                     Sounds.play(Sound.NEGATIVE_EFFECT);
                 }

@@ -57,7 +57,7 @@ public class Risk extends Game {
     public static Animation<TextureRegion> RED_LEADER, BLACK_LEADER, GREEN_LEADER, YELLOW_LEADER;
     public static Animation<TextureRegion> FRODO, SAM;
     public static Texture RED_CIRCLE, GREEN_CIRCLE, BLACK_CIRCLE, YELLOW_CIRCLE, LEADER_CIRCLE;
-    
+
     public static TextureRegion[][] DICE_TEXTURES;
     public static List<RingPathWrapper> RING_PATHS = new ArrayList<>();
 
