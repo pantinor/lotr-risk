@@ -45,7 +45,7 @@ import org.apache.commons.io.IOUtils;
 
 public class Risk extends Game {
 
-    public static Skin skin;
+    public static Skin skin, ccskin;
     public static BitmapFont font;
 
     public static final int SCREEN_WIDTH = 1800;
@@ -73,6 +73,7 @@ public class Risk extends Game {
     public void create() {
 
         skin = new Skin(Gdx.files.classpath("assets/skin/uiskin.json"));
+        ccskin = new Skin(Gdx.files.classpath("assets/skin/clean-crispy/clean-crispy-ui.json"));
 
         font = skin.get("default-font", BitmapFont.class);
 

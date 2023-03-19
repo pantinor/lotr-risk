@@ -64,7 +64,7 @@ public class TurnWidget extends Table {
             }
         };
 
-        nextButton = new TextButton(">>", Risk.skin, "blue");
+        nextButton = new TextButton(">>", Risk.ccskin, "arcade");
         nextButton.addListener(draftListener);
         currentListener = draftListener;
 
@@ -86,10 +86,10 @@ public class TurnWidget extends Table {
         add(stepLabel).colspan(5).center();
         row();
 
-        add(nextButton).colspan(5).center().width(60).minWidth(60);
+        add(nextButton).colspan(5).center();
         row();
 
-        setBounds(SCREEN_WIDTH / 2 - 100, 0, 200, 80);
+        setBounds(SCREEN_WIDTH / 2 - 100, 0, 200, 140);
 
         setBackground(new TextureRegionDrawable(Risk.fillRectangle(1, 1, new Color(0, 0, .62f, .8f))));
 

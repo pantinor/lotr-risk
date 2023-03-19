@@ -57,7 +57,7 @@ import lotr.Risk.RingPathWrapper;
 
 public class GameScreen implements Screen, InputProcessor {
 
-    protected float time = 0;
+    private float time = 0;
 
     private final Stage mapStage, widgetStage;
     private final Batch batch = new SpriteBatch();
