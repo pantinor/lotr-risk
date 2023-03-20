@@ -75,8 +75,8 @@ public class GameScreen implements Screen, InputProcessor {
     private final TurnWidget turnWidget;
 
     private final List<RegionWrapper> regions = new ArrayList<>();
-    private RegionWrapper selectedAttackingTerritory, selectedDefendingTerritory;
-    private Integer attackingCount, defendingCount;
+    public RegionWrapper selectedAttackingTerritory, selectedDefendingTerritory;
+    public Integer attackingCount, defendingCount;
     private AnimatedPieMenu invasionRadial;
 
     public GameScreen(Risk main, Game game) {

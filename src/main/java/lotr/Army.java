@@ -23,7 +23,7 @@ public class Army {
     public List<TerritoryCard> territoryCards = new ArrayList<>();
     @Expose
     public List<AdventureCard> adventureCards = new ArrayList<>();
-    
+
     public Army() {
 
     }
@@ -47,7 +47,7 @@ public class Army {
     public void removeTerritoryCard(TerritoryCard c) {
         this.territoryCards.remove(c);
     }
-    
+
     public void addAdventureCard(AdventureCard c) {
         this.adventureCards.add(c);
     }
@@ -81,11 +81,25 @@ public class Army {
         }
         return false;
     }
-
+    
     public void addBattalion(TerritoryCard tc) {
         Battalion b = new Battalion(this.armyType);
         b.territory = tc;
         this.battalions.add(b);
+    }
+
+    public void removeBattalion(TerritoryCard tc) {
+        Battalion tmp = null;
+
+        for (Battalion b : this.battalions) {
+            if (b.territory == tc) {
+                tmp = b;
+                break;
+            }
+        }
+        if (tmp != null) {
+            this.battalions.remove(tmp);
+        }
     }
 
     public List<TerritoryCard> claimedTerritories() {

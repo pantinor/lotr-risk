@@ -404,11 +404,11 @@ public class ReinforceScreen implements Screen {
 
         Risk.font.draw(hudbatch, "Strongholds", x, y -= 40);
         for (Location s : strongholds) {
-            Risk.font.draw(hudbatch, "    " + s.toString().replace("_", " "), x, y -= 20);
+            Risk.font.draw(hudbatch, "    " + s.title(), x, y -= 20);
         }
         Risk.font.draw(hudbatch, "Regions", x, y -= 40);
         for (Region r : ownedRegions) {
-            Risk.font.draw(hudbatch, "    " + r.toString().replace("_", " "), x, y -= 20);
+            Risk.font.draw(hudbatch, "    " + r, x, y -= 20);
         }
 
         Risk.font.draw(hudbatch, "Cards with Eleven Archers " + sumArchers, x, y -= 40);

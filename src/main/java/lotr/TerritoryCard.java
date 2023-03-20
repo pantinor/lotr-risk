@@ -104,6 +104,12 @@ public enum TerritoryCard {
         return region;
     }
 
+    public String title() {
+        String name = this.toString();
+        name = name.replace("_1", "").replace("_2", "").replace("_2", "").replace("_4", "").replace("_", " ");
+        return name;
+    }
+
     public TerritoryCard[] adjacents() {
         return adjacents;
     }

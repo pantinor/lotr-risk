@@ -56,10 +56,16 @@ public enum Location {
         return region;
     }
 
+    public String title() {
+        String name = this.toString();
+        name = name.replace("_", " ");
+        return name;
+    }
+
     public boolean isSiteOfPower() {
         return siteOfPower;
     }
-    
+
     public static Location getStronghold(TerritoryCard c) {
         for (Location l : Location.values()) {
             if (!l.isSiteOfPower() && l.territory == c) {

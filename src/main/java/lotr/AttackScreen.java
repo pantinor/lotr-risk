@@ -37,11 +37,6 @@ import com.badlogic.gdx.physics.bullet.dynamics.btSequentialImpulseConstraintSol
 import com.badlogic.gdx.physics.bullet.linearmath.btDefaultMotionState;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.moveTo;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Array;
@@ -76,7 +71,10 @@ public class AttackScreen implements Screen {
     private final Army defender;
     private final TerritoryCard from;
     private final TerritoryCard to;
-    private final int attackingCount, defendingCount;
+
+    private int attackingCount, defendingCount;
+
+    private TextButton attack;
 
     private Environment environment;
     private PointLight light;
@@ -93,20 +91,15 @@ public class AttackScreen implements Screen {
     private btRigidBody groundBody;
     private btDefaultMotionState groundMotionState;
     private ModelInstance ground;
-    private static final Model groundModel;
+    private final Model groundModel;
+    private static final float DICE_DROP_HEIGHT = 30;
 
     static {
         Bullet.init();
-
-        ModelBuilder modelBuilder = new ModelBuilder();
-        Texture txt = new Texture(Gdx.files.classpath("assets/data/risk-map.png"));
-        groundModel = modelBuilder.createRect(20f, 0f, -20f, -20f, 0f, -20f, -20f, 0f, 20f, 20f, 0f, 20f, 0, 1, 0,
-                new Material(TextureAttribute.createDiffuse(txt), ColorAttribute.createSpecular(1, 1, 1, 1), FloatAttribute.createShininess(8f)),
-                VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
     }
 
     public AttackScreen(Risk main, GameScreen parent, Game game, Army invader, Army defender,
-            TerritoryCard from, TerritoryCard to, int attackingCount, int defendingCount) {
+            TerritoryCard from, TerritoryCard to, int acount, int dcount) {
 
         this.main = main;
         this.parent = parent;
@@ -115,8 +108,8 @@ public class AttackScreen implements Screen {
         this.defender = defender;
         this.from = from;
         this.to = to;
-        this.attackingCount = attackingCount;
-        this.defendingCount = defendingCount;
+        this.attackingCount = acount;
+        this.defendingCount = dcount;
 
         frameLeft = Risk.fillCircle(invader.armyType.color(), 300);
         frameRight = Risk.fillCircle(defender.armyType.color(), 300);
@@ -152,6 +145,11 @@ public class AttackScreen implements Screen {
         btboxShape.calculateLocalInertia(1f, tempVector);
         btRigidBody.btRigidBodyConstructionInfo boxInfo = new btRigidBody.btRigidBodyConstructionInfo(1f, null, btboxShape, tempVector);
 
+        ModelBuilder modelBuilder = new ModelBuilder();
+        Texture txt = new Texture(Gdx.files.classpath("assets/data/risk-map.png"));
+        groundModel = modelBuilder.createRect(20f, 0f, -20f, -20f, 0f, -20f, -20f, 0f, 20f, 20f, 0f, 20f, 0, 1, 0,
+                new Material(TextureAttribute.createDiffuse(txt), ColorAttribute.createSpecular(1, 1, 1, 1), FloatAttribute.createShininess(8f)),
+                VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
         ground = new ModelInstance(groundModel);
         groundMotionState = new btDefaultMotionState();
         groundMotionState.setWorldTransform(ground.transform);
@@ -159,7 +157,7 @@ public class AttackScreen implements Screen {
         groundBody.setMotionState(groundMotionState);
         collisionWorld.addRigidBody(groundBody);
 
-        TextButton attack = new TextButton("ROLL", Risk.ccskin, "arcade");
+        attack = new TextButton("ROLL", Risk.ccskin, "arcade");
         attack.setBounds(900 - 50, 200, 100, 100);
         attack.addListener(new ChangeListener() {
             @Override
@@ -173,19 +171,17 @@ public class AttackScreen implements Screen {
                 for (int i = 1; i <= attackingCount; i++) {
                     int r = DICE.roll();
                     rollsInvader.add(r);
-                    addBox(Dice.getRedModel(r - 1), i + 2, 40, 0, boxInfo);
+                    addBox(Dice.getRedModel(r - 1), i + 2, DICE_DROP_HEIGHT, 0, boxInfo);
                 }
 
                 for (int i = 1; i <= defendingCount; i++) {
                     int r = DICE.roll();
                     rollsDefender.add(r);
-                    addBox(Dice.getBlackModel(r - 1), i - 6, 40, 0, boxInfo);
+                    addBox(Dice.getBlackModel(r - 1), i - 6, DICE_DROP_HEIGHT, 0, boxInfo);
                 }
 
                 Collections.sort(rollsInvader, Collections.reverseOrder());
                 Collections.sort(rollsDefender, Collections.reverseOrder());
-
-                Sounds.play(Sound.DICE);
 
                 int highestAttacking = rollsInvader.get(0);
                 if (hasLeader(invader, from)) {
@@ -197,12 +193,36 @@ public class AttackScreen implements Screen {
                     highestDefending++;
                 }
 
+                if (isDefendingStrongHold()) {
+                    highestDefending++;
+                }
+
                 if (highestDefending >= highestAttacking) {
-                    Sounds.play(Sound.EVADE);
-                    animateText("Defender wins", 500, 500, "default-green");
+                    Sounds.play(Sound.NEGATIVE_EFFECT);
+                    invader.removeBattalion(from);
+                    attackingCount--;
+                    if (attackingCount == 0) {
+                        attack.setVisible(false);
+                    }
                 } else {
-                    Sounds.play(Sound.PC_STRUCK);
-                    animateText("Attacker wins", 500, 500, "default-red");
+                    Sounds.play(Sound.POSITIVE_EFFECT);
+                    defender.removeBattalion(to);
+                    defendingCount--;
+                    if (defendingCount == 0) {
+                        if (hasLeader(defender, to)) {
+                            removeLeader(defender, to);
+                        }
+                        attack.setVisible(false);
+
+                        int count = game.battalionCount(from);
+                        for (Battalion b : invader.getBattalions()) {
+                            if (b.territory == from && count > 1) {
+                                b.territory = to;
+                                count--;
+                            }
+                        }
+
+                    }
                 }
 
             }
@@ -213,6 +233,8 @@ public class AttackScreen implements Screen {
         done.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                AttackScreen.this.parent.attackingCount = null;
+                AttackScreen.this.parent.selectedDefendingTerritory = null;
                 main.setScreen(AttackScreen.this.parent);
             }
         });
@@ -279,23 +301,18 @@ public class AttackScreen implements Screen {
 
         int y = 400;
 
-        String row1 = String.format("Battalions %d", game.battalionCount(from));
-        Risk.font.draw(this.stage.getBatch(), row1, 170, y -= 20);
+        Risk.font.draw(this.stage.getBatch(), String.format("%s", from.title()), 170, y -= 20);
+        Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(from)), 170, y -= 20);
 
         y = 400;
 
-        row1 = String.format("Battalions %d", game.battalionCount(to));
-        Risk.font.draw(this.stage.getBatch(), row1, 1470, y -= 20);
-
-        for (Location l : Location.values()) {
-            if (!l.isSiteOfPower() && l.getTerritory() == to) {
-                Risk.font.draw(this.stage.getBatch(), "Stronghold Defender Bonus", 1470, y -= 20);
-                break;
-            }
+        Risk.font.draw(this.stage.getBatch(), String.format("%s", to.title()), 1470, y -= 20);
+        Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(to)), 1470, y -= 20);
+        if (isDefendingStrongHold()) {
+            Risk.font.draw(this.stage.getBatch(), "Stronghold Defender Bonus", 1470, y -= 20);
         }
 
-        Risk.font.draw(this.stage.getBatch(), String.format("CAMREA %f %f %f", camera.position.x, camera.position.y, camera.position.z), 1470, y -= 20);
-
+        //Risk.font.draw(this.stage.getBatch(), String.format("CAMREA %f %f %f", camera.position.x, camera.position.y, camera.position.z), 1470, y -= 20);
         this.stage.getBatch().end();
 
         this.stage.act();
@@ -331,6 +348,10 @@ public class AttackScreen implements Screen {
         if (hasLeader) {
             batch.draw(ltr, x += 56, y, 96, 96);
         }
+
+        if (hasLeader) {
+            batch.draw(ltr, x += 56, y, 96, 96);
+        }
     }
 
     private boolean hasLeader(Army a, TerritoryCard tc) {
@@ -341,6 +362,37 @@ public class AttackScreen implements Screen {
 
         if (a.leader2 != null && a.leader2.territory == tc) {
             return true;
+        }
+        return false;
+    }
+
+    private void removeLeader(Army a, TerritoryCard tc) {
+
+        if (a.leader1 != null && a.leader1.territory == tc) {
+            a.leader1.territory = null;
+        }
+
+        if (a.leader2 != null && a.leader2.territory == tc) {
+            a.leader2.territory = null;
+        }
+    }
+
+    private void moveLeader(Army a, TerritoryCard from, TerritoryCard to) {
+
+        if (a.leader1 != null && a.leader1.territory == from) {
+            a.leader1.territory = to;
+        }
+
+        if (a.leader2 != null && a.leader2.territory == from) {
+            a.leader2.territory = to;
+        }
+    }
+
+    private boolean isDefendingStrongHold() {
+        for (Location l : Location.values()) {
+            if (!l.isSiteOfPower() && l.getTerritory() == to) {
+                return true;
+            }
         }
         return false;
     }
@@ -361,19 +413,20 @@ public class AttackScreen implements Screen {
     @Override
     public void dispose() {
         clear();
-        collisionWorld.clearForces();
-        collisionWorld.dispose();
-        collisionWorld.release();
+
+        groundBody.dispose();
+        groundMotionState.dispose();
+        groundModel.dispose();
+
         broadphase.dispose();
         dispatcher.dispose();
         collisionConfiguration.dispose();
-    }
 
-    public void animateText(String text, int x, int y, String color) {
-        Label label = new Label(text, Risk.skin, color);
-        label.setPosition(x, y);
-        this.stage.addActor(label);
-        label.addAction(sequence(moveTo(x + 200, y + 200, 3), fadeOut(1), removeActor(label)));
+        collisionWorld.clearForces();
+        collisionWorld.dispose();
+        collisionWorld.release();
+        collisionWorld = null;
+
     }
 
     @Override
