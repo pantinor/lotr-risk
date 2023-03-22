@@ -31,6 +31,24 @@ button-arcade-pressed
   orig: 84, 84
   offset: 0, 0
   index: -1
+button-sword-arcade
+  rotate: false
+  xy: 168, 252
+  size: 84, 84
+  split: 0, 0, 0, 0
+  pad: 18, 18, 25, 38
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+button-sword-arcade-pressed
+  rotate: false
+  xy: 252, 252
+  size: 84, 84
+  split: 0, 0, 0, 0
+  pad: 18, 18, 30, 33
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
 button-close
   rotate: false
   xy: 74, 51

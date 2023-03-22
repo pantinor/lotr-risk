@@ -72,7 +72,7 @@ public class GameScreen implements Screen, InputProcessor {
     private final Risk main;
 
     private final Hud hud = new Hud();
-    private final TurnWidget turnWidget;
+    public final TurnWidget turnWidget;
 
     private final List<RegionWrapper> regions = new ArrayList<>();
     public RegionWrapper selectedAttackingTerritory, selectedDefendingTerritory;
@@ -178,7 +178,7 @@ public class GameScreen implements Screen, InputProcessor {
                                 if (dc > 2) {
                                     dc = 2;
                                 }
-                                turnWidget.setAttackButtonListener(game.current(), occupyingArmy, selectedAttackingTerritory.territory, w.territory, attackingCount, dc);
+                                GameScreen.this.turnWidget.setCombat(game.current(), occupyingArmy, selectedAttackingTerritory.territory, w.territory, attackingCount, dc);
                                 break;
                             } else {
                                 attackingCount = null;
@@ -200,16 +200,8 @@ public class GameScreen implements Screen, InputProcessor {
                     int count = game.battalionCount(selectedAttackingTerritory.territory);
                     count = count > 4 ? 4 : count;
                     if (count > 1 && game.isClaimed(selectedAttackingTerritory.territory) == game.current()) {
-                        invasionRadial.resetSelection();
-                        invasionRadial.clearChildren();
-                        for (int i = 1; i < count; i++) {
-                            Label l = new Label(Integer.toString(i), Risk.skin);
-                            l.setUserObject(i);
-                            invasionRadial.addActor(l);
-                        }
-                        invasionRadial.centerOnMouse();
-                        invasionRadial.animateOpening(.4f);
 
+                        boolean hasCombatAdjacent = false;
                         for (RegionWrapper adj : selectedAttackingTerritory.adjacents.values()) {
                             if (game.isClaimed(adj.territory) != game.current()) {
                                 Vector3 start = new Vector3(selectedAttackingTerritory.textPosition);
@@ -217,7 +209,20 @@ public class GameScreen implements Screen, InputProcessor {
                                 InvasionPointerActor arrow = new InvasionPointerActor(shapeRenderer, start, end);
                                 mapStage.addActor(arrow);
                                 arrow.addAction(sequence(delay(5, removeActor(arrow))));
+                                hasCombatAdjacent = true;
                             }
+                        }
+
+                        if (hasCombatAdjacent) {
+                            invasionRadial.resetSelection();
+                            invasionRadial.clearChildren();
+                            for (int i = 1; i < count; i++) {
+                                Label l = new Label(Integer.toString(i), Risk.skin);
+                                l.setUserObject(i);
+                                invasionRadial.addActor(l);
+                            }
+                            invasionRadial.centerOnMouse();
+                            invasionRadial.animateOpening(.4f);
                         }
                     }
                 }

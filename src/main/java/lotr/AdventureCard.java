@@ -64,7 +64,7 @@ public enum AdventureCard {
     DANGEROUS_CROSSING(MISSION, "PLAY WHEN THE FELLOWSHIP ATTEMPTS TO LEAVE A TERRITORY WITH NO DIE ROLL.", "Force the Fellowship to roll a die and score higher than 3 to leave the Territory."),
     GOLLUM(MISSION, "PLAY WHEN THE FELLOWSHIP ATTEMPTS TO LEAVE A TERRITORY WITH NO DIE ROLL.", "Force the Fellowship to roll a die and score higher than 3 to leave the Territory."),
     HUNT_FOR_THE_RINGBEARER(MISSION, "PLAY AT THE START OF YOUR TURN.", "If you control the Territory with the Fellowship, place 4 battalions there. Otherwise, move the Fellowship forward 1 space (no need to roll the die)."),
-    SIEGE_MACHINES(MISSION, "PLAY BEFORE INVADING A TERRITORY WITH A STRONGHOLD.", "The Stronghold loses its +1 advantage until the | invasion ends."),
+    SIEGE_MACHINES(MISSION, "PLAY BEFORE INVADING A TERRITORY WITH A STRONGHOLD.", "The Stronghold loses its +1 advantage until the invasion ends."),
     STRATEGIC_WITHDRAWAL(MISSION, "PLAY AFTER AN ENEMY DECLARES AN INVASION ON ONE OF YOUR TERRITORIES.", "You may move all but 1 battalion from your invaded Territory into an adjacent Territory that you control."),
     BLACK_SAILS(MISSION, "PLAY AFTER DECLARING A SEABORNE INVASION.", "Add 1 to your highest die roll for the entire invasion."),
     FARAMIR_FINDS_TTHE_RINGBEARER(MISSION, "PLAY AFTER THE FELLOWSHIP ROLLS THE DIE TO LEAVE A TERRITORY.", "Choose to either add or subtract 2 from the die roll."),

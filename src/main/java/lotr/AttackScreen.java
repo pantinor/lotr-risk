@@ -23,6 +23,7 @@ import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.Bullet;
+import com.badlogic.gdx.physics.bullet.BulletBase;
 import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
 import com.badlogic.gdx.physics.bullet.collision.btBroadphaseInterface;
 import com.badlogic.gdx.physics.bullet.collision.btCollisionConfiguration;
@@ -81,18 +82,21 @@ public class AttackScreen implements Screen {
     private ModelBatch modelBatch;
     private PerspectiveCamera camera;
     private CameraInputController inputController;
+
     private btCollisionConfiguration collisionConfiguration;
     private btCollisionDispatcher dispatcher;
     private btBroadphaseInterface broadphase;
     private btDynamicsWorld collisionWorld;
-    private Array<ModelInstance> instances = new Array<>();
-    private Array<btDefaultMotionState> motionStates = new Array<>();
-    private Array<btRigidBody> bodies = new Array<>();
     private btRigidBody groundBody;
     private btDefaultMotionState groundMotionState;
+    private Array<btDefaultMotionState> motionStates = new Array<>();
+    private Array<btRigidBody> bodies = new Array<>();
+    private Array<BulletBase> allBulletReferences = new Array<>();
+
+    private Array<ModelInstance> instances = new Array<>();
     private ModelInstance ground;
     private final Model groundModel;
-    private static final float DICE_DROP_HEIGHT = 30;
+    private static final float DICE_DROP_HEIGHT = 10;
 
     static {
         Bullet.init();
@@ -134,7 +138,8 @@ public class AttackScreen implements Screen {
         collisionConfiguration = new btDefaultCollisionConfiguration();
         dispatcher = new btCollisionDispatcher(collisionConfiguration);
         broadphase = new btDbvtBroadphase();
-        collisionWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, new btSequentialImpulseConstraintSolver(), collisionConfiguration);
+        btSequentialImpulseConstraintSolver solver = new btSequentialImpulseConstraintSolver();
+        collisionWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
         collisionWorld.setGravity(new Vector3(0, -60, 0));
 
         Vector3 tempVector = new Vector3();
@@ -151,11 +156,25 @@ public class AttackScreen implements Screen {
                 new Material(TextureAttribute.createDiffuse(txt), ColorAttribute.createSpecular(1, 1, 1, 1), FloatAttribute.createShininess(8f)),
                 VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
         ground = new ModelInstance(groundModel);
+
         groundMotionState = new btDefaultMotionState();
         groundMotionState.setWorldTransform(ground.transform);
         groundBody = new btRigidBody(groundInfo);
         groundBody.setMotionState(groundMotionState);
         collisionWorld.addRigidBody(groundBody);
+
+        //for clean ups of native memory
+        allBulletReferences.add(collisionWorld);
+        allBulletReferences.add(groundShape);
+        allBulletReferences.add(groundInfo);
+        allBulletReferences.add(groundMotionState);
+        allBulletReferences.add(groundBody);
+        allBulletReferences.add(btboxShape);
+        allBulletReferences.add(boxInfo);
+        allBulletReferences.add(solver);
+        allBulletReferences.add(broadphase);
+        allBulletReferences.add(dispatcher);
+        allBulletReferences.add(collisionConfiguration);
 
         attack = new TextButton("ROLL", Risk.ccskin, "arcade");
         attack.setBounds(900 - 50, 200, 100, 100);
@@ -171,13 +190,13 @@ public class AttackScreen implements Screen {
                 for (int i = 1; i <= attackingCount; i++) {
                     int r = DICE.roll();
                     rollsInvader.add(r);
-                    addBox(Dice.getRedModel(r - 1), i + 2, DICE_DROP_HEIGHT, 0, boxInfo);
+                    addBox(Dice.getRedModel(r - 1), i*3 + 0, DICE_DROP_HEIGHT, 0, boxInfo);
                 }
 
                 for (int i = 1; i <= defendingCount; i++) {
                     int r = DICE.roll();
                     rollsDefender.add(r);
-                    addBox(Dice.getBlackModel(r - 1), i - 6, DICE_DROP_HEIGHT, 0, boxInfo);
+                    addBox(Dice.getBlackModel(r - 1), i*3 - 10, DICE_DROP_HEIGHT, 0, boxInfo);
                 }
 
                 Collections.sort(rollsInvader, Collections.reverseOrder());
@@ -213,15 +232,20 @@ public class AttackScreen implements Screen {
                             removeLeader(defender, to);
                         }
                         attack.setVisible(false);
-
-                        int count = game.battalionCount(from);
-                        for (Battalion b : invader.getBattalions()) {
-                            if (b.territory == from && count > 1) {
-                                b.territory = to;
-                                count--;
+                        int dcount = game.battalionCount(to);
+                        if (dcount == 0) {
+                            int acount = game.battalionCount(from);
+                            for (Battalion b : invader.getBattalions()) {
+                                if (b.territory == from && acount > 1) {
+                                    b.territory = to;
+                                    acount--;
+                                }
+                            }
+                            if (hasLeader(invader, from)) {
+                                moveLeader(invader, from, to);
+                                //TODO check mission card
                             }
                         }
-
                     }
                 }
 
@@ -236,6 +260,8 @@ public class AttackScreen implements Screen {
                 AttackScreen.this.parent.attackingCount = null;
                 AttackScreen.this.parent.selectedDefendingTerritory = null;
                 main.setScreen(AttackScreen.this.parent);
+                AttackScreen.this.parent.turnWidget.clearCombat();
+                dispose();
             }
         });
 
@@ -256,6 +282,7 @@ public class AttackScreen implements Screen {
         btRigidBody b = new btRigidBody(boxInfo);
         b.setMotionState(ms);
         bodies.add(b);
+
         collisionWorld.addRigidBody(b);
     }
 
@@ -349,9 +376,6 @@ public class AttackScreen implements Screen {
             batch.draw(ltr, x += 56, y, 96, 96);
         }
 
-        if (hasLeader) {
-            batch.draw(ltr, x += 56, y, 96, 96);
-        }
     }
 
     private boolean hasLeader(Army a, TerritoryCard tc) {
@@ -398,35 +422,25 @@ public class AttackScreen implements Screen {
     }
 
     private void clear() {
+        for (btDefaultMotionState motionState : motionStates) {
+            motionState.dispose();
+        }
+        motionStates.clear();
         for (btRigidBody body : bodies) {
             collisionWorld.removeRigidBody(body);
             body.dispose();
         }
         bodies.clear();
-        for (btDefaultMotionState motionState : motionStates) {
-            motionState.dispose();
-        }
-        motionStates.clear();
         instances.clear();
     }
 
     @Override
     public void dispose() {
         clear();
-
-        groundBody.dispose();
-        groundMotionState.dispose();
-        groundModel.dispose();
-
-        broadphase.dispose();
-        dispatcher.dispose();
-        collisionConfiguration.dispose();
-
-        collisionWorld.clearForces();
-        collisionWorld.dispose();
-        collisionWorld.release();
-        collisionWorld = null;
-
+        for (BulletBase b : allBulletReferences) {
+            b.dispose();
+        }
+        allBulletReferences.clear();
     }
 
     @Override

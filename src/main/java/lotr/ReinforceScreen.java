@@ -264,7 +264,6 @@ public class ReinforceScreen implements Screen {
         this.exit.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                turnWidget.setNextStep(TurnWidget.Step.ATTACK);
                 main.setScreen(ReinforceScreen.this.gameScreen);
             }
         });
