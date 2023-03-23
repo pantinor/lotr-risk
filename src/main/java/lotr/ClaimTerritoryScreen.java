@@ -51,6 +51,7 @@ import static lotr.Risk.YELLOW_BATTALION;
 import static lotr.Risk.LEADER_CIRCLE;
 import static lotr.Risk.RED_CIRCLE;
 import static lotr.Risk.YELLOW_CIRCLE;
+import static lotr.util.RendererUtil.filledPolygon;
 
 public class ClaimTerritoryScreen implements Screen {
 
@@ -442,8 +443,11 @@ public class ClaimTerritoryScreen implements Screen {
 
         renderer.render();
 
-        Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
+
+        if (selectedTerritory != null) {
+            filledPolygon(shapeRenderer, new Color(0x00ff0080), selectedTerritory.vertices);
+        }
 
         hudbatch.begin();
         for (RegionWrapper w : regions) {
@@ -495,14 +499,6 @@ public class ClaimTerritoryScreen implements Screen {
             }
         }
         hudbatch.end();
-
-        if (selectedTerritory != null) {
-            Gdx.gl.glLineWidth(6);
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-            shapeRenderer.setColor(Color.RED);
-            shapeRenderer.polygon(selectedTerritory.vertices);
-            shapeRenderer.end();
-        }
 
         stage.act();
         stage.draw();

@@ -54,6 +54,8 @@ import static lotr.Risk.BLACK_CIRCLE;
 import static lotr.Risk.YELLOW_CIRCLE;
 import lotr.Risk.RegionWrapper;
 import lotr.Risk.RingPathWrapper;
+import lotr.TurnWidget.Step;
+import static lotr.util.RendererUtil.filledPolygon;
 
 public class GameScreen implements Screen, InputProcessor {
 
@@ -196,7 +198,7 @@ public class GameScreen implements Screen, InputProcessor {
 
             @Override
             public boolean touchUp(int x, int y, int pointer, int button) {
-                if (button == 1 && selectedAttackingTerritory != null && selectedDefendingTerritory == null) {
+                if (button == 1 && selectedAttackingTerritory != null && selectedDefendingTerritory == null && turnWidget.currentStep == Step.COMBAT) {
                     int count = game.battalionCount(selectedAttackingTerritory.territory);
                     count = count > 4 ? 4 : count;
                     if (count > 1 && game.isClaimed(selectedAttackingTerritory.territory) == game.current()) {
@@ -247,7 +249,7 @@ public class GameScreen implements Screen, InputProcessor {
         time += delta;
         Gdx.gl.glClearColor(0, 0, 0, 0);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
+        
         camera.update();
 
         renderer.setView(camera);
@@ -257,20 +259,14 @@ public class GameScreen implements Screen, InputProcessor {
         shapeRenderer.setProjectionMatrix(camera.combined);
 
         if (selectedAttackingTerritory != null) {
-            Gdx.gl.glLineWidth(8);
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
             if (selectedDefendingTerritory == null) {
-                shapeRenderer.setColor(Color.YELLOW);
                 for (TerritoryCard adj : selectedAttackingTerritory.territory.adjacents()) {
-                    shapeRenderer.polygon(selectedAttackingTerritory.adjacents.get(adj).vertices);
+                    filledPolygon(shapeRenderer, new Color(0x7f7f7f80), selectedAttackingTerritory.adjacents.get(adj).vertices);
                 }
             } else {
-                shapeRenderer.setColor(Color.GREEN);
-                shapeRenderer.polygon(selectedDefendingTerritory.vertices);
+                filledPolygon(shapeRenderer, new Color(0xff000080), selectedDefendingTerritory.vertices);
             }
-            shapeRenderer.setColor(Color.RED);
-            shapeRenderer.polygon(selectedAttackingTerritory.vertices);
-            shapeRenderer.end();
+            filledPolygon(shapeRenderer, new Color(0x00ff0080), selectedAttackingTerritory.vertices);
         }
 
         this.mapStage.act();

@@ -17,12 +17,12 @@ public class TurnWidget extends Table {
     private final Risk main;
     private final GameScreen gameScreen;
 
-    private ChangeListener draftListener;
-    private ChangeListener endCombatlistener;
-    private ChangeListener fortifyListener;
-    private ChangeListener cardsListener;
-    private ChangeListener ringListener;
-    private ChangeListener doneListener;
+    private final ChangeListener draftListener;
+    private final ChangeListener endCombatlistener;
+    private final ChangeListener fortifyListener;
+    private final ChangeListener cardsListener;
+    private final ChangeListener ringListener;
+    private final ChangeListener doneListener;
 
     private final TextButton nextButton;
     private final TextButton combatButton;
@@ -30,17 +30,18 @@ public class TurnWidget extends Table {
     private ChangeListener currentListener;
     private final Label stepLabel;
 
-    TextureRegionDrawable activeTexture = new TextureRegionDrawable(Risk.fillRectangle(5, 5, Color.YELLOW));
-    TextureRegionDrawable inactiveTexture = new TextureRegionDrawable(Risk.fillRectangle(5, 5, Color.GRAY));
+    private final TextureRegionDrawable activeTexture = new TextureRegionDrawable(Risk.fillRectangle(5, 5, Color.YELLOW));
+    private final TextureRegionDrawable inactiveTexture = new TextureRegionDrawable(Risk.fillRectangle(5, 5, Color.GRAY));
 
-    Image[] progressBar = new Image[6];
-
+    private final Image[] progressBar = new Image[6];
+    
+    public Step currentStep;
     public Army invader, defender;
     public TerritoryCard from, to;
     public int attackingCount, defendingCount;
 
     public static enum Step {
-        DRAFT, ATTACK, FORTIFY, CARDS, RING, DONE;
+        DRAFT, COMBAT, FORTIFY, CARDS, RING, DONE;
     }
 
     public TurnWidget(Risk main, GameScreen gameScreen, Game game) {
@@ -59,7 +60,7 @@ public class TurnWidget extends Table {
         draftListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                setNextStep(TurnWidget.Step.ATTACK);
+                setNextStep(TurnWidget.Step.COMBAT);
                 ReinforceScreen rsc = new ReinforceScreen(main, game, game.current(), gameScreen, TurnWidget.this);
                 main.setScreen(rsc);
             }
@@ -147,6 +148,8 @@ public class TurnWidget extends Table {
     }
 
     public void setNextStep(Step step) {
+        
+        currentStep = step;
 
         stepLabel.setText(step.toString());
 
@@ -165,7 +168,7 @@ public class TurnWidget extends Table {
             currentListener = draftListener;
             nextButton.addListener(draftListener);
             progressBar[0].setDrawable(activeTexture);
-        } else if (step == Step.ATTACK) {
+        } else if (step == Step.COMBAT) {
             currentListener = endCombatlistener;
             nextButton.addListener(endCombatlistener);
             progressBar[1].setDrawable(activeTexture);

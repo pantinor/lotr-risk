@@ -1,8 +1,10 @@
 package lotr;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.utils.DelayedRemovalArray;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -20,7 +22,9 @@ import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.PointLight;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.Bullet;
 import com.badlogic.gdx.physics.bullet.BulletBase;
@@ -38,9 +42,12 @@ import com.badlogic.gdx.physics.bullet.dynamics.btSequentialImpulseConstraintSol
 import com.badlogic.gdx.physics.bullet.linearmath.btDefaultMotionState;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Array;
+import com.payne.games.piemenu.AnimatedPieMenu;
+import com.payne.games.piemenu.PieMenu;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -97,6 +104,11 @@ public class AttackScreen implements Screen {
     private ModelInstance ground;
     private final Model groundModel;
     private static final float DICE_DROP_HEIGHT = 10;
+
+    private AnimatedPieMenu reinforceRadial;
+    private DelayedRemovalArray<ExplosionTriangle> explosionTriangles = new DelayedRemovalArray<>();
+    private final ShapeRenderer shapeRenderer = new ShapeRenderer();
+    private final Vector2 invaderPosition = new Vector2(100, 200), defenderPosition = new Vector2(1400, 200);
 
     static {
         Bullet.init();
@@ -190,13 +202,13 @@ public class AttackScreen implements Screen {
                 for (int i = 1; i <= attackingCount; i++) {
                     int r = DICE.roll();
                     rollsInvader.add(r);
-                    addBox(Dice.getRedModel(r - 1), i*3 + 0, DICE_DROP_HEIGHT, 0, boxInfo);
+                    addBox(Dice.getRedModel(r - 1), i * 3 + 0, DICE_DROP_HEIGHT, 0, boxInfo);
                 }
 
                 for (int i = 1; i <= defendingCount; i++) {
                     int r = DICE.roll();
                     rollsDefender.add(r);
-                    addBox(Dice.getBlackModel(r - 1), i*3 - 10, DICE_DROP_HEIGHT, 0, boxInfo);
+                    addBox(Dice.getBlackModel(r - 1), i * 3 - 10, DICE_DROP_HEIGHT, 0, boxInfo);
                 }
 
                 Collections.sort(rollsInvader, Collections.reverseOrder());
@@ -223,30 +235,15 @@ public class AttackScreen implements Screen {
                     if (attackingCount == 0) {
                         attack.setVisible(false);
                     }
+                    addExplosion(invaderPosition);
                 } else {
                     Sounds.play(Sound.POSITIVE_EFFECT);
                     defender.removeBattalion(to);
                     defendingCount--;
                     if (defendingCount == 0) {
-                        if (hasLeader(defender, to)) {
-                            removeLeader(defender, to);
-                        }
                         attack.setVisible(false);
-                        int dcount = game.battalionCount(to);
-                        if (dcount == 0) {
-                            int acount = game.battalionCount(from);
-                            for (Battalion b : invader.getBattalions()) {
-                                if (b.territory == from && acount > 1) {
-                                    b.territory = to;
-                                    acount--;
-                                }
-                            }
-                            if (hasLeader(invader, from)) {
-                                moveLeader(invader, from, to);
-                                //TODO check mission card
-                            }
-                        }
                     }
+                    addExplosion(defenderPosition);
                 }
 
             }
@@ -257,16 +254,81 @@ public class AttackScreen implements Screen {
         done.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                AttackScreen.this.parent.attackingCount = null;
-                AttackScreen.this.parent.selectedDefendingTerritory = null;
-                main.setScreen(AttackScreen.this.parent);
-                AttackScreen.this.parent.turnWidget.clearCombat();
-                dispose();
+                int totalDefendingBattalionCount = game.battalionCount(to);
+                if (defendingCount == 0 && totalDefendingBattalionCount == 0) {
+
+                    if (hasLeader(invader, from)) {
+                        moveLeader(invader, from, to);
+                        //TODO check mission card
+                    }
+
+                    if (defendingCount == 0 && hasLeader(defender, to)) {
+                        removeLeader(defender, to);
+                    }
+
+                    int acount = game.battalionCount(from);
+
+                    if (acount > 1) {
+                        reinforceRadial.resetSelection();
+                        reinforceRadial.clearChildren();
+                        for (int i = 1; i < acount; i++) {
+                            Label l = new Label(Integer.toString(i), Risk.skin);
+                            l.setUserObject(i);
+                            reinforceRadial.addActor(l);
+                        }
+                        reinforceRadial.centerOnMouse();
+                        reinforceRadial.animateOpening(.4f);
+                    }
+
+                } else {
+                    AttackScreen.this.parent.attackingCount = null;
+                    AttackScreen.this.parent.selectedDefendingTerritory = null;
+                    main.setScreen(AttackScreen.this.parent);
+                    AttackScreen.this.parent.turnWidget.clearCombat();
+                    dispose();
+                }
             }
         });
 
         this.stage.addActor(done);
         this.stage.addActor(attack);
+
+        PieMenu.PieMenuStyle style = new PieMenu.PieMenuStyle();
+        style.backgroundColor = new Color(1, 1, 1, .3f);
+        style.selectedColor = new Color(.7f, .3f, .5f, 1);
+        style.sliceColor = new Color(0, .7f, 0, 1);
+        style.alternateSliceColor = new Color(.7f, 0, 0, 1);
+
+        reinforceRadial = new AnimatedPieMenu(Risk.skin.getRegion("white"), style, 75, .3f, 180, 320);
+        reinforceRadial.setInfiniteSelectionRange(true);
+        reinforceRadial.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                reinforceRadial.transitionToClosing(.4f);
+                int index = reinforceRadial.getSelectedIndex();
+                if (!reinforceRadial.isValidIndex(index)) {
+                    return;
+                }
+                Actor child = reinforceRadial.getChild(index);
+                Integer reinforceCount = (Integer) child.getUserObject();
+
+                for (Battalion b : invader.getBattalions()) {
+                    if (b.territory == from && reinforceCount > 0) {
+                        b.territory = to;
+                        reinforceCount--;
+                    }
+                }
+
+                AttackScreen.this.parent.attackingCount = null;
+                AttackScreen.this.parent.selectedDefendingTerritory = null;
+                main.setScreen(AttackScreen.this.parent);
+                AttackScreen.this.parent.turnWidget.clearCombat();
+                dispose();
+
+            }
+        });
+
+        this.stage.addActor(reinforceRadial);
     }
 
     private void addBox(Model boxModel, float x, float y, float z, btRigidBody.btRigidBodyConstructionInfo boxInfo) {
@@ -286,9 +348,16 @@ public class AttackScreen implements Screen {
         collisionWorld.addRigidBody(b);
     }
 
+    private void addExplosion(Vector2 pos) {
+        int n = MathUtils.random(20, 30);
+        for (int k = 0; k < n; k++) {
+            ExplosionTriangle explosionTriangle = new ExplosionTriangle(shapeRenderer, pos, k * 360 / n);
+            explosionTriangles.add(explosionTriangle);
+        }
+    }
+
     @Override
     public void show() {
-        Gdx.input.setInputProcessor(stage);
         Gdx.input.setInputProcessor(new InputMultiplexer(stage, inputController));
     }
 
@@ -319,9 +388,21 @@ public class AttackScreen implements Screen {
         modelBatch.render(instances, environment);
         modelBatch.end();
 
+        for (ExplosionTriangle tri : explosionTriangles) {
+            tri.render(delta);
+        }
+
+        explosionTriangles.begin();
+        for (int i = 0; i < explosionTriangles.size; i++) {
+            if (explosionTriangles.get(i).getTime() > 8f) {
+                explosionTriangles.removeIndex(i);
+            }
+        }
+        explosionTriangles.end();
+
         this.stage.getBatch().begin();
-        this.stage.getBatch().draw(this.frameLeft, 100, 200);
-        this.stage.getBatch().draw(this.frameRight, 1400, 200);
+        this.stage.getBatch().draw(this.frameLeft, invaderPosition.x, invaderPosition.y);
+        this.stage.getBatch().draw(this.frameRight, defenderPosition.x, defenderPosition.y);
 
         drawIcons(this.stage.getBatch(), invader, attackingCount, 90, 380, hasLeader(invader, from));
         drawIcons(this.stage.getBatch(), defender, defendingCount, 1420, 380, hasLeader(defender, to));
