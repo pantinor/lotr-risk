@@ -133,6 +133,7 @@ public class AttackScreen implements Screen {
         environment = new Environment();
         environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.25f, 0.25f, 0.25f, 1f));
         light = new PointLight();
+        light.set(1f, 0.8f, 0.6f, 7, 10, 0, 120);
         environment.add(light);
         environment.add(new PointLight().set(1f, 0.8f, 0.6f, -20, 4, 20, 20));
 
@@ -189,7 +190,7 @@ public class AttackScreen implements Screen {
         allBulletReferences.add(collisionConfiguration);
 
         attack = new TextButton("ROLL", Risk.ccskin, "arcade");
-        attack.setBounds(900 - 50, 200, 100, 100);
+        attack.setBounds(900 - 50, 200, 84, 84);
         attack.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
@@ -198,59 +199,71 @@ public class AttackScreen implements Screen {
 
                 List<Integer> rollsInvader = new ArrayList<>();
                 List<Integer> rollsDefender = new ArrayList<>();
+                List<Integer> rollsInvaderWithBonus = new ArrayList<>();
+                List<Integer> rollsDefenderWithBonus = new ArrayList<>();
 
                 for (int i = 1; i <= attackingCount; i++) {
                     int r = DICE.roll();
                     rollsInvader.add(r);
-                    addBox(Dice.getRedModel(r - 1), i * 3 + 0, DICE_DROP_HEIGHT, 0, boxInfo);
+                    if (hasLeader(invader, from)) {
+                        r++;
+                    }
+                    rollsInvaderWithBonus.add(r);
                 }
 
                 for (int i = 1; i <= defendingCount; i++) {
                     int r = DICE.roll();
                     rollsDefender.add(r);
-                    addBox(Dice.getBlackModel(r - 1), i * 3 - 10, DICE_DROP_HEIGHT, 0, boxInfo);
+                    if (hasLeader(defender, to)) {
+                        r++;
+                    }
+                    if (isDefendingStrongHold()) {
+                        r++;
+                    }
+                    rollsDefenderWithBonus.add(r);
                 }
 
                 Collections.sort(rollsInvader, Collections.reverseOrder());
                 Collections.sort(rollsDefender, Collections.reverseOrder());
+                Collections.sort(rollsInvaderWithBonus, Collections.reverseOrder());
+                Collections.sort(rollsDefenderWithBonus, Collections.reverseOrder());
 
-                int highestAttacking = rollsInvader.get(0);
-                if (hasLeader(invader, from)) {
-                    highestAttacking++;
+                for (int i = 0; i < attackingCount; i++) {
+                    addBox(Dice.getRedModel(rollsInvader.get(i) - 1), 2, DICE_DROP_HEIGHT, i * 3 - 4, boxInfo);
                 }
 
-                int highestDefending = rollsDefender.get(0);
-                if (hasLeader(defender, to)) {
-                    highestDefending++;
+                for (int i = 0; i < defendingCount; i++) {
+                    addBox(Dice.getBlackModel(rollsDefender.get(i) - 1), -2, DICE_DROP_HEIGHT, i * 3 - 4, boxInfo);
                 }
 
-                if (isDefendingStrongHold()) {
-                    highestDefending++;
-                }
+                int count = attackingCount >= defendingCount ? attackingCount : defendingCount;
 
-                if (highestDefending >= highestAttacking) {
-                    Sounds.play(Sound.NEGATIVE_EFFECT);
-                    invader.removeBattalion(from);
-                    attackingCount--;
-                    if (attackingCount == 0) {
-                        attack.setVisible(false);
+                for (int i = 0; i < count; i++) {
+                    if (i < rollsInvaderWithBonus.size() && i < rollsDefenderWithBonus.size()) {
+                        int highestAttacking = rollsInvaderWithBonus.get(i);
+                        int highestDefending = rollsDefenderWithBonus.get(i);
+                        if (highestDefending >= highestAttacking) {
+                            Sounds.play(Sound.NEGATIVE_EFFECT);
+                            invader.removeBattalion(from);
+                            attackingCount--;
+                            addExplosion(invaderPosition);
+                        } else {
+                            Sounds.play(Sound.POSITIVE_EFFECT);
+                            defender.removeBattalion(to);
+                            defendingCount--;
+                            addExplosion(defenderPosition);
+                        }
                     }
-                    addExplosion(invaderPosition);
-                } else {
-                    Sounds.play(Sound.POSITIVE_EFFECT);
-                    defender.removeBattalion(to);
-                    defendingCount--;
-                    if (defendingCount == 0) {
-                        attack.setVisible(false);
-                    }
-                    addExplosion(defenderPosition);
                 }
-
+                
+                if (attackingCount == 0 || defendingCount == 0) {
+                    attack.setVisible(false);
+                }
             }
         });
 
         TextButton done = new TextButton("FINISH", Risk.ccskin, "arcade");
-        done.setBounds(900 - 50, 50, 100, 100);
+        done.setBounds(900 - 50, 50, 84, 84);
         done.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
@@ -379,9 +392,6 @@ public class AttackScreen implements Screen {
         for (int i = 0; i < motionStates.size; i++) {
             motionStates.get(i).getWorldTransform(instances.get(i).transform);
         }
-
-        float lightSize = 100 + 20 * MathUtils.random();
-        light.set(1f, 0.8f, 0.6f, 7, 10, 0, lightSize);
 
         modelBatch.begin(camera);
         modelBatch.render(ground, environment);

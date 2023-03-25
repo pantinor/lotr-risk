@@ -296,7 +296,7 @@ public enum TerritoryCard {
                     c.adjacents = new TerritoryCard[]{GORGOROTH};
                     break;
                 case MITHLOND:
-                    c.adjacents = new TerritoryCard[]{TOWER_HILLS, LUNE_VALLEY, FORLINDON, FORODWAITH, MINHIRIATH};
+                    c.adjacents = new TerritoryCard[]{TOWER_HILLS, LUNE_VALLEY, FORLINDON, FORODWAITH, MINHIRIATH, HARLINDON};
                     break;
                 case WITHERED_HEATH:
                     c.adjacents = new TerritoryCard[]{FORODWAITH, ESGAROTH, NORTH_RHUN};

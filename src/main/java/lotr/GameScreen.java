@@ -187,7 +187,10 @@ public class GameScreen implements Screen, InputProcessor {
                                 selectedDefendingTerritory = null;
                             }
                         } else {
-                            selectedAttackingTerritory = w;
+                            Army occupyingArmy = game.getOccupyingArmy(w.territory);
+                            if (occupyingArmy == game.current()) {
+                                selectedAttackingTerritory = w;
+                            }
                             break;
                         }
                     }
@@ -249,7 +252,7 @@ public class GameScreen implements Screen, InputProcessor {
         time += delta;
         Gdx.gl.glClearColor(0, 0, 0, 0);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        
+
         camera.update();
 
         renderer.setView(camera);
@@ -261,7 +264,10 @@ public class GameScreen implements Screen, InputProcessor {
         if (selectedAttackingTerritory != null) {
             if (selectedDefendingTerritory == null) {
                 for (TerritoryCard adj : selectedAttackingTerritory.territory.adjacents()) {
-                    filledPolygon(shapeRenderer, new Color(0x7f7f7f80), selectedAttackingTerritory.adjacents.get(adj).vertices);
+                    Army occupyingArmy = game.getOccupyingArmy(adj);
+                    if (occupyingArmy != game.current()) {
+                        filledPolygon(shapeRenderer, new Color(0x7f7f7f80), selectedAttackingTerritory.adjacents.get(adj).vertices);
+                    }
                 }
             } else {
                 filledPolygon(shapeRenderer, new Color(0xff000080), selectedDefendingTerritory.vertices);

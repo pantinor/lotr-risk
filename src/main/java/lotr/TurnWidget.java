@@ -70,6 +70,8 @@ public class TurnWidget extends Table {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
                 setNextStep(TurnWidget.Step.FORTIFY);
+                FortifyScreen rsc = new FortifyScreen(main, game, game.current(), gameScreen, TurnWidget.this);
+                main.setScreen(rsc);
             }
         };
 
