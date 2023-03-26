@@ -12,9 +12,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.maps.MapLayer;
-import com.badlogic.gdx.maps.MapObject;
-import com.badlogic.gdx.maps.objects.RectangleMapObject;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
@@ -22,12 +20,6 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.moveTo;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.Gson;
@@ -35,10 +27,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.IOUtils;
@@ -46,7 +35,8 @@ import org.apache.commons.io.IOUtils;
 public class Risk extends Game {
 
     public static Skin skin, ccskin;
-    public static BitmapFont font;
+    public static BitmapFont font, smallFont;
+    public static boolean textToggle = true;
 
     public static final int SCREEN_WIDTH = 1800;
     public static final int SCREEN_HEIGHT = 1050;
@@ -59,7 +49,6 @@ public class Risk extends Game {
     public static Texture RED_CIRCLE, GREEN_CIRCLE, BLACK_CIRCLE, YELLOW_CIRCLE, LEADER_CIRCLE;
 
     public static TextureRegion[][] DICE_TEXTURES;
-    public static List<RingPathWrapper> RING_PATHS = new ArrayList<>();
 
     public static void main(String[] args) {
         LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
@@ -76,6 +65,12 @@ public class Risk extends Game {
         ccskin = new Skin(Gdx.files.classpath("assets/skin/clean-crispy/clean-crispy-ui.json"));
 
         font = skin.get("default-font", BitmapFont.class);
+
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/gnuolane.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameter.size = 14;
+        smallFont = generator.generateFont(parameter);
+        skin.add("small", smallFont, BitmapFont.class);
 
         TerritoryCard.init();
 
@@ -96,20 +91,6 @@ public class Risk extends Game {
 
         FRODO = getAnimation(tileset, 332);
         SAM = getAnimation(tileset, 320);
-
-        MapLayer pathLayer = TMX_MAP.getLayers().get("ring-path");
-        Iterator<MapObject> pathIter = pathLayer.getObjects().iterator();
-        while (pathIter.hasNext()) {
-            RectangleMapObject obj = (RectangleMapObject) pathIter.next();
-            RingPathWrapper w = new RingPathWrapper();
-            w.name = obj.getName();
-            w.id = obj.getProperties().get("id", Integer.class);
-            w.x = obj.getProperties().get("x", Float.class);
-            w.y = obj.getProperties().get("y", Float.class);
-            RING_PATHS.add(w);
-        }
-        Collections.sort(RING_PATHS);
-        RING_PATHS.get(0).selected = true;
 
         RED_CIRCLE = fillCircle(Color.RED, 24);
         BLACK_CIRCLE = fillCircle(Color.GRAY, 24);
@@ -192,11 +173,11 @@ public class Risk extends Game {
 
     public static class RingPathWrapper implements Comparable {
 
-        int id;
-        String name;
-        float x;
-        float y;
-        boolean selected;
+        public int id;
+        public String name;
+        public float x;
+        public float y;
+        public boolean selected;
 
         @Override
         public int compareTo(Object obj) {
@@ -307,10 +288,4 @@ public class Risk extends Game {
         return anim;
     }
 
-    public static void animateAddedBattalion(Stage stage, int value, float sx, float sy, float dx, float dy) {
-        Label label = new Label("+ " + value, Risk.skin);
-        label.setPosition(sx - 3, sy);
-        stage.addActor(label);
-        label.addAction(sequence(moveTo(dx - 3, dy, 3), fadeOut(1), removeActor(label)));
-    }
 }

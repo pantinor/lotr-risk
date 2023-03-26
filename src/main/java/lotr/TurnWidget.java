@@ -2,6 +2,7 @@ package lotr;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -34,7 +35,7 @@ public class TurnWidget extends Table {
     private final TextureRegionDrawable inactiveTexture = new TextureRegionDrawable(Risk.fillRectangle(5, 5, Color.GRAY));
 
     private final Image[] progressBar = new Image[6];
-    
+
     public Step currentStep;
     public Army invader, defender;
     public TerritoryCard from, to;
@@ -142,6 +143,17 @@ public class TurnWidget extends Table {
         add(nextButton).colspan(3).center();
         row();
 
+        CheckBox cbtext = new CheckBox("  Labels", Risk.skin, "selection-small");
+        cbtext.setChecked(true);
+        cbtext.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                Risk.textToggle = ((CheckBox) actor).isChecked();
+            }
+        });
+        add(cbtext).colspan(3).left();
+        row();
+
         setBounds(SCREEN_WIDTH / 2 - 115, 0, 230, 140);
 
         setBackground(new TextureRegionDrawable(Risk.fillRectangle(1, 1, new Color(0, 0, .62f, .8f))));
@@ -150,7 +162,7 @@ public class TurnWidget extends Table {
     }
 
     public void setNextStep(Step step) {
-        
+
         currentStep = step;
 
         stepLabel.setText(step.toString());

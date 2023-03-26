@@ -86,10 +86,25 @@ public enum TerritoryCard {
     private TerritoryCard[] adjacents;
     private Region region;
 
+    private final String title;
+    private final String capitalized;
+
     private TerritoryCard(ClassType t, BattalionType b, Region r) {
         this.type = t;
         this.battalion = b;
         this.region = r;
+
+        String name = this.toString();
+        this.title = name.replace("_1", "").replace("_2", "").replace("_2", "").replace("_4", "").replace("_", " ");
+
+        char[] array = title().toLowerCase().toCharArray();
+        array[0] = Character.toUpperCase(array[0]);
+        for (int i = 1; i < array.length; i++) {
+            if (Character.isWhitespace(array[i - 1])) {
+                array[i] = Character.toUpperCase(array[i]);
+            }
+        }
+        this.capitalized = new String(array);
     }
 
     public ClassType type() {
@@ -105,9 +120,11 @@ public enum TerritoryCard {
     }
 
     public String title() {
-        String name = this.toString();
-        name = name.replace("_1", "").replace("_2", "").replace("_2", "").replace("_4", "").replace("_", " ");
-        return name;
+        return this.title;
+    }
+
+    public String capitalized() {
+        return this.capitalized;
     }
 
     public TerritoryCard[] adjacents() {

@@ -10,11 +10,15 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.objects.PolygonMapObject;
+import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
+import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
+import com.badlogic.gdx.maps.tiled.objects.TiledMapTileMapObject;
 import com.badlogic.gdx.maps.tiled.renderers.HexagonalTiledMapRenderer;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
@@ -34,7 +38,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import lotr.Constants.ArmyType;
-import static lotr.Risk.FRODO;
+import static lotr.RingPathActor.RING_PATHS;
 import static lotr.Risk.GREEN_BATTALION;
 import static lotr.Risk.GREEN_LEADER;
 import static lotr.Risk.SCREEN_HEIGHT;
@@ -43,8 +47,6 @@ import static lotr.Risk.BLACK_BATTALION;
 import static lotr.Risk.BLACK_LEADER;
 import static lotr.Risk.RED_BATTALION;
 import static lotr.Risk.RED_LEADER;
-import static lotr.Risk.RING_PATHS;
-import static lotr.Risk.SAM;
 import static lotr.Risk.TMX_MAP;
 import static lotr.Risk.YELLOW_BATTALION;
 import static lotr.Risk.YELLOW_LEADER;
@@ -53,8 +55,9 @@ import static lotr.Risk.GREEN_CIRCLE;
 import static lotr.Risk.BLACK_CIRCLE;
 import static lotr.Risk.YELLOW_CIRCLE;
 import lotr.Risk.RegionWrapper;
-import lotr.Risk.RingPathWrapper;
+import static lotr.Risk.TMX_MAP;
 import lotr.TurnWidget.Step;
+import lotr.util.LocationActor;
 import static lotr.util.RendererUtil.filledPolygon;
 
 public class GameScreen implements Screen, InputProcessor {
@@ -80,8 +83,13 @@ public class GameScreen implements Screen, InputProcessor {
     public RegionWrapper selectedAttackingTerritory, selectedDefendingTerritory;
     public Integer attackingCount, defendingCount;
     private AnimatedPieMenu invasionRadial;
+    
+    private RingPathActor ringPathActor;
 
     public GameScreen(Risk main, Game game) {
+
+        this.game = game;
+        this.main = main;
 
         this.camera = new OrthographicCamera(SCREEN_WIDTH, SCREEN_HEIGHT);
         this.viewport = new ScreenViewport(this.camera);
@@ -102,8 +110,8 @@ public class GameScreen implements Screen, InputProcessor {
             RegionWrapper w = new RegionWrapper();
             w.polygon = poly;
             w.vertices = poly.getTransformedVertices();
-            w.name = name.toUpperCase();
             w.territory = TerritoryCard.getTerritory(name);
+            w.name = w.territory.capitalized();
 
             regions.add(w);
         }
@@ -111,8 +119,17 @@ public class GameScreen implements Screen, InputProcessor {
         TiledMapTileLayer iconLayer = (TiledMapTileLayer) TMX_MAP.getLayers().get("icons");
         Risk.setPoints(iconLayer, regions, 1f);
 
-        this.game = game;
-        this.main = main;
+        MapLayer locLayer = TMX_MAP.getLayers().get("locations");
+        Iterator<MapObject> locIter = locLayer.getObjects().iterator();
+        while (locIter.hasNext()) {
+            TiledMapTileMapObject obj = (TiledMapTileMapObject) locIter.next();
+            Location l = Location.valueOf(obj.getName());
+            TextureRegion tr = obj.getTile().getTextureRegion();
+            float x = obj.getProperties().get("x", Float.class);
+            float y = obj.getProperties().get("y", Float.class);
+            LocationActor la = new LocationActor(tr, l, x, y);
+            mapStage.addActor(la);
+        }
 
         this.widgetStage = new Stage();
         this.turnWidget = new TurnWidget(main, this, game);
@@ -144,9 +161,9 @@ public class GameScreen implements Screen, InputProcessor {
             }
         });
 
-        this.widgetStage.addActor(invasionRadial);
+        widgetStage.addActor(invasionRadial);
 
-        this.input = new InputMultiplexer(widgetStage, new InputAdapter() {
+        input = new InputMultiplexer(widgetStage, new InputAdapter() {
 
             Vector3 curr = new Vector3();
             Vector3 last = new Vector3(-1, -1, -1);
@@ -235,6 +252,8 @@ public class GameScreen implements Screen, InputProcessor {
             }
 
         });
+
+        this.ringPathActor = new RingPathActor(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"));
     }
 
     @Override
@@ -282,8 +301,10 @@ public class GameScreen implements Screen, InputProcessor {
 
             if (w.territory != null) {
                 renderer.getBatch().begin();
-
-                Risk.font.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
+                
+                if (Risk.textToggle) {
+                    Risk.font.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
+                }
 
                 ArmyType at = game.getOccupyingArmy(w.territory).armyType;
 
@@ -324,15 +345,6 @@ public class GameScreen implements Screen, InputProcessor {
                 renderer.getBatch().end();
             }
 
-        }
-
-        for (RingPathWrapper rw : RING_PATHS) {
-            if (rw.selected) {
-                renderer.getBatch().begin();
-                renderer.getBatch().draw(FRODO.getKeyFrame(time, true), rw.x + 10, rw.y + 10);
-                renderer.getBatch().draw(SAM.getKeyFrame(time, true), rw.x - 10, rw.y - 10);
-                renderer.getBatch().end();
-            }
         }
 
         this.batch.begin();

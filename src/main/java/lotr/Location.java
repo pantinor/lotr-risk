@@ -2,6 +2,7 @@ package lotr;
 
 public enum Location {
 
+    //strong holds
     MINES_OF_MORIA(TerritoryCard.MORIA, Region.RHOVANION, false),
     ANNUMINAS(TerritoryCard.EVENDIM_HILLS, Region.ERIADOR, false),
     ISENGARD(TerritoryCard.FANGORN, Region.ROHAN, false),
@@ -13,6 +14,7 @@ public enum Location {
     MINAS_MORGUL(TerritoryCard.MINAS_MORGUL, Region.MORDOR, false),
     MINAS_TIRITH(TerritoryCard.MINAS_TIRITH, Region.GONDOR, false),
     CITY_OF_THE_CORSAIRS(TerritoryCard.UMBAR, Region.HARADAWAITH, false),
+    //sites of power
     HOBBITON(TerritoryCard.THE_SHIRE, Region.ERIADOR, true),
     ELVEN_HALLS(TerritoryCard.NORTH_MIRKWOOD, Region.MIRKWOOD, true),
     BREE(TerritoryCard.FORNOST, Region.ARNOR, true),
@@ -41,11 +43,25 @@ public enum Location {
     private TerritoryCard territory;
     private Region region;
     boolean siteOfPower;
+    private final String title;
+    private final String capitalized;
 
     private Location(TerritoryCard t, Region r, boolean sop) {
         this.territory = t;
         this.region = r;
         this.siteOfPower = sop;
+
+        String name = this.toString();
+        this.title = name.replace("_1", "").replace("_2", "").replace("_2", "").replace("_4", "").replace("_", " ");
+
+        char[] array = title().toLowerCase().toCharArray();
+        array[0] = Character.toUpperCase(array[0]);
+        for (int i = 1; i < array.length; i++) {
+            if (Character.isWhitespace(array[i - 1])) {
+                array[i] = Character.toUpperCase(array[i]);
+            }
+        }
+        this.capitalized = new String(array);
     }
 
     public TerritoryCard getTerritory() {
@@ -57,9 +73,11 @@ public enum Location {
     }
 
     public String title() {
-        String name = this.toString();
-        name = name.replace("_", " ");
-        return name;
+        return this.title;
+    }
+
+    public String capitalized() {
+        return this.capitalized;
     }
 
     public boolean isSiteOfPower() {

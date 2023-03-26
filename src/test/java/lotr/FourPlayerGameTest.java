@@ -109,6 +109,10 @@ public class FourPlayerGameTest {
 
             t = terrs.remove(rand.nextInt(terrs.size()));
             army.leader2.territory = t;
+            
+            
+            army.adventureCards.add(AdventureCard.BREE);
+            army.territoryCards.add(t);
         }
 
         GsonBuilder builder = new GsonBuilder();

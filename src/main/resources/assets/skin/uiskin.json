@@ -1,7 +1,7 @@
 {
 com.badlogic.gdx.graphics.g2d.BitmapFont: {
     default: { file: default.fnt },
-    default-font: { file: default.fnt } 
+    default-font: { file: default.fnt }
 },
 com.badlogic.gdx.graphics.Color: {
 	green: { a: 1, b: 0, g: 1, r: 0 },
@@ -65,8 +65,7 @@ com.badlogic.gdx.scenes.scene2d.ui.CheckBox$CheckBoxStyle: {
 	default: { checkboxOn: check-on, checkboxOff: check-off, font: default-font, fontColor: white },
 	selection-blue: { checkboxOn: check-on, checkboxOff: check-off, font: default-font, fontColor: white, checkedFontColor: blue },
 	selection-yellow: { checkboxOn: check-on, checkboxOff: check-off, font: default-font, fontColor: white, checkedFontColor: yellow },
-	card-in-hand: { checkboxOn: check-on, checkboxOff: check-off, font: default-font, fontColor: blue },
-        toggled-in-notebook: { checkboxOn: check-on, checkboxOff: check-off, font: default-font, fontColor: red }
+	selection-small: { checkboxOn: check-on, checkboxOff: check-off, font: default-font, fontColor: white, checkedFontColor: white }
 },
 com.badlogic.gdx.scenes.scene2d.ui.List$ListStyle: {
 	default: { fontColorUnselected: white, selection: selection, fontColorSelected: white, font: default-font }

@@ -9,7 +9,6 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttributes;
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Material;
@@ -40,12 +39,19 @@ import com.badlogic.gdx.physics.bullet.dynamics.btDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
 import com.badlogic.gdx.physics.bullet.dynamics.btSequentialImpulseConstraintSolver;
 import com.badlogic.gdx.physics.bullet.linearmath.btDefaultMotionState;
+import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.moveTo;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Scaling;
 import com.payne.games.piemenu.AnimatedPieMenu;
 import com.payne.games.piemenu.PieMenu;
 import java.util.ArrayList;
@@ -108,7 +114,9 @@ public class AttackScreen implements Screen {
     private AnimatedPieMenu reinforceRadial;
     private DelayedRemovalArray<ExplosionTriangle> explosionTriangles = new DelayedRemovalArray<>();
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
-    private final Vector2 invaderPosition = new Vector2(100, 200), defenderPosition = new Vector2(1400, 200);
+    private final Vector2 invaderPosition = new Vector2(200, 200), defenderPosition = new Vector2(1200, 200);
+    private List<Image> invaderIcons = new ArrayList<>();
+    private List<Image> defenderIcons = new ArrayList<>();
 
     static {
         Bullet.init();
@@ -189,11 +197,20 @@ public class AttackScreen implements Screen {
         allBulletReferences.add(dispatcher);
         allBulletReferences.add(collisionConfiguration);
 
+        MissionCardWidget invaderCards = new MissionCardWidget(stage, game, invader, defender, from, to, 15);
+        MissionCardWidget defenderCards = new MissionCardWidget(stage, game, defender, invader, to, from, Risk.SCREEN_WIDTH - 15 - MissionCardWidget.WIDTH);
+
+        this.stage.addActor(invaderCards);
+        this.stage.addActor(defenderCards);
+
         attack = new TextButton("ROLL", Risk.ccskin, "arcade");
         attack.setBounds(900 - 50, 200, 84, 84);
         attack.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+
+                invaderCards.disable();
+                defenderCards.disable();
 
                 clear();
 
@@ -245,19 +262,26 @@ public class AttackScreen implements Screen {
                         if (highestDefending >= highestAttacking) {
                             Sounds.play(Sound.NEGATIVE_EFFECT);
                             invader.removeBattalion(from);
+                            AttackScreen.this.animateRemovalActor(invaderIcons.remove(0));
                             attackingCount--;
-                            addExplosion(invaderPosition);
                         } else {
                             Sounds.play(Sound.POSITIVE_EFFECT);
                             defender.removeBattalion(to);
+                            AttackScreen.this.animateRemovalActor(defenderIcons.remove(0));
                             defendingCount--;
-                            addExplosion(defenderPosition);
                         }
                     }
                 }
-                
+
                 if (attackingCount == 0 || defendingCount == 0) {
                     attack.setVisible(false);
+                    int totalDefendingBattalionCount = game.battalionCount(to);
+                    if (defendingCount == 0 && totalDefendingBattalionCount == 0) {
+                        if (hasLeader(defender, to)) {
+                            removeLeader(defender, to);
+                            AttackScreen.this.animateRemovalActor(defenderIcons.get(defenderIcons.size() - 1));
+                        }
+                    }
                 }
             }
         });
@@ -269,18 +293,7 @@ public class AttackScreen implements Screen {
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
                 int totalDefendingBattalionCount = game.battalionCount(to);
                 if (defendingCount == 0 && totalDefendingBattalionCount == 0) {
-
-                    if (hasLeader(invader, from)) {
-                        moveLeader(invader, from, to);
-                        //TODO check mission card
-                    }
-
-                    if (defendingCount == 0 && hasLeader(defender, to)) {
-                        removeLeader(defender, to);
-                    }
-
                     int acount = game.battalionCount(from);
-
                     if (acount > 1) {
                         reinforceRadial.resetSelection();
                         reinforceRadial.clearChildren();
@@ -292,7 +305,10 @@ public class AttackScreen implements Screen {
                         reinforceRadial.centerOnMouse();
                         reinforceRadial.animateOpening(.4f);
                     }
-
+                    if (hasLeader(invader, from)) {
+                        moveLeader(invader, from, to);
+                        //TODO check mission card
+                    }
                 } else {
                     AttackScreen.this.parent.attackingCount = null;
                     AttackScreen.this.parent.selectedDefendingTerritory = null;
@@ -342,6 +358,9 @@ public class AttackScreen implements Screen {
         });
 
         this.stage.addActor(reinforceRadial);
+
+        addIcons(invaderIcons, invader, attackingCount, invaderPosition.x - 10, 380, hasLeader(invader, from));
+        addIcons(defenderIcons, defender, defendingCount, defenderPosition.x - 10, 380, hasLeader(defender, to));
     }
 
     private void addBox(Model boxModel, float x, float y, float z, btRigidBody.btRigidBodyConstructionInfo boxInfo) {
@@ -359,14 +378,6 @@ public class AttackScreen implements Screen {
         bodies.add(b);
 
         collisionWorld.addRigidBody(b);
-    }
-
-    private void addExplosion(Vector2 pos) {
-        int n = MathUtils.random(20, 30);
-        for (int k = 0; k < n; k++) {
-            ExplosionTriangle explosionTriangle = new ExplosionTriangle(shapeRenderer, pos, k * 360 / n);
-            explosionTriangles.add(explosionTriangle);
-        }
     }
 
     @Override
@@ -414,23 +425,19 @@ public class AttackScreen implements Screen {
         this.stage.getBatch().draw(this.frameLeft, invaderPosition.x, invaderPosition.y);
         this.stage.getBatch().draw(this.frameRight, defenderPosition.x, defenderPosition.y);
 
-        drawIcons(this.stage.getBatch(), invader, attackingCount, 90, 380, hasLeader(invader, from));
-        drawIcons(this.stage.getBatch(), defender, defendingCount, 1420, 380, hasLeader(defender, to));
-
         int y = 400;
 
-        Risk.font.draw(this.stage.getBatch(), String.format("%s", from.title()), 170, y -= 20);
-        Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(from)), 170, y -= 20);
+        Risk.font.draw(this.stage.getBatch(), String.format("%s", from.title()), invaderPosition.x + 70, y -= 20);
+        Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(from)), invaderPosition.x + 70, y -= 20);
 
         y = 400;
 
-        Risk.font.draw(this.stage.getBatch(), String.format("%s", to.title()), 1470, y -= 20);
-        Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(to)), 1470, y -= 20);
+        Risk.font.draw(this.stage.getBatch(), String.format("%s", to.title()), defenderPosition.x + 70, y -= 20);
+        Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(to)), defenderPosition.x + 70, y -= 20);
         if (isDefendingStrongHold()) {
-            Risk.font.draw(this.stage.getBatch(), "Stronghold Defender Bonus", 1470, y -= 20);
+            Risk.font.draw(this.stage.getBatch(), "Stronghold Defender Bonus", defenderPosition.x + 70, y -= 20);
         }
 
-        //Risk.font.draw(this.stage.getBatch(), String.format("CAMREA %f %f %f", camera.position.x, camera.position.y, camera.position.z), 1470, y -= 20);
         this.stage.getBatch().end();
 
         this.stage.act();
@@ -438,8 +445,10 @@ public class AttackScreen implements Screen {
 
     }
 
-    private void drawIcons(Batch batch, Army a, int count, float x, float y, boolean hasLeader) {
+    private void addIcons(List<Image> images, Army a, int count, float x, float y, boolean hasLeader) {
+
         TextureRegion tr = null, ltr = null;
+
         switch (a.armyType) {
             case RED:
                 tr = RED_BATTALION.getKeyFrame(time, true);
@@ -460,13 +469,46 @@ public class AttackScreen implements Screen {
         }
 
         for (int i = 0; i < count; i++) {
-            batch.draw(tr, x += 56, y, 96, 96);
+            Image im = new Image(tr);
+            im.setScaling(Scaling.fit);
+            im.setScale(2f);
+            im.setPosition(x += 56, y);
+            images.add(im);
+            this.stage.addActor(im);
         }
 
         if (hasLeader) {
-            batch.draw(ltr, x += 56, y, 96, 96);
+            Image im = new Image(ltr);
+            im.setScaling(Scaling.fit);
+            im.setScale(2f);
+            im.setPosition(x += 56, y);
+            images.add(im);
+            this.stage.addActor(im);
         }
 
+    }
+
+    private void animateRemovalActor(Image im) {
+        im.addAction(sequence(
+                moveTo(Risk.SCREEN_WIDTH / 2, Risk.SCREEN_HEIGHT / 2, 2),
+                new Action() {
+            @Override
+            public boolean act(float delta) {
+                addExplosion(im.getX(), im.getY());
+                return true;
+            }
+        },
+                fadeOut(1),
+                removeActor(im)));
+
+    }
+
+    private void addExplosion(float x, float y) {
+        int n = MathUtils.random(20, 30);
+        for (int k = 0; k < n; k++) {
+            ExplosionTriangle explosionTriangle = new ExplosionTriangle(shapeRenderer, new Vector2(x, y), k * 360 / n);
+            explosionTriangles.add(explosionTriangle);
+        }
     }
 
     private boolean hasLeader(Army a, TerritoryCard tc) {
@@ -532,6 +574,7 @@ public class AttackScreen implements Screen {
             b.dispose();
         }
         allBulletReferences.clear();
+        stage.dispose();
     }
 
     @Override
