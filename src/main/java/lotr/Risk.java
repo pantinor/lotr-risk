@@ -7,12 +7,19 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g3d.Material;
+import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
+import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
@@ -30,6 +37,9 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lotr.ai.StrongBot;
+import lotr.ai.WeakBot;
+import lotr.ai.RandomBot;
 import org.apache.commons.io.IOUtils;
 
 public class Risk extends Game {
@@ -49,6 +59,9 @@ public class Risk extends Game {
     public static Texture RED_CIRCLE, GREEN_CIRCLE, BLACK_CIRCLE, YELLOW_CIRCLE, LEADER_CIRCLE;
 
     public static TextureRegion[][] DICE_TEXTURES;
+
+    private static final Model[] blackModels = new Model[6];
+    private static final Model[] redModels = new Model[6];
 
     public static void main(String[] args) {
         LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
@@ -100,6 +113,13 @@ public class Risk extends Game {
 
         DICE_TEXTURES = TextureRegion.split(new Texture(Gdx.files.classpath("assets/data/dice-sheet.png")), 64, 64);
 
+        for (int i = 0; i < 6; i++) {
+            blackModels[i] = buildDiceModel(0, i);
+        }
+        for (int i = 0; i < 6; i++) {
+            redModels[i] = buildDiceModel(1, i);
+        }
+
         lotr.Game game = null;
 
         InputStream is = null;
@@ -123,12 +143,29 @@ public class Risk extends Game {
             game = gson.fromJson(json, new TypeToken<lotr.Game>() {
             }.getType());
 
-            game.setBlack(game.black);
-            game.setGreen(game.green);
-            game.setYellow(game.yellow);
             game.setRed(game.red);
+            game.setGreen(game.green);
+            game.setBlack(game.black);
+            game.setYellow(game.yellow);
 
             GameScreen gameScreen = new GameScreen(this, game);
+
+            for (int i = 0; i < 4; i++) {
+                if (game.armies[i].botType != null) {
+                    switch (game.armies[i].botType) {
+                        case STRONG:
+                            game.armies[i].bot = new StrongBot(game, game.armies[i], gameScreen);
+                            break;
+                        case RANDOM:
+                            game.armies[i].bot = new WeakBot(game, game.armies[i], gameScreen);
+                            break;
+                        case WEAK:
+                            game.armies[i].bot = new RandomBot(game, game.armies[i], gameScreen);
+                            break;
+                    }
+                }
+            }
+
             setScreen(gameScreen);
         }
 
@@ -286,6 +323,38 @@ public class Risk extends Game {
 
         Animation<TextureRegion> anim = new Animation(.4f, arr);
         return anim;
+    }
+
+    public static Model getBlackModel(int val) {
+        return blackModels[val];
+    }
+
+    public static Model getRedModel(int val) {
+        return redModels[val];
+    }
+
+    private static Model buildDiceModel(int id, int val) {
+        ModelBuilder modelBuilder = new ModelBuilder();
+
+        Texture texture = Risk.DICE_TEXTURES[0][0].getTexture();
+        long attributes = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
+
+        modelBuilder.begin();
+        MeshPartBuilder mpb = modelBuilder.part("box", GL20.GL_TRIANGLES, attributes, new Material(TextureAttribute.createDiffuse(texture)));
+        mpb.setUVRange(Risk.DICE_TEXTURES[id][val == 0 ? 3 : 0]);
+        mpb.rect(-1f, -1f, -1f, -1f, 1f, -1f, 1f, 1f, -1, 1f, -1f, -1f, 0, 0, -1);
+        mpb.setUVRange(Risk.DICE_TEXTURES[id][val == 1 ? 3 : 1]);
+        mpb.rect(-1f, 1f, 1f, -1f, -1f, 1f, 1f, -1f, 1f, 1f, 1f, 1f, 0, 0, 1);
+        mpb.setUVRange(Risk.DICE_TEXTURES[id][val == 2 ? 3 : 2]);
+        mpb.rect(-1f, -1f, 1f, -1f, -1f, -1f, 1f, -1f, -1f, 1f, -1f, 1f, 0, -1, 0);
+        mpb.setUVRange(Risk.DICE_TEXTURES[id][val]);
+        mpb.rect(-1f, 1f, -1f, -1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, -1f, 0, 1, 0);
+        mpb.setUVRange(Risk.DICE_TEXTURES[id][val == 4 ? 3 : 4]);
+        mpb.rect(-1f, -1f, 1f, -1f, 1f, 1f, -1f, 1f, -1f, -1f, -1f, -1f, -1, 0, 0);
+        mpb.setUVRange(Risk.DICE_TEXTURES[id][val == 5 ? 3 : 5]);
+        mpb.rect(1f, -1f, -1f, 1f, 1f, -1f, 1f, 1f, 1f, 1f, -1f, 1f, 1, 0, 0);
+        Model boxModel = modelBuilder.end();
+        return boxModel;
     }
 
 }

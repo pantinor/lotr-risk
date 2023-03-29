@@ -161,7 +161,12 @@ public class FortifyScreen implements Screen {
                         fortifyCount--;
                     }
                 }
-                
+
+                if (game.hasLeader(army, selectedTerritory.territory)) {
+                    game.moveLeader(army, selectedTerritory.territory, selectedFortifyTerritory.territory);
+                    //TODO check mission card
+                }
+
                 //only one fortification allowed!
                 fortifyRadial.remove();
             }

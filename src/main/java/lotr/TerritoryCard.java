@@ -1,6 +1,7 @@
 package lotr;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import lotr.Constants.BattalionType;
@@ -362,13 +363,7 @@ public enum TerritoryCard {
                 temp.add(c);
             }
         }
-        List<TerritoryCard> shuffled = new ArrayList<>();
-        Random rand = new Random();
-        while (!temp.isEmpty()) {
-            int r = rand.nextInt(temp.size());
-            TerritoryCard c = temp.remove(r);
-            shuffled.add(c);
-        }
-        return shuffled;
+        Collections.shuffle(temp);
+        return temp;
     }
 }

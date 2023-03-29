@@ -24,6 +24,7 @@ import com.badlogic.gdx.utils.Align;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import lotr.ai.BaseBot;
 
 public class NewGameDialog extends Window {
 
@@ -111,15 +112,36 @@ public class NewGameDialog extends Window {
                         game.black.pickTerritories(evil, 8);
                         game.green.pickTerritories(good, 8);
                         game.yellow.pickTerritories(good, 8);
+
+                        int humanPlayer = new Random().nextInt(4);
+                        if (humanPlayer != 0) {
+                            game.red.botType = BaseBot.Type.values()[new Random().nextInt(3)];
+                        }
+                        if (humanPlayer != 1) {
+                            game.green.botType = BaseBot.Type.values()[new Random().nextInt(3)];
+                        }
+                        if (humanPlayer != 2) {
+                            game.black.botType = BaseBot.Type.values()[new Random().nextInt(3)];
+                        }
+                        if (humanPlayer != 3) {
+                            game.yellow.botType = BaseBot.Type.values()[new Random().nextInt(3)];
+                        }
                     } else {
                         game.red.pickTerritories(evil, 8);
                         game.black.pickTerritories(evil, 8);
                         game.red.pickTerritories(neutral, 8);
                         game.black.pickTerritories(neutral, 8);
-                        if (game.green != null) {
-                            game.green.pickTerritories(good, 16);
-                        } else {
-                            game.yellow.pickTerritories(good, 16);
+                        game.green.pickTerritories(good, 16);
+                        
+                        int humanPlayer = new Random().nextInt(3);
+                        if (humanPlayer != 0) {
+                            game.red.botType = BaseBot.Type.values()[new Random().nextInt(3)];
+                        }
+                        if (humanPlayer != 1) {
+                            game.green.botType = BaseBot.Type.values()[new Random().nextInt(3)];
+                        }
+                        if (humanPlayer != 2) {
+                            game.black.botType = BaseBot.Type.values()[new Random().nextInt(3)];
                         }
                     }
 

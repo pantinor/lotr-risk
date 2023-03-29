@@ -63,7 +63,7 @@ public class Hud {
             }
 
             String row1 = String.format("Battalions %d Territories %d", a.battalions.size(), claimedTerritories.size());
-            String row2 = String.format("Regions %s  Strongholds %d", a.ownedRegions(claimedTerritories).size(), a.ownedStrongholds(claimedTerritories).size());
+            String row2 = String.format("Regions %s Strongholds %d %s", a.ownedRegions(claimedTerritories).size(), a.ownedStrongholds(claimedTerritories).size(), a.isBot());
 
             Risk.font.setColor(a.armyType.color());
             Risk.font.draw(batch, row1, 50, y);

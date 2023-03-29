@@ -197,21 +197,11 @@ public class AttackScreen implements Screen {
         allBulletReferences.add(dispatcher);
         allBulletReferences.add(collisionConfiguration);
 
-        MissionCardWidget invaderCards = new MissionCardWidget(stage, game, invader, defender, from, to, 15);
-        MissionCardWidget defenderCards = new MissionCardWidget(stage, game, defender, invader, to, from, Risk.SCREEN_WIDTH - 15 - MissionCardWidget.WIDTH);
-
-        this.stage.addActor(invaderCards);
-        this.stage.addActor(defenderCards);
-
         attack = new TextButton("ROLL", Risk.ccskin, "arcade");
         attack.setBounds(900 - 50, 200, 84, 84);
         attack.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-
-                invaderCards.disable();
-                defenderCards.disable();
-
                 clear();
 
                 List<Integer> rollsInvader = new ArrayList<>();
@@ -222,7 +212,7 @@ public class AttackScreen implements Screen {
                 for (int i = 1; i <= attackingCount; i++) {
                     int r = DICE.roll();
                     rollsInvader.add(r);
-                    if (hasLeader(invader, from)) {
+                    if (game.hasLeader(invader, from)) {
                         r++;
                     }
                     rollsInvaderWithBonus.add(r);
@@ -231,10 +221,10 @@ public class AttackScreen implements Screen {
                 for (int i = 1; i <= defendingCount; i++) {
                     int r = DICE.roll();
                     rollsDefender.add(r);
-                    if (hasLeader(defender, to)) {
+                    if (game.hasLeader(defender, to)) {
                         r++;
                     }
-                    if (isDefendingStrongHold()) {
+                    if (game.isDefendingStrongHold(to)) {
                         r++;
                     }
                     rollsDefenderWithBonus.add(r);
@@ -246,11 +236,11 @@ public class AttackScreen implements Screen {
                 Collections.sort(rollsDefenderWithBonus, Collections.reverseOrder());
 
                 for (int i = 0; i < attackingCount; i++) {
-                    addBox(Dice.getRedModel(rollsInvader.get(i) - 1), 2, DICE_DROP_HEIGHT, i * 3 - 4, boxInfo);
+                    addBox(Risk.getRedModel(rollsInvader.get(i) - 1), 2, DICE_DROP_HEIGHT, i * 3 - 4, boxInfo);
                 }
 
                 for (int i = 0; i < defendingCount; i++) {
-                    addBox(Dice.getBlackModel(rollsDefender.get(i) - 1), -2, DICE_DROP_HEIGHT, i * 3 - 4, boxInfo);
+                    addBox(Risk.getBlackModel(rollsDefender.get(i) - 1), -2, DICE_DROP_HEIGHT, i * 3 - 4, boxInfo);
                 }
 
                 int count = attackingCount >= defendingCount ? attackingCount : defendingCount;
@@ -277,8 +267,8 @@ public class AttackScreen implements Screen {
                     attack.setVisible(false);
                     int totalDefendingBattalionCount = game.battalionCount(to);
                     if (defendingCount == 0 && totalDefendingBattalionCount == 0) {
-                        if (hasLeader(defender, to)) {
-                            removeLeader(defender, to);
+                        if (game.hasLeader(defender, to)) {
+                            game.removeLeader(defender, to);
                             AttackScreen.this.animateRemovalActor(defenderIcons.get(defenderIcons.size() - 1));
                         }
                     }
@@ -305,15 +295,15 @@ public class AttackScreen implements Screen {
                         reinforceRadial.centerOnMouse();
                         reinforceRadial.animateOpening(.4f);
                     }
-                    if (hasLeader(invader, from)) {
-                        moveLeader(invader, from, to);
+                    if (game.hasLeader(invader, from)) {
+                        game.moveLeader(invader, from, to);
                         //TODO check mission card
                     }
                 } else {
                     AttackScreen.this.parent.attackingCount = null;
                     AttackScreen.this.parent.selectedDefendingTerritory = null;
                     main.setScreen(AttackScreen.this.parent);
-                    AttackScreen.this.parent.turnWidget.clearCombat();
+                    AttackScreen.this.parent.turnWidget.clearCombat(false);
                     dispose();
                 }
             }
@@ -351,7 +341,7 @@ public class AttackScreen implements Screen {
                 AttackScreen.this.parent.attackingCount = null;
                 AttackScreen.this.parent.selectedDefendingTerritory = null;
                 main.setScreen(AttackScreen.this.parent);
-                AttackScreen.this.parent.turnWidget.clearCombat();
+                AttackScreen.this.parent.turnWidget.clearCombat(true);
                 dispose();
 
             }
@@ -359,8 +349,8 @@ public class AttackScreen implements Screen {
 
         this.stage.addActor(reinforceRadial);
 
-        addIcons(invaderIcons, invader, attackingCount, invaderPosition.x - 10, 380, hasLeader(invader, from));
-        addIcons(defenderIcons, defender, defendingCount, defenderPosition.x - 10, 380, hasLeader(defender, to));
+        addIcons(invaderIcons, invader, attackingCount, invaderPosition.x - 10, 380, game.hasLeader(invader, from));
+        addIcons(defenderIcons, defender, defendingCount, defenderPosition.x - 10, 380, game.hasLeader(defender, to));
     }
 
     private void addBox(Model boxModel, float x, float y, float z, btRigidBody.btRigidBodyConstructionInfo boxInfo) {
@@ -434,7 +424,7 @@ public class AttackScreen implements Screen {
 
         Risk.font.draw(this.stage.getBatch(), String.format("%s", to.title()), defenderPosition.x + 70, y -= 20);
         Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(to)), defenderPosition.x + 70, y -= 20);
-        if (isDefendingStrongHold()) {
+        if (game.isDefendingStrongHold(to)) {
             Risk.font.draw(this.stage.getBatch(), "Stronghold Defender Bonus", defenderPosition.x + 70, y -= 20);
         }
 
@@ -509,49 +499,6 @@ public class AttackScreen implements Screen {
             ExplosionTriangle explosionTriangle = new ExplosionTriangle(shapeRenderer, new Vector2(x, y), k * 360 / n);
             explosionTriangles.add(explosionTriangle);
         }
-    }
-
-    private boolean hasLeader(Army a, TerritoryCard tc) {
-
-        if (a.leader1 != null && a.leader1.territory == tc) {
-            return true;
-        }
-
-        if (a.leader2 != null && a.leader2.territory == tc) {
-            return true;
-        }
-        return false;
-    }
-
-    private void removeLeader(Army a, TerritoryCard tc) {
-
-        if (a.leader1 != null && a.leader1.territory == tc) {
-            a.leader1.territory = null;
-        }
-
-        if (a.leader2 != null && a.leader2.territory == tc) {
-            a.leader2.territory = null;
-        }
-    }
-
-    private void moveLeader(Army a, TerritoryCard from, TerritoryCard to) {
-
-        if (a.leader1 != null && a.leader1.territory == from) {
-            a.leader1.territory = to;
-        }
-
-        if (a.leader2 != null && a.leader2.territory == from) {
-            a.leader2.territory = to;
-        }
-    }
-
-    private boolean isDefendingStrongHold() {
-        for (Location l : Location.values()) {
-            if (!l.isSiteOfPower() && l.getTerritory() == to) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void clear() {

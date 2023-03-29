@@ -3,10 +3,16 @@ package lotr;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import lotr.ai.RandomBot;
+import lotr.ai.StrongBot;
+import lotr.ai.WeakBot;
+import org.apache.commons.io.IOUtils;
 import static org.testng.Assert.assertEquals;
 import org.testng.annotations.Test;
 
@@ -109,8 +115,7 @@ public class FourPlayerGameTest {
 
             t = terrs.remove(rand.nextInt(terrs.size()));
             army.leader2.territory = t;
-            
-            
+
             army.adventureCards.add(AdventureCard.BREE);
             army.territoryCards.add(t);
         }
@@ -170,6 +175,40 @@ public class FourPlayerGameTest {
         int r = rand.nextInt(temp.size());
 
         return temp.get(r);
+    }
+
+    @Test
+    public void testBotAttack() throws Exception {
+        
+        TerritoryCard.init();
+
+        InputStream is = null;
+        String json = null;
+
+        is = new FileInputStream("savedGame.json");
+        json = IOUtils.toString(is);
+
+        GsonBuilder builder = new GsonBuilder();
+        Gson gson = builder.excludeFieldsWithoutExposeAnnotation().create();
+
+        Game game = gson.fromJson(json, new TypeToken<lotr.Game>() {
+        }.getType());
+
+        game.setRed(game.red);
+        game.setGreen(game.green);
+        game.setBlack(game.black);
+        game.setYellow(game.yellow);
+
+        game.red.bot = new StrongBot(game, game.red, null);
+        game.green.bot = new WeakBot(game, game.red, null);
+        game.black.bot = new RandomBot(game, game.red, null);
+        game.yellow.bot = new StrongBot(game, game.red, null);
+
+        TerritoryCard pickedFromTerritory = game.black.bot.findClaimedTerritory(true);
+        TerritoryCard pickedToTerritory = game.black.bot.pickTerritoryToAttack(pickedFromTerritory);
+        game.black.bot.reinforce(pickedFromTerritory);
+        game.black.bot.attack(pickedFromTerritory, pickedToTerritory);
+
     }
 
 }

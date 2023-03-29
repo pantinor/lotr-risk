@@ -2,6 +2,7 @@ package lotr;
 
 import com.google.gson.annotations.Expose;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class Game {
@@ -76,6 +77,49 @@ public class Game {
     public void setYellow(Army a) {
         this.armies[3] = a;
         this.yellow = a;
+    }
+
+    public boolean hasLeader(Army a, TerritoryCard tc) {
+
+        if (a.leader1 != null && a.leader1.territory == tc) {
+            return true;
+        }
+
+        if (a.leader2 != null && a.leader2.territory == tc) {
+            return true;
+        }
+        return false;
+    }
+
+    public void removeLeader(Army a, TerritoryCard tc) {
+
+        if (a.leader1 != null && a.leader1.territory == tc) {
+            a.leader1.territory = null;
+        }
+
+        if (a.leader2 != null && a.leader2.territory == tc) {
+            a.leader2.territory = null;
+        }
+    }
+
+    public void moveLeader(Army a, TerritoryCard from, TerritoryCard to) {
+
+        if (a.leader1 != null && a.leader1.territory == from) {
+            a.leader1.territory = to;
+        }
+
+        if (a.leader2 != null && a.leader2.territory == from) {
+            a.leader2.territory = to;
+        }
+    }
+
+    public boolean isDefendingStrongHold(TerritoryCard to) {
+        for (Location l : Location.values()) {
+            if (!l.isSiteOfPower() && l.getTerritory() == to) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Army isClaimed(TerritoryCard tc) {
@@ -196,6 +240,68 @@ public class Game {
         }
 
         return null;
+    }
+
+    public void turnInTerritoryCards(Army army, int sumArchers, int sumRiders, int sumEagles) {
+        if (sumArchers >= 1 && sumRiders >= 1 && sumEagles >= 1) {
+            Iterator<TerritoryCard> iter = army.territoryCards.iterator();
+            while (iter.hasNext()) {
+                TerritoryCard c = iter.next();
+                if (c.battalionType() == Constants.BattalionType.EAGLE || c.battalionType() == null) {
+                    iter.remove();
+                    break;
+                }
+            }
+            iter = army.territoryCards.iterator();
+            while (iter.hasNext()) {
+                TerritoryCard c = iter.next();
+                if (c.battalionType() == Constants.BattalionType.DARK_RIDER || c.battalionType() == null) {
+                    iter.remove();
+                    territoryCards.add(c);
+                }
+            }
+            iter = army.territoryCards.iterator();
+            while (iter.hasNext()) {
+                TerritoryCard c = iter.next();
+                if (c.battalionType() == Constants.BattalionType.ELVEN_ARCHER || c.battalionType() == null) {
+                    iter.remove();
+                    territoryCards.add(c);
+                }
+            }
+        } else if (sumEagles >= 3) {
+            Iterator<TerritoryCard> iter = army.territoryCards.iterator();
+            int removed = 0;
+            while (iter.hasNext()) {
+                TerritoryCard c = iter.next();
+                if (removed < 3 && c.battalionType() == Constants.BattalionType.EAGLE || c.battalionType() == null) {
+                    iter.remove();
+                    territoryCards.add(c);
+                    removed++;
+                }
+            }
+        } else if (sumRiders >= 3) {
+            Iterator<TerritoryCard> iter = army.territoryCards.iterator();
+            int removed = 0;
+            while (iter.hasNext()) {
+                TerritoryCard c = iter.next();
+                if (removed < 3 && c.battalionType() == Constants.BattalionType.DARK_RIDER || c.battalionType() == null) {
+                    iter.remove();
+                    territoryCards.add(c);
+                    removed++;
+                }
+            }
+        } else if (sumArchers >= 3) {
+            Iterator<TerritoryCard> iter = army.territoryCards.iterator();
+            int removed = 0;
+            while (iter.hasNext()) {
+                TerritoryCard c = iter.next();
+                if (removed < 3 && c.battalionType() == Constants.BattalionType.ELVEN_ARCHER || c.battalionType() == null) {
+                    iter.remove();
+                    territoryCards.add(c);
+                    removed++;
+                }
+            }
+        }
     }
 
 }

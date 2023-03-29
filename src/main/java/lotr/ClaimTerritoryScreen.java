@@ -219,7 +219,7 @@ public class ClaimTerritoryScreen implements Screen {
 
                 try {
                     GsonBuilder builder = new GsonBuilder();
-                    Gson gson = builder.excludeFieldsWithoutExposeAnnotation().create();
+                    Gson gson = builder.setPrettyPrinting().excludeFieldsWithoutExposeAnnotation().create();
                     String json = gson.toJson(game);
                     FileOutputStream fos = new FileOutputStream("savedGame.json");
                     fos.write(json.getBytes("UTF-8"));

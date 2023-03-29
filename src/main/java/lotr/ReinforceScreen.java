@@ -249,14 +249,19 @@ public class ReinforceScreen implements Screen {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
                 if (selectedTerritory != null) {
-                    if (false) {
-                        //TODO
+                    if (cardReinforcements > 0 && claimedTerritories.contains(selectedTerritory.territory)) {
+                        army.addBattalion(selectedTerritory.territory);
+                        cardReinforcements--;
+                        Sounds.play(Sound.TRIGGER);
                     } else {
                         Sounds.play(Sound.NEGATIVE_EFFECT);
                     }
                 } else {
                     Sounds.play(Sound.NEGATIVE_EFFECT);
                 }
+
+                game.turnInTerritoryCards(army, sumArchers, sumRiders, sumEagles);
+
             }
         });
 
@@ -412,7 +417,7 @@ public class ReinforceScreen implements Screen {
         stage.act();
         stage.draw();
 
-        if (strongholdReinforcements == 0 && territoryReinforcements == 0 && regionReinforcements == 0) {
+        if (strongholdReinforcements == 0 && territoryReinforcements == 0 && regionReinforcements == 0 && cardReinforcements == 0) {
             this.reinforceStrongholds.setVisible(false);
             this.reinforceTerritories.setVisible(false);
             this.reinforceRegions.setVisible(false);

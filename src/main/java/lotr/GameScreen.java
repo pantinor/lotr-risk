@@ -3,7 +3,6 @@ package lotr;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -15,9 +14,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.objects.PolygonMapObject;
-import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
-import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
 import com.badlogic.gdx.maps.tiled.objects.TiledMapTileMapObject;
 import com.badlogic.gdx.maps.tiled.renderers.HexagonalTiledMapRenderer;
 import com.badlogic.gdx.math.Polygon;
@@ -38,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import lotr.Constants.ArmyType;
-import static lotr.RingPathActor.RING_PATHS;
 import static lotr.Risk.GREEN_BATTALION;
 import static lotr.Risk.GREEN_LEADER;
 import static lotr.Risk.SCREEN_HEIGHT;
@@ -47,7 +43,6 @@ import static lotr.Risk.BLACK_BATTALION;
 import static lotr.Risk.BLACK_LEADER;
 import static lotr.Risk.RED_BATTALION;
 import static lotr.Risk.RED_LEADER;
-import static lotr.Risk.TMX_MAP;
 import static lotr.Risk.YELLOW_BATTALION;
 import static lotr.Risk.YELLOW_LEADER;
 import static lotr.Risk.RED_CIRCLE;
@@ -60,7 +55,7 @@ import lotr.TurnWidget.Step;
 import lotr.util.LocationActor;
 import static lotr.util.RendererUtil.filledPolygon;
 
-public class GameScreen implements Screen, InputProcessor {
+public class GameScreen implements Screen {
 
     private float time = 0;
 
@@ -83,8 +78,10 @@ public class GameScreen implements Screen, InputProcessor {
     public RegionWrapper selectedAttackingTerritory, selectedDefendingTerritory;
     public Integer attackingCount, defendingCount;
     private AnimatedPieMenu invasionRadial;
-    
+
     private RingPathActor ringPathActor;
+    public MissionCardWidget missionCardSlider;
+    public LogScrollPane logs;
 
     public GameScreen(Risk main, Game game) {
 
@@ -160,8 +157,15 @@ public class GameScreen implements Screen, InputProcessor {
                 }
             }
         });
-
         widgetStage.addActor(invasionRadial);
+
+        ringPathActor = new RingPathActor(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"));
+
+        missionCardSlider = new MissionCardWidget(widgetStage, game);
+        widgetStage.addActor(missionCardSlider);
+        
+        logs = new LogScrollPane();
+        widgetStage.addActor(logs);
 
         input = new InputMultiplexer(widgetStage, new InputAdapter() {
 
@@ -252,8 +256,6 @@ public class GameScreen implements Screen, InputProcessor {
             }
 
         });
-
-        this.ringPathActor = new RingPathActor(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"));
     }
 
     @Override
@@ -301,7 +303,7 @@ public class GameScreen implements Screen, InputProcessor {
 
             if (w.territory != null) {
                 renderer.getBatch().begin();
-                
+
                 if (Risk.textToggle) {
                     Risk.font.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
                 }
@@ -357,36 +359,6 @@ public class GameScreen implements Screen, InputProcessor {
     }
 
     @Override
-    public boolean keyUp(int keycode) {
-        return false;
-    }
-
-    @Override
-    public boolean keyTyped(char c) {
-        return false;
-    }
-
-    @Override
-    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        return false;
-    }
-
-    @Override
-    public boolean touchUp(int i, int i1, int i2, int i3) {
-        return false;
-    }
-
-    @Override
-    public boolean touchDragged(int i, int i1, int i2) {
-        return false;
-    }
-
-    @Override
-    public boolean mouseMoved(int i, int i1) {
-        return false;
-    }
-
-    @Override
     public void pause() {
     }
 
@@ -402,18 +374,24 @@ public class GameScreen implements Screen, InputProcessor {
     public void dispose() {
     }
 
-    @Override
-    public boolean keyDown(int i) {
-        return false;
+    public void setMissions(boolean show) {
+        if (show) {
+            TerritoryCard to = selectedDefendingTerritory != null ? selectedDefendingTerritory.territory : null;
+            TerritoryCard from = selectedAttackingTerritory != null ? selectedAttackingTerritory.territory : null;
+            Army occupyingArmy = selectedDefendingTerritory != null ? game.getOccupyingArmy(selectedDefendingTerritory.territory) : null;
+            missionCardSlider.set(game.current(), occupyingArmy, from, to);
+            missionCardSlider.show();
+        } else {
+            missionCardSlider.hide();
+        }
     }
-
-    @Override
-    public boolean scrolled(float amountX, float amountY) {
-        return false;
-    }
-
-    public Hud hud() {
-        return this.hud;
+    
+    public void toggleLog(boolean show) {
+        if (show) {
+            logs.show();
+        } else {
+            logs.hide();
+        }
     }
 
 }

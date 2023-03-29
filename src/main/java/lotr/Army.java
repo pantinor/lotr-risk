@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Random;
 import lotr.Constants.ArmyType;
 import lotr.Constants.ClassType;
+import lotr.ai.BaseBot;
 
 public class Army {
 
@@ -24,6 +25,11 @@ public class Army {
     @Expose
     public List<AdventureCard> adventureCards = new ArrayList<>();
 
+    public BaseBot bot;
+    
+    @Expose
+    public BaseBot.Type botType;
+
     public Army() {
 
     }
@@ -38,6 +44,18 @@ public class Army {
         for (int i = 0; i < startingBattalions; i++) {
             this.battalions.add(new Battalion(a));
         }
+    }
+
+    public boolean isBot() {
+        return this.bot != null;
+    }
+
+    public BaseBot getBot() {
+        return bot;
+    }
+
+    public void setBot(BaseBot bot) {
+        this.bot = bot;
     }
 
     public void addTerritoryCard(TerritoryCard c) {
@@ -81,7 +99,7 @@ public class Army {
         }
         return false;
     }
-    
+
     public void addBattalion(TerritoryCard tc) {
         Battalion b = new Battalion(this.armyType);
         b.territory = tc;
