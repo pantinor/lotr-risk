@@ -36,6 +36,7 @@ import lotr.Risk.RegionWrapper;
 import static lotr.Risk.TMX_MAP;
 import static lotr.Risk.GREEN_CIRCLE;
 import static lotr.Risk.BLACK_CIRCLE;
+import lotr.Risk.FortifyRegionWrapper;
 import static lotr.Risk.LEADER_CIRCLE;
 import static lotr.Risk.RED_CIRCLE;
 import static lotr.Risk.YELLOW_CIRCLE;
@@ -53,10 +54,11 @@ public class FortifyScreen implements Screen {
     private final GameScreen gameScreen;
     private final TurnWidget turnWidget;
     private AnimatedPieMenu fortifyRadial;
+    private boolean done;
 
     private final float unitScale = 0.35f;
     private final List<RegionWrapper> regions = new ArrayList<>();
-    private RegionWrapper selectedTerritory, selectedFortifyTerritory;
+    private FortifyRegionWrapper selectedTerritory, selectedFortifyTerritory;
     private final List<TerritoryCard> claimedTerritories;
 
     private final SpriteBatch hudbatch = new SpriteBatch();
@@ -107,7 +109,7 @@ public class FortifyScreen implements Screen {
 
             String name = obj.getName();
 
-            RegionWrapper w = new RegionWrapper();
+            FortifyRegionWrapper w = new FortifyRegionWrapper();
 
             w.polygon = poly;
             poly.setScale(unitScale, unitScale);
@@ -152,23 +154,37 @@ public class FortifyScreen implements Screen {
                 if (!fortifyRadial.isValidIndex(index)) {
                     return;
                 }
+                
                 Actor child = fortifyRadial.getChild(index);
                 Integer fortifyCount = (Integer) child.getUserObject();
 
-                for (Battalion b : army.getBattalions()) {
-                    if (b.territory == selectedTerritory.territory && fortifyCount > 0) {
-                        b.territory = selectedFortifyTerritory.territory;
-                        fortifyCount--;
+                if (fortifyCount > 0) {
+                    for (Battalion b : army.getBattalions()) {
+                        if (b.territory == selectedTerritory.territory && fortifyCount > 0) {
+                            b.territory = selectedFortifyTerritory.territory;
+                            fortifyCount--;
+                        }
                     }
                 }
 
                 if (game.hasLeader(army, selectedTerritory.territory)) {
-                    game.moveLeader(army, selectedTerritory.territory, selectedFortifyTerritory.territory);
+                    //do not overwrite the existing leader
+                    if (!game.hasLeader(army, selectedFortifyTerritory.territory)) {
+                        game.moveLeader(army, selectedTerritory.territory, selectedFortifyTerritory.territory);
+                    }
                     //TODO check mission card
                 }
 
                 //only one fortification allowed!
                 fortifyRadial.remove();
+                done = true;
+
+                selectedFortifyTerritory = null;
+                selectedTerritory = null;
+                for (RegionWrapper w : regions) {
+                    FortifyRegionWrapper frw = (FortifyRegionWrapper) w;
+                    frw.isConnected = false;
+                }
             }
         });
 
@@ -181,27 +197,44 @@ public class FortifyScreen implements Screen {
         Gdx.input.setInputProcessor(new InputMultiplexer(stage, new InputAdapter() {
             @Override
             public boolean touchDown(int x, int y, int pointer, int button) {
+
+                if (done) {
+                    return false;
+                }
+
                 if (button == 0) {
                     selectedFortifyTerritory = null;
                     selectedTerritory = null;
                     Vector3 tmp = camera.unproject(new Vector3(x, y, 0));
                     Vector2 v = new Vector2(tmp.x, tmp.y - 0);
+
                     for (RegionWrapper w : regions) {
+                        FortifyRegionWrapper frw = (FortifyRegionWrapper) w;
+                        frw.isConnected = false;
                         if (w.polygon.contains(v) && claimedTerritories.contains(w.territory)) {
-                            selectedTerritory = w;
-                            break;
+                            selectedTerritory = frw;
                         }
                     }
 
+                    if (selectedTerritory != null) {
+                        for (RegionWrapper w : regions) {
+                            FortifyRegionWrapper frw = (FortifyRegionWrapper) w;
+                            if (army.isConnected(selectedTerritory.territory, w.territory)) {
+                                frw.isConnected = true;
+                            }
+                        }
+                    }
                 }
 
                 if (button == 1 && selectedTerritory != null) {
                     selectedFortifyTerritory = null;
                     Vector3 tmp = camera.unproject(new Vector3(x, y, 0));
                     Vector2 v = new Vector2(tmp.x, tmp.y - 0);
+
                     for (RegionWrapper w : regions) {
-                        if (w.polygon.contains(v) && claimedTerritories.contains(w.territory) && selectedTerritory.adjacents.containsKey(w.territory)) {
-                            selectedFortifyTerritory = w;
+                        FortifyRegionWrapper frw = (FortifyRegionWrapper) w;
+                        if (w.polygon.contains(v) && frw.isConnected) {
+                            selectedFortifyTerritory = frw;
 
                             int count = game.battalionCount(selectedTerritory.territory);
                             if (count > 1) {
@@ -212,6 +245,16 @@ public class FortifyScreen implements Screen {
                                     l.setUserObject(i);
                                     fortifyRadial.addActor(l);
                                 }
+                                fortifyRadial.centerOnMouse();
+                                fortifyRadial.animateOpening(.4f);
+                            } else if (game.hasLeader(army, selectedTerritory.territory)) {
+                                fortifyRadial.resetSelection();
+                                fortifyRadial.clearChildren();
+
+                                Label l = new Label("L", Risk.skin);
+                                l.setUserObject(-1);
+                                fortifyRadial.addActor(l);
+
                                 fortifyRadial.centerOnMouse();
                                 fortifyRadial.animateOpening(.4f);
                             }
@@ -244,18 +287,19 @@ public class FortifyScreen implements Screen {
 
         shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
 
-        if (selectedTerritory != null) {
-            if (selectedFortifyTerritory == null) {
-                for (TerritoryCard adj : selectedTerritory.territory.adjacents()) {
-                    Army occupyingArmy = game.getOccupyingArmy(adj);
-                    if (occupyingArmy == army) {
-                        filledPolygon(shapeRenderer, new Color(0x7fff0080), selectedTerritory.adjacents.get(adj).vertices);
-                    }
-                }
-            } else {
-                filledPolygon(shapeRenderer, new Color(0xffff0080), selectedFortifyTerritory.vertices);
+        for (RegionWrapper w : regions) {
+            FortifyRegionWrapper frw = (FortifyRegionWrapper) w;
+            if (frw.isConnected) {
+                filledPolygon(shapeRenderer, new Color(0x228b2280), frw.vertices);
             }
+        }
+
+        if (selectedTerritory != null) {
             filledPolygon(shapeRenderer, new Color(0x00ff0080), selectedTerritory.vertices);
+        }
+
+        if (selectedFortifyTerritory != null) {
+            filledPolygon(shapeRenderer, new Color(0xffff0080), selectedFortifyTerritory.vertices);
         }
 
         hudbatch.begin();

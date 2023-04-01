@@ -18,6 +18,9 @@ public class Game {
 
     public final Army[] armies = new Army[4];
 
+    public Step currentStep = Step.DRAFT;
+    private List<GameStepListener> listeners = new ArrayList<>();
+
     @Expose
     public int turnIndex = 0;
 
@@ -27,6 +30,32 @@ public class Game {
     @Expose
     public List<AdventureCard> adventureCards = new ArrayList<>();
 
+    public static enum Step {
+        DRAFT("Receive and Place Reinforcements"),
+        COMBAT("Combat"),
+        FORTIFY("Fortify Your Position"),
+        TCARD("Collect a Terriritory Card"),
+        ACARD("Collect a Adventure Card"),
+        REPLACE("Replace a Leader"),
+        RING("Move the Fellowship");
+
+        private final String desc;
+
+        private Step(String desc) {
+            this.desc = desc;
+        }
+
+        public String desc() {
+            return desc;
+        }
+
+    }
+
+    public static interface GameStepListener {
+
+        public void nextStep(Step step);
+    }
+
     public Game() {
 
     }
@@ -35,12 +64,31 @@ public class Game {
         return armies[turnIndex];
     }
 
-    public Army next() {
+    public Army nextPlayer() {
         this.turnIndex++;
         if (this.turnIndex > 3 || (this.turnIndex == 3 && this.yellow == null)) {
             this.turnIndex = 0;
         }
         return armies[turnIndex];
+    }
+    
+    public void registerListener(GameStepListener l) {
+        this.listeners.add(l);
+    }
+    
+    public void nextStep() {
+        
+        int next = this.currentStep.ordinal() + 1;
+        if (next >= Step.values().length) {
+            next = 0;
+            nextPlayer();
+        }
+        
+        this.currentStep = Step.values()[next];
+        
+        for(GameStepListener l : this.listeners) {
+            l.nextStep(currentStep);
+        }
     }
 
     public Army getRed() {

@@ -318,16 +318,16 @@ public class ClaimTerritoryScreen implements Screen {
         Army a = this.game.current();
 
         if (a.armyType == ArmyType.RED) {
-            redLabel.setStyle(Risk.skin.get("default-yellow", Label.LabelStyle.class));
+            redLabel.setStyle(Risk.skin.get("yellow", Label.LabelStyle.class));
         }
         if (a.armyType == ArmyType.GREEN) {
-            greenLabel.setStyle(Risk.skin.get("default-yellow", Label.LabelStyle.class));
+            greenLabel.setStyle(Risk.skin.get("yellow", Label.LabelStyle.class));
         }
         if (a.armyType == ArmyType.BLACK) {
-            blackLabel.setStyle(Risk.skin.get("default-yellow", Label.LabelStyle.class));
+            blackLabel.setStyle(Risk.skin.get("yellow", Label.LabelStyle.class));
         }
         if (a.armyType == ArmyType.YELLOW) {
-            yellowLabel.setStyle(Risk.skin.get("default-yellow", Label.LabelStyle.class));
+            yellowLabel.setStyle(Risk.skin.get("yellow", Label.LabelStyle.class));
         }
 
         claim.setVisible(true);
@@ -355,7 +355,7 @@ public class ClaimTerritoryScreen implements Screen {
 
         claim.setVisible(false);
 
-        this.game.next();
+        this.game.nextPlayer();
 
         setActiveArmy();
 

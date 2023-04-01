@@ -20,21 +20,18 @@ import com.badlogic.gdx.maps.tiled.renderers.HexagonalTiledMapRenderer;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.delay;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.payne.games.piemenu.AnimatedPieMenu;
 import com.payne.games.piemenu.PieMenu;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import lotr.Constants.ArmyType;
+import lotr.Game.Step;
 import static lotr.Risk.GREEN_BATTALION;
 import static lotr.Risk.GREEN_LEADER;
 import static lotr.Risk.SCREEN_HEIGHT;
@@ -51,7 +48,6 @@ import static lotr.Risk.BLACK_CIRCLE;
 import static lotr.Risk.YELLOW_CIRCLE;
 import lotr.Risk.RegionWrapper;
 import static lotr.Risk.TMX_MAP;
-import lotr.TurnWidget.Step;
 import lotr.util.LocationActor;
 import static lotr.util.RendererUtil.filledPolygon;
 
@@ -76,10 +72,8 @@ public class GameScreen implements Screen {
 
     private final List<RegionWrapper> regions = new ArrayList<>();
     public RegionWrapper selectedAttackingTerritory, selectedDefendingTerritory;
-    public Integer attackingCount, defendingCount;
-    private AnimatedPieMenu invasionRadial;
 
-    private RingPathActor ringPathActor;
+    public RingPathActor ringPathActor;
     public MissionCardWidget missionCardSlider;
     public LogScrollPane logs;
 
@@ -128,7 +122,8 @@ public class GameScreen implements Screen {
             mapStage.addActor(la);
         }
 
-        this.widgetStage = new Stage();
+        this.widgetStage = Risk.STAGE = new Stage();
+
         this.turnWidget = new TurnWidget(main, this, game);
         this.widgetStage.addActor(turnWidget);
 
@@ -138,34 +133,13 @@ public class GameScreen implements Screen {
         style.sliceColor = new Color(0, .7f, 0, 1);
         style.alternateSliceColor = new Color(.7f, 0, 0, 1);
 
-        invasionRadial = new AnimatedPieMenu(Risk.skin.getRegion("white"), style, 75, .3f, 180, 320);
-        invasionRadial.setInfiniteSelectionRange(true);
-        invasionRadial.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                invasionRadial.transitionToClosing(.4f);
-                int index = invasionRadial.getSelectedIndex();
-                if (!invasionRadial.isValidIndex(index)) {
-                    return;
-                }
-                Actor child = invasionRadial.getChild(index);
-                Object tmp = child.getUserObject();
-                if (tmp != null) {
-                    attackingCount = (Integer) tmp;
-                } else {
-                    attackingCount = null;
-                }
-            }
-        });
-        widgetStage.addActor(invasionRadial);
-
-        ringPathActor = new RingPathActor(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"));
-
         missionCardSlider = new MissionCardWidget(widgetStage, game);
         widgetStage.addActor(missionCardSlider);
-        
+
         logs = new LogScrollPane();
         widgetStage.addActor(logs);
+
+        ringPathActor = new RingPathActor(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"), logs);
 
         input = new InputMultiplexer(widgetStage, new InputAdapter() {
 
@@ -189,78 +163,70 @@ public class GameScreen implements Screen {
             public boolean touchDown(int x, int y, int pointer, int button) {
                 last.set(-1, -1, -1);
 
+                turnWidget.clearCombat(false);
+
                 Vector3 tmp = camera.unproject(new Vector3(x, y, 0));
                 Vector2 v = new Vector2(tmp.x, tmp.y - 0);
-                for (RegionWrapper w : regions) {
-                    if (w.polygon.contains(v)) {
-                        if (attackingCount != null) {
-                            Army occupyingArmy = game.getOccupyingArmy(w.territory);
-                            if (selectedAttackingTerritory.adjacents.containsKey(w.territory) && occupyingArmy != game.current()) {
-                                selectedDefendingTerritory = w;
-                                int dc = game.battalionCount(w.territory);
-                                if (dc > 2) {
-                                    dc = 2;
-                                }
-                                GameScreen.this.turnWidget.setCombat(game.current(), occupyingArmy, selectedAttackingTerritory.territory, w.territory, attackingCount, dc);
-                                break;
-                            } else {
-                                attackingCount = null;
-                                selectedDefendingTerritory = null;
-                            }
-                        } else {
+
+                if (button == 0 && game.currentStep == Step.COMBAT) {
+                    selectedDefendingTerritory = null;
+                    selectedAttackingTerritory = null;
+                    for (RegionWrapper w : regions) {
+                        if (w.polygon.contains(v)) {
                             Army occupyingArmy = game.getOccupyingArmy(w.territory);
                             if (occupyingArmy == game.current()) {
                                 selectedAttackingTerritory = w;
+
+                                //draw some pointer arrows to potential targets to attack
+                                int count = game.battalionCount(w.territory);
+                                if (count > 1 && game.isClaimed(w.territory) == game.current()) {
+                                    for (RegionWrapper adj : w.adjacents.values()) {
+                                        if (game.isClaimed(adj.territory) != game.current()) {
+                                            Vector3 start = new Vector3(w.textPosition);
+                                            Vector3 end = new Vector3(adj.textPosition);
+                                            InvasionPointerActor arrow = new InvasionPointerActor(shapeRenderer, start, end);
+                                            mapStage.addActor(arrow);
+                                            arrow.addAction(sequence(delay(3, removeActor(arrow))));
+                                        }
+                                    }
+                                }
                             }
                             break;
                         }
                     }
                 }
 
-                return false;
-            }
-
-            @Override
-            public boolean touchUp(int x, int y, int pointer, int button) {
-                if (button == 1 && selectedAttackingTerritory != null && selectedDefendingTerritory == null && turnWidget.currentStep == Step.COMBAT) {
-                    int count = game.battalionCount(selectedAttackingTerritory.territory);
-                    count = count > 4 ? 4 : count;
-                    if (count > 1 && game.isClaimed(selectedAttackingTerritory.territory) == game.current()) {
-
-                        boolean hasCombatAdjacent = false;
-                        for (RegionWrapper adj : selectedAttackingTerritory.adjacents.values()) {
-                            if (game.isClaimed(adj.territory) != game.current()) {
-                                Vector3 start = new Vector3(selectedAttackingTerritory.textPosition);
-                                Vector3 end = new Vector3(adj.textPosition);
-                                InvasionPointerActor arrow = new InvasionPointerActor(shapeRenderer, start, end);
-                                mapStage.addActor(arrow);
-                                arrow.addAction(sequence(delay(5, removeActor(arrow))));
-                                hasCombatAdjacent = true;
+                if (button == 1 && selectedAttackingTerritory != null && game.currentStep == Step.COMBAT) {
+                    selectedDefendingTerritory = null;
+                    for (RegionWrapper w : regions) {
+                        if (w.polygon.contains(v)) {
+                            Army occupyingArmy = game.getOccupyingArmy(w.territory);
+                            if (selectedAttackingTerritory.adjacents.containsKey(w.territory) && occupyingArmy != game.current()) {
+                                selectedDefendingTerritory = w;
+                                GameScreen.this.turnWidget.setCombat(game.current(), occupyingArmy, selectedAttackingTerritory.territory, w.territory);
+                                break;
                             }
-                        }
-
-                        if (hasCombatAdjacent) {
-                            invasionRadial.resetSelection();
-                            invasionRadial.clearChildren();
-                            for (int i = 1; i < count; i++) {
-                                Label l = new Label(Integer.toString(i), Risk.skin);
-                                l.setUserObject(i);
-                                invasionRadial.addActor(l);
-                            }
-                            invasionRadial.centerOnMouse();
-                            invasionRadial.animateOpening(.4f);
                         }
                     }
                 }
+
                 return false;
             }
 
         });
+
+        if (game.current().isBot()) {
+            widgetStage.addAction(game.current().bot.run());
+        }
     }
 
     @Override
     public void show() {
         Gdx.input.setInputProcessor(input);
+
+        turnWidget.clearCombat(false);
+        selectedAttackingTerritory = null;
+        selectedDefendingTerritory = null;
     }
 
     @Override
@@ -281,6 +247,7 @@ public class GameScreen implements Screen {
         renderer.render();
 
         shapeRenderer.setProjectionMatrix(camera.combined);
+        ringPathActor.render();
 
         if (selectedAttackingTerritory != null) {
             if (selectedDefendingTerritory == null) {
@@ -385,7 +352,7 @@ public class GameScreen implements Screen {
             missionCardSlider.hide();
         }
     }
-    
+
     public void toggleLog(boolean show) {
         if (show) {
             logs.show();

@@ -14,16 +14,40 @@
   <image source="map-rendered.png" width="2048" height="2688"/>
  </imagelayer>
  <objectgroup id="13" name="ring-path" visible="0">
-  <object id="131" name="mount doom" x="1752" y="1891" width="21" height="21"/>
-  <object id="130" name="gorgoroth" x="1750" y="2077" width="24" height="22"/>
-  <object id="129" name="minas morgul" x="1561" y="2035" width="17" height="19"/>
+  <object id="131" name="mount doom" x="1752" y="1891" width="21" height="21">
+   <properties>
+    <property name="roll" value="true"/>
+   </properties>
+  </object>
+  <object id="130" name="gorgoroth" x="1750" y="2077" width="24" height="22">
+   <properties>
+    <property name="roll" value="true"/>
+   </properties>
+  </object>
+  <object id="129" name="minas morgul" x="1561" y="2035" width="17" height="19">
+   <properties>
+    <property name="roll" value="true"/>
+   </properties>
+  </object>
   <object id="128" name="ithilien" x="1354" y="1862" width="21" height="23"/>
-  <object id="127" name="dead marshes" x="1448" y="1636" width="24" height="25"/>
+  <object id="127" name="dead marshes" x="1448" y="1636" width="24" height="25">
+   <properties>
+    <property name="roll" value="true"/>
+   </properties>
+  </object>
   <object id="126" name="emyn muil" x="1520" y="1463" width="23" height="28"/>
   <object id="125" name="the wold" x="1420" y="1299" width="24" height="27"/>
-  <object id="124" name="lorien" x="1307" y="1103" width="23" height="22"/>
+  <object id="124" name="lorien" x="1307" y="1103" width="23" height="22">
+   <properties>
+    <property name="roll" value="true"/>
+   </properties>
+  </object>
   <object id="123" name="gladden fields" x="1312" y="987" width="23" height="20"/>
-  <object id="122" name="moria" x="1155" y="906" width="21" height="22"/>
+  <object id="122" name="moria" x="1155" y="906" width="21" height="22">
+   <properties>
+    <property name="roll" value="true"/>
+   </properties>
+  </object>
   <object id="121" name="eregion" x="1131" y="795" width="23" height="22"/>
   <object id="120" name="rivendell" x="1195" y="627" width="30" height="32"/>
   <object id="119" name="south downs" x="980" y="764" width="30" height="29"/>

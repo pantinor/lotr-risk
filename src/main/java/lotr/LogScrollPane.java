@@ -1,21 +1,20 @@
 package lotr;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import lotr.util.Logger;
 
-public class LogScrollPane extends ScrollPane {
+public class LogScrollPane extends ScrollPane implements Logger {
 
     public static final float WIDTH = 600;
     private static final float HEIGHT = 400;
 
     private final Table internalTable;
-    private final Label.LabelStyle ls = new Label.LabelStyle(Risk.skin.get("default-font", BitmapFont.class), Color.WHITE);
 
     public LogScrollPane() {
         super(new Table(), Risk.skin);
@@ -29,17 +28,14 @@ public class LogScrollPane extends ScrollPane {
         setScrollingDisabled(true, false);
     }
 
-    public void add(String text) {
-        add(text, true);
-    }
-
-    public void add(String text, boolean scrollBottom) {
+    @Override
+    public void log(String text, Color color) {
 
         if (text == null) {
             return;
         }
 
-        Label label = new Label(text, ls);
+        Label label = new Label(text, Risk.skin, "default-font", color);
         label.setWrap(true);
         label.setAlignment(Align.topLeft, Align.left);
 
@@ -47,9 +43,7 @@ public class LogScrollPane extends ScrollPane {
         internalTable.row();
 
         pack();
-        if (scrollBottom) {
-            scrollTo(0, 0, 0, 0);
-        }
+        scrollTo(0, 0, 0, 0);
 
     }
 

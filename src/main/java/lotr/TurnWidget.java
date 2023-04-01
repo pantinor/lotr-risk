@@ -10,11 +10,15 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
+import lotr.Game.GameStepListener;
+import lotr.Game.Step;
+import static lotr.Risk.GAME;
 import static lotr.Risk.SCREEN_WIDTH;
+import static lotr.Risk.STAGE;
 import lotr.util.Sound;
 import lotr.util.Sounds;
 
-public class TurnWidget extends Table {
+public class TurnWidget extends Table implements GameStepListener {
 
     private final Game game;
     private final Risk main;
@@ -39,32 +43,9 @@ public class TurnWidget extends Table {
 
     private final Image[] progressBar = new Image[7];
 
-    public Step currentStep;
     public Army invader, defender;
     public TerritoryCard from, to;
-    public int attackingCount, defendingCount;
     boolean conqueredTerritory;
-
-    public static enum Step {
-        DRAFT("Receive and Place Reinforcements"),
-        COMBAT("Combat"),
-        FORTIFY("Fortify Your Position"),
-        TCARD("Collect a Terriritory Card"),
-        ACARD("Collect a Adventure Card"),
-        REPLACE("Replace a Leader"),
-        RING("Move the Fellowship");
-
-        private final String desc;
-
-        private Step(String desc) {
-            this.desc = desc;
-        }
-
-        public String desc() {
-            return desc;
-        }
-
-    }
 
     public TurnWidget(Risk main, GameScreen gameScreen, Game game) {
         this.game = game;
@@ -84,47 +65,31 @@ public class TurnWidget extends Table {
         columnDefaults(5).expandX().left().uniformX();
         columnDefaults(6).expandX().left().uniformX();
 
+        game.registerListener(this);
+
         draftListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
                 conqueredTerritory = false;
-                setNextStep(TurnWidget.Step.COMBAT);
-                if (game.current().isBot()) {
-                    TerritoryCard pickedFromTerritory = game.current().bot.findClaimedTerritory(true);
-                    TerritoryCard pickedToTerritory = game.current().bot.pickTerritoryToAttack(pickedFromTerritory);
-                    game.current().bot.reinforce(pickedFromTerritory);
-                    game.current().bot.attack(pickedFromTerritory, pickedToTerritory);
-                } else {
-                    ReinforceScreen rsc = new ReinforceScreen(main, game, game.current(), gameScreen, TurnWidget.this);
-                    main.setScreen(rsc);
-                }
+                ReinforceScreen rsc = new ReinforceScreen(main, game, game.current(), gameScreen, TurnWidget.this);
+                main.setScreen(rsc);
+                game.nextStep();//attack
             }
         };
 
         endCombatlistener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                setNextStep(TurnWidget.Step.FORTIFY);
-                if (game.current().isBot()) {
-                    TerritoryCard pickedFromTerritory = game.current().bot.findClaimedTerritory(false);
-                    TerritoryCard pickedToTerritory = game.current().bot.pickTerritoryToFortify(pickedFromTerritory);
-                    game.current().bot.fortify(pickedFromTerritory, pickedToTerritory);
-                } else {
-                    FortifyScreen rsc = new FortifyScreen(main, game, game.current(), gameScreen, TurnWidget.this);
-                    main.setScreen(rsc);
-                }
+                FortifyScreen rsc = new FortifyScreen(main, game, game.current(), gameScreen, TurnWidget.this);
+                main.setScreen(rsc);
+                game.nextStep();//fortify
             }
         };
 
         fortifyListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                setNextStep(TurnWidget.Step.TCARD);
-                if (game.current().isBot()) {
-
-                } else {
-
-                }
+                game.nextStep();//tcard
             }
         };
 
@@ -138,31 +103,32 @@ public class TurnWidget extends Table {
                         Sounds.play(Sound.POSITIVE_EFFECT);
                     }
                 }
-                setNextStep(TurnWidget.Step.ACARD);
+                game.nextStep();//acard
             }
         };
 
         acardListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                setNextStep(TurnWidget.Step.REPLACE);
+                game.nextStep();//replace
             }
         };
 
         replaceListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                setNextStep(TurnWidget.Step.RING);
+                game.nextStep();//ring
             }
         };
 
         ringListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                //TODO
-                game.next();
-                gameScreen.logs.add("--------------------");
-                setNextStep(TurnWidget.Step.DRAFT);
+                gameScreen.ringPathActor.advance();
+                game.nextStep();//draft for next player
+                if (GAME.current().isBot()) {
+                    STAGE.addAction(GAME.current().bot.run());
+                }
             }
         };
 
@@ -174,7 +140,7 @@ public class TurnWidget extends Table {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
                 if (invader != null) {
-                    AttackScreen as = new AttackScreen(main, gameScreen, game, invader, defender, from, to, attackingCount, defendingCount);
+                    AttackScreen as = new AttackScreen(main, gameScreen, game, invader, defender, from, to);
                     main.setScreen(as);
                 }
             }
@@ -236,12 +202,11 @@ public class TurnWidget extends Table {
         });
         add(logs).colspan(2).left();
 
-        setNextStep(Step.DRAFT);
+        nextStep(Step.DRAFT);
     }
 
-    public void setNextStep(Step step) {
-
-        currentStep = step;
+    @Override
+    public void nextStep(Step step) {
 
         stepLabel.setText(step.desc());
 
@@ -258,43 +223,55 @@ public class TurnWidget extends Table {
         }
 
         if (step == Step.DRAFT) {
-            currentListener = draftListener;
-            nextButton.addListener(draftListener);
+            if (!game.current().isBot()) {
+                currentListener = draftListener;
+                nextButton.addListener(draftListener);
+            }
             progressBar[0].setDrawable(activeTexture);
         } else if (step == Step.COMBAT) {
-            currentListener = endCombatlistener;
-            nextButton.addListener(endCombatlistener);
+            if (!game.current().isBot()) {
+                currentListener = endCombatlistener;
+                nextButton.addListener(endCombatlistener);
+            }
             progressBar[1].setDrawable(activeTexture);
         } else if (step == Step.FORTIFY) {
-            currentListener = fortifyListener;
-            nextButton.addListener(fortifyListener);
+            if (!game.current().isBot()) {
+                currentListener = fortifyListener;
+                nextButton.addListener(fortifyListener);
+            }
             progressBar[2].setDrawable(activeTexture);
         } else if (step == Step.TCARD) {
-            currentListener = tcardListener;
-            nextButton.addListener(tcardListener);
+            if (!game.current().isBot()) {
+                currentListener = tcardListener;
+                nextButton.addListener(tcardListener);
+            }
             progressBar[3].setDrawable(activeTexture);
         } else if (step == Step.ACARD) {
-            currentListener = acardListener;
-            nextButton.addListener(acardListener);
+            if (!game.current().isBot()) {
+                currentListener = acardListener;
+                nextButton.addListener(acardListener);
+            }
             progressBar[4].setDrawable(activeTexture);
         } else if (step == Step.REPLACE) {
-            currentListener = replaceListener;
-            nextButton.addListener(replaceListener);
+            if (!game.current().isBot()) {
+                currentListener = replaceListener;
+                nextButton.addListener(replaceListener);
+            }
             progressBar[5].setDrawable(activeTexture);
         } else if (step == Step.RING) {
-            currentListener = ringListener;
-            nextButton.addListener(ringListener);
+            if (!game.current().isBot()) {
+                currentListener = ringListener;
+                nextButton.addListener(ringListener);
+            }
             progressBar[6].setDrawable(activeTexture);
         }
     }
 
-    public void setCombat(Army invader, Army defender, TerritoryCard from, TerritoryCard to, int attackingCount, int defendingCount) {
+    public void setCombat(Army invader, Army defender, TerritoryCard from, TerritoryCard to) {
         this.invader = invader;
         this.defender = defender;
         this.from = from;
         this.to = to;
-        this.attackingCount = attackingCount;
-        this.defendingCount = defendingCount;
         this.combatButton.setVisible(true);
     }
 
@@ -309,7 +286,5 @@ public class TurnWidget extends Table {
         this.defender = null;
         this.from = null;
         this.to = null;
-        this.attackingCount = 0;
-        this.defendingCount = 0;
     }
 }

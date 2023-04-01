@@ -27,6 +27,7 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.Gson;
@@ -63,11 +64,17 @@ public class Risk extends Game {
     private static final Model[] blackModels = new Model[6];
     private static final Model[] redModels = new Model[6];
 
+    public static lotr.Game GAME;
+    public static Stage STAGE;
+
     public static void main(String[] args) {
+
         LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
+
         cfg.title = "LOTR Risk";
         cfg.width = SCREEN_WIDTH;
         cfg.height = SCREEN_HEIGHT;
+
         new LwjglApplication(new Risk(), cfg);
     }
 
@@ -120,8 +127,6 @@ public class Risk extends Game {
             redModels[i] = buildDiceModel(1, i);
         }
 
-        lotr.Game game = null;
-
         InputStream is = null;
         String json = null;
         try {
@@ -131,42 +136,48 @@ public class Risk extends Game {
         }
 
         if (is == null) {
-            game = new lotr.Game();
+            GAME = new lotr.Game();
 
-            ClaimTerritoryScreen startScreen = new ClaimTerritoryScreen(this, game);
+            ClaimTerritoryScreen startScreen = new ClaimTerritoryScreen(this, GAME);
             setScreen(startScreen);
 
         } else {
             GsonBuilder builder = new GsonBuilder();
             Gson gson = builder.excludeFieldsWithoutExposeAnnotation().create();
 
-            game = gson.fromJson(json, new TypeToken<lotr.Game>() {
+            GAME = gson.fromJson(json, new TypeToken<lotr.Game>() {
             }.getType());
 
-            game.setRed(game.red);
-            game.setGreen(game.green);
-            game.setBlack(game.black);
-            game.setYellow(game.yellow);
-
-            GameScreen gameScreen = new GameScreen(this, game);
+            GAME.setRed(GAME.red);
+            GAME.setGreen(GAME.green);
+            GAME.setBlack(GAME.black);
+            GAME.setYellow(GAME.yellow);
 
             for (int i = 0; i < 4; i++) {
-                if (game.armies[i].botType != null) {
-                    switch (game.armies[i].botType) {
+                if (GAME.armies[i].botType != null) {
+                    switch (GAME.armies[i].botType) {
                         case STRONG:
-                            game.armies[i].bot = new StrongBot(game, game.armies[i], gameScreen);
+                            GAME.armies[i].bot = new StrongBot(GAME, GAME.armies[i]);
                             break;
                         case RANDOM:
-                            game.armies[i].bot = new WeakBot(game, game.armies[i], gameScreen);
+                            GAME.armies[i].bot = new WeakBot(GAME, GAME.armies[i]);
                             break;
                         case WEAK:
-                            game.armies[i].bot = new RandomBot(game, game.armies[i], gameScreen);
+                            GAME.armies[i].bot = new RandomBot(GAME, GAME.armies[i]);
                             break;
                     }
                 }
             }
 
+            GameScreen gameScreen = new GameScreen(this, GAME);
             setScreen(gameScreen);
+
+            for (int i = 0; i < 4; i++) {
+                if (GAME.armies[i].botType != null) {
+                    GAME.armies[i].bot.set(gameScreen.logs, gameScreen.ringPathActor);
+                }
+            }
+
         }
 
     }
@@ -207,27 +218,9 @@ public class Risk extends Game {
         Vector3 textPosition;
         Vector3 namePosition;
     }
-
-    public static class RingPathWrapper implements Comparable {
-
-        public int id;
-        public String name;
-        public float x;
-        public float y;
-        public boolean selected;
-
-        @Override
-        public int compareTo(Object obj) {
-            final RingPathWrapper other = (RingPathWrapper) obj;
-            if (this.id > other.id) {
-                return 1;
-            } else if (this.id < other.id) {
-                return -1;
-            } else {
-                return 0;
-            }
-        }
-
+    
+    public static class FortifyRegionWrapper extends RegionWrapper {
+        boolean isConnected;
     }
 
     public static void setPoints(TiledMapTileLayer layer, List<RegionWrapper> regions, float unitScale) {

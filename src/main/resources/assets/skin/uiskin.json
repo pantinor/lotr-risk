@@ -9,6 +9,7 @@ com.badlogic.gdx.graphics.Color: {
 	red: { a: 1, b: 0, g: 0, r: 1 },
 	blue: { a: 1, b: 1, g: 0, r: 0 },
 	yellow: { a: 1, b: 0, g: 0.96, r: 0.96 },
+        gray: { a: 1, b: 0.74, g: 0.74, r: 0.74 },
 	black: { a: 1, b: 0, g: 0, r: 0 },
 },
 com.badlogic.gdx.scenes.scene2d.ui.Skin$TintedDrawable: {
@@ -53,10 +54,11 @@ com.badlogic.gdx.scenes.scene2d.ui.Slider$SliderStyle: {
 },
 com.badlogic.gdx.scenes.scene2d.ui.Label$LabelStyle: {
 	default: { font: default-font, fontColor: white },
-        default-blue: { font: default-font, fontColor: blue },
-        default-red: { font: default-font, fontColor: red },
-        default-green: { font: default-font, fontColor: green },
-        default-yellow: { font: default-font, fontColor: yellow }
+        blue: { font: default-font, fontColor: blue },
+        red: { font: default-font, fontColor: red },
+        green: { font: default-font, fontColor: green },
+        gray: { font: default-font, fontColor: gray },
+        yellow: { font: default-font, fontColor: yellow }
 },
 com.badlogic.gdx.scenes.scene2d.ui.TextField$TextFieldStyle: {
 	default: { selection: selection, background: textfield, font: default-font, fontColor: white, cursor: cursor }

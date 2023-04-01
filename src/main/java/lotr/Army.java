@@ -2,7 +2,9 @@ package lotr;
 
 import com.google.gson.annotations.Expose;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import lotr.Constants.ArmyType;
 import lotr.Constants.ClassType;
@@ -26,7 +28,7 @@ public class Army {
     public List<AdventureCard> adventureCards = new ArrayList<>();
 
     public BaseBot bot;
-    
+
     @Expose
     public BaseBot.Type botType;
 
@@ -188,6 +190,40 @@ public class Army {
 
     public void setLeader2(Leader leader2) {
         this.leader2 = leader2;
+    }
+
+    /**
+     * Territories are connected if all the territories between are controlled
+     * by this army.Used when fortifying.
+     *
+     *
+     * @param from
+     * @param to
+     * @return is connected
+     */
+    public boolean isConnected(TerritoryCard from, TerritoryCard to) {
+        List<TerritoryCard> claimedTerritories = claimedTerritories();
+        if (claimedTerritories.contains(from) && claimedTerritories.contains(to)) {
+            Map<TerritoryCard, TerritoryCard> connectedTerritories = new HashMap<>();
+            return connected(from, to, claimedTerritories, connectedTerritories);
+        }
+        return false;
+    }
+
+    private boolean connected(TerritoryCard next, TerritoryCard to, List<TerritoryCard> claimedTerritories, Map<TerritoryCard, TerritoryCard> connectedTerritories) {
+        for (TerritoryCard adj : next.adjacents()) {
+            if (adj == to) {
+                return true;
+            } else {
+                if (claimedTerritories.contains(adj) && !connectedTerritories.containsKey(adj)) {
+                    connectedTerritories.put(adj, adj);
+                    if (connected(adj, to, claimedTerritories, connectedTerritories)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
 }

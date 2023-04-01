@@ -75,6 +75,7 @@ public class AttackScreen implements Screen {
     public static final Dice DICE = new Dice();
 
     private final Stage stage = new Stage();
+
     private final Texture frameLeft;
     private final Texture frameRight;
 
@@ -86,9 +87,9 @@ public class AttackScreen implements Screen {
     private final TerritoryCard from;
     private final TerritoryCard to;
 
-    private int attackingCount, defendingCount;
+    private int attackerDice, defenderDice;
 
-    private TextButton attack;
+    private TextButton rollButton, continueButton;
 
     private Environment environment;
     private PointLight light;
@@ -122,8 +123,7 @@ public class AttackScreen implements Screen {
         Bullet.init();
     }
 
-    public AttackScreen(Risk main, GameScreen parent, Game game, Army invader, Army defender,
-            TerritoryCard from, TerritoryCard to, int acount, int dcount) {
+    public AttackScreen(Risk main, GameScreen parent, Game game, Army invader, Army defender, TerritoryCard from, TerritoryCard to) {
 
         this.main = main;
         this.parent = parent;
@@ -132,8 +132,12 @@ public class AttackScreen implements Screen {
         this.defender = defender;
         this.from = from;
         this.to = to;
-        this.attackingCount = acount;
-        this.defendingCount = dcount;
+
+        int invaderCount = game.battalionCount(from);
+        int defenderCount = game.battalionCount(to);
+
+        attackerDice = invaderCount == 2 ? 1 : invaderCount == 3 ? 2 : 3;
+        defenderDice = defenderCount == 1 ? 1 : 2;
 
         frameLeft = Risk.fillCircle(invader.armyType.color(), 300);
         frameRight = Risk.fillCircle(defender.armyType.color(), 300);
@@ -197,19 +201,19 @@ public class AttackScreen implements Screen {
         allBulletReferences.add(dispatcher);
         allBulletReferences.add(collisionConfiguration);
 
-        attack = new TextButton("ROLL", Risk.ccskin, "arcade");
-        attack.setBounds(900 - 50, 200, 84, 84);
-        attack.addListener(new ChangeListener() {
+        rollButton = new TextButton("ROLL", Risk.ccskin, "arcade");
+        rollButton.setBounds(900 - 50, 300, 84, 84);
+        rollButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                clear();
+                clearDice();
 
                 List<Integer> rollsInvader = new ArrayList<>();
                 List<Integer> rollsDefender = new ArrayList<>();
                 List<Integer> rollsInvaderWithBonus = new ArrayList<>();
                 List<Integer> rollsDefenderWithBonus = new ArrayList<>();
 
-                for (int i = 1; i <= attackingCount; i++) {
+                for (int i = 1; i <= attackerDice; i++) {
                     int r = DICE.roll();
                     rollsInvader.add(r);
                     if (game.hasLeader(invader, from)) {
@@ -218,7 +222,7 @@ public class AttackScreen implements Screen {
                     rollsInvaderWithBonus.add(r);
                 }
 
-                for (int i = 1; i <= defendingCount; i++) {
+                for (int i = 1; i <= defenderDice; i++) {
                     int r = DICE.roll();
                     rollsDefender.add(r);
                     if (game.hasLeader(defender, to)) {
@@ -235,15 +239,15 @@ public class AttackScreen implements Screen {
                 Collections.sort(rollsInvaderWithBonus, Collections.reverseOrder());
                 Collections.sort(rollsDefenderWithBonus, Collections.reverseOrder());
 
-                for (int i = 0; i < attackingCount; i++) {
-                    addBox(Risk.getRedModel(rollsInvader.get(i) - 1), 2, DICE_DROP_HEIGHT, i * 3 - 4, boxInfo);
+                for (int i = 0; i < attackerDice; i++) {
+                    animate3DDiceThrow(Risk.getRedModel(rollsInvader.get(i) - 1), 2, DICE_DROP_HEIGHT, i * 3 - 4, boxInfo);
                 }
 
-                for (int i = 0; i < defendingCount; i++) {
-                    addBox(Risk.getBlackModel(rollsDefender.get(i) - 1), -2, DICE_DROP_HEIGHT, i * 3 - 4, boxInfo);
+                for (int i = 0; i < defenderDice; i++) {
+                    animate3DDiceThrow(Risk.getBlackModel(rollsDefender.get(i) - 1), -2, DICE_DROP_HEIGHT, i * 3 - 4, boxInfo);
                 }
 
-                int count = attackingCount >= defendingCount ? attackingCount : defendingCount;
+                int count = attackerDice >= defenderDice ? attackerDice : defenderDice;
 
                 for (int i = 0; i < count; i++) {
                     if (i < rollsInvaderWithBonus.size() && i < rollsDefenderWithBonus.size()) {
@@ -253,20 +257,28 @@ public class AttackScreen implements Screen {
                             Sounds.play(Sound.NEGATIVE_EFFECT);
                             invader.removeBattalion(from);
                             AttackScreen.this.animateRemovalActor(invaderIcons.remove(0));
-                            attackingCount--;
+                            attackerDice--;
                         } else {
                             Sounds.play(Sound.POSITIVE_EFFECT);
                             defender.removeBattalion(to);
                             AttackScreen.this.animateRemovalActor(defenderIcons.remove(0));
-                            defendingCount--;
+                            defenderDice--;
                         }
                     }
                 }
 
-                if (attackingCount == 0 || defendingCount == 0) {
-                    attack.setVisible(false);
-                    int totalDefendingBattalionCount = game.battalionCount(to);
-                    if (defendingCount == 0 && totalDefendingBattalionCount == 0) {
+                if (attackerDice == 0 || defenderDice == 0) {
+
+                    rollButton.setVisible(false);
+
+                    int invaderCount = game.battalionCount(from);
+                    int defenderCount = game.battalionCount(to);
+
+                    if (invaderCount > 1 && defenderCount > 0) {
+                        continueButton.setVisible(true);
+                    }
+
+                    if (defenderDice == 0 && defenderCount == 0) {
                         if (game.hasLeader(defender, to)) {
                             game.removeLeader(defender, to);
                             AttackScreen.this.animateRemovalActor(defenderIcons.get(defenderIcons.size() - 1));
@@ -276,13 +288,44 @@ public class AttackScreen implements Screen {
             }
         });
 
+        continueButton = new TextButton("CONTINUE", Risk.ccskin, "arcade");
+        continueButton.setBounds(900 - 50, 200, 84, 84);
+        continueButton.setVisible(false);
+        continueButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                
+                for (Image im : invaderIcons) {
+                    im.remove();
+                }
+                invaderIcons.clear();
+                for (Image im : defenderIcons) {
+                    im.remove();
+                }
+                defenderIcons.clear();
+                
+                int invaderCount = game.battalionCount(from);
+                int defenderCount = game.battalionCount(to);
+
+                attackerDice = invaderCount == 2 ? 1 : invaderCount == 3 ? 2 : 3;
+                defenderDice = defenderCount == 1 ? 1 : 2;
+
+                addIcons(invaderIcons, invader, attackerDice, invaderPosition.x - 10, 380, game.hasLeader(invader, from));
+                addIcons(defenderIcons, defender, defenderDice, defenderPosition.x - 10, 380, game.hasLeader(defender, to));
+                
+                rollButton.setVisible(true);
+                continueButton.setVisible(false);
+
+            }
+        });
+
         TextButton done = new TextButton("FINISH", Risk.ccskin, "arcade");
-        done.setBounds(900 - 50, 50, 84, 84);
+        done.setBounds(900 - 50, 100, 84, 84);
         done.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
                 int totalDefendingBattalionCount = game.battalionCount(to);
-                if (defendingCount == 0 && totalDefendingBattalionCount == 0) {
+                if (defenderDice == 0 && totalDefendingBattalionCount == 0) {
                     int acount = game.battalionCount(from);
                     if (acount > 1) {
                         reinforceRadial.resetSelection();
@@ -300,17 +343,15 @@ public class AttackScreen implements Screen {
                         //TODO check mission card
                     }
                 } else {
-                    AttackScreen.this.parent.attackingCount = null;
-                    AttackScreen.this.parent.selectedDefendingTerritory = null;
                     main.setScreen(AttackScreen.this.parent);
-                    AttackScreen.this.parent.turnWidget.clearCombat(false);
                     dispose();
                 }
             }
         });
 
         this.stage.addActor(done);
-        this.stage.addActor(attack);
+        this.stage.addActor(rollButton);
+        this.stage.addActor(continueButton);
 
         PieMenu.PieMenuStyle style = new PieMenu.PieMenuStyle();
         style.backgroundColor = new Color(1, 1, 1, .3f);
@@ -338,10 +379,7 @@ public class AttackScreen implements Screen {
                     }
                 }
 
-                AttackScreen.this.parent.attackingCount = null;
-                AttackScreen.this.parent.selectedDefendingTerritory = null;
                 main.setScreen(AttackScreen.this.parent);
-                AttackScreen.this.parent.turnWidget.clearCombat(true);
                 dispose();
 
             }
@@ -349,11 +387,11 @@ public class AttackScreen implements Screen {
 
         this.stage.addActor(reinforceRadial);
 
-        addIcons(invaderIcons, invader, attackingCount, invaderPosition.x - 10, 380, game.hasLeader(invader, from));
-        addIcons(defenderIcons, defender, defendingCount, defenderPosition.x - 10, 380, game.hasLeader(defender, to));
+        addIcons(invaderIcons, invader, attackerDice, invaderPosition.x - 10, 380, game.hasLeader(invader, from));
+        addIcons(defenderIcons, defender, defenderDice, defenderPosition.x - 10, 380, game.hasLeader(defender, to));
     }
 
-    private void addBox(Model boxModel, float x, float y, float z, btRigidBody.btRigidBodyConstructionInfo boxInfo) {
+    private void animate3DDiceThrow(Model boxModel, float x, float y, float z, btRigidBody.btRigidBodyConstructionInfo boxInfo) {
         ModelInstance box = new ModelInstance(boxModel);
         instances.add(box);
 
@@ -370,69 +408,17 @@ public class AttackScreen implements Screen {
         collisionWorld.addRigidBody(b);
     }
 
-    @Override
-    public void show() {
-        Gdx.input.setInputProcessor(new InputMultiplexer(stage, inputController));
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        stage.getViewport().update(width, height, false);
-    }
-
-    @Override
-    public void render(float delta) {
-        time += delta;
-        Gdx.gl.glClearColor(0, 0, .62f, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-
-        camera.update();
-
-        collisionWorld.stepSimulation(delta, 5);
-        groundMotionState.getWorldTransform(ground.transform);
-        for (int i = 0; i < motionStates.size; i++) {
-            motionStates.get(i).getWorldTransform(instances.get(i).transform);
+    private void clearDice() {
+        for (btDefaultMotionState motionState : motionStates) {
+            motionState.dispose();
         }
-
-        modelBatch.begin(camera);
-        modelBatch.render(ground, environment);
-        modelBatch.render(instances, environment);
-        modelBatch.end();
-
-        for (ExplosionTriangle tri : explosionTriangles) {
-            tri.render(delta);
+        motionStates.clear();
+        for (btRigidBody body : bodies) {
+            collisionWorld.removeRigidBody(body);
+            body.dispose();
         }
-
-        explosionTriangles.begin();
-        for (int i = 0; i < explosionTriangles.size; i++) {
-            if (explosionTriangles.get(i).getTime() > 8f) {
-                explosionTriangles.removeIndex(i);
-            }
-        }
-        explosionTriangles.end();
-
-        this.stage.getBatch().begin();
-        this.stage.getBatch().draw(this.frameLeft, invaderPosition.x, invaderPosition.y);
-        this.stage.getBatch().draw(this.frameRight, defenderPosition.x, defenderPosition.y);
-
-        int y = 400;
-
-        Risk.font.draw(this.stage.getBatch(), String.format("%s", from.title()), invaderPosition.x + 70, y -= 20);
-        Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(from)), invaderPosition.x + 70, y -= 20);
-
-        y = 400;
-
-        Risk.font.draw(this.stage.getBatch(), String.format("%s", to.title()), defenderPosition.x + 70, y -= 20);
-        Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(to)), defenderPosition.x + 70, y -= 20);
-        if (game.isDefendingStrongHold(to)) {
-            Risk.font.draw(this.stage.getBatch(), "Stronghold Defender Bonus", defenderPosition.x + 70, y -= 20);
-        }
-
-        this.stage.getBatch().end();
-
-        this.stage.act();
-        this.stage.draw();
-
+        bodies.clear();
+        instances.clear();
     }
 
     private void addIcons(List<Image> images, Army a, int count, float x, float y, boolean hasLeader) {
@@ -501,22 +487,76 @@ public class AttackScreen implements Screen {
         }
     }
 
-    private void clear() {
-        for (btDefaultMotionState motionState : motionStates) {
-            motionState.dispose();
+    @Override
+    public void show() {
+        Gdx.input.setInputProcessor(new InputMultiplexer(stage, inputController));
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, false);
+    }
+
+    @Override
+    public void render(float delta) {
+        time += delta;
+        Gdx.gl.glClearColor(0, 0, .62f, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+
+        camera.update();
+
+        collisionWorld.stepSimulation(delta, 5);
+        groundMotionState.getWorldTransform(ground.transform);
+        for (int i = 0; i < motionStates.size; i++) {
+            motionStates.get(i).getWorldTransform(instances.get(i).transform);
         }
-        motionStates.clear();
-        for (btRigidBody body : bodies) {
-            collisionWorld.removeRigidBody(body);
-            body.dispose();
+
+        modelBatch.begin(camera);
+        modelBatch.render(ground, environment);
+        modelBatch.render(instances, environment);
+        modelBatch.end();
+
+        for (ExplosionTriangle tri : explosionTriangles) {
+            tri.render(delta);
         }
-        bodies.clear();
-        instances.clear();
+
+        explosionTriangles.begin();
+        for (int i = 0; i < explosionTriangles.size; i++) {
+            if (explosionTriangles.get(i).getTime() > 8f) {
+                explosionTriangles.removeIndex(i);
+            }
+        }
+        explosionTriangles.end();
+
+        this.stage.getBatch().begin();
+        this.stage.getBatch().draw(this.frameLeft, invaderPosition.x, invaderPosition.y);
+        this.stage.getBatch().draw(this.frameRight, defenderPosition.x, defenderPosition.y);
+
+        int y = 400;
+
+        Risk.font.draw(this.stage.getBatch(), String.format("%s", from.title()), invaderPosition.x + 70, y -= 20);
+        Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(from)), invaderPosition.x + 70, y -= 20);
+
+        y = 400;
+
+        Risk.font.draw(this.stage.getBatch(), String.format("%s", to.title()), defenderPosition.x + 70, y -= 20);
+        Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(to)), defenderPosition.x + 70, y -= 20);
+        if (game.isDefendingStrongHold(to)) {
+            Risk.font.draw(this.stage.getBatch(), "Stronghold Defender Bonus", defenderPosition.x + 70, y -= 20);
+        }
+
+        this.stage.getBatch().end();
+
+        this.stage.act();
+        this.stage.draw();
+
     }
 
     @Override
     public void dispose() {
-        clear();
+
+        clearDice();
+
         for (BulletBase b : allBulletReferences) {
             b.dispose();
         }

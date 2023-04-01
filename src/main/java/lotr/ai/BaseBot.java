@@ -1,15 +1,25 @@
 package lotr.ai;
 
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.actions.RunnableAction;
+import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import lotr.Army;
 import lotr.Battalion;
+import lotr.Constants;
 import lotr.Game;
-import lotr.GameScreen;
+import lotr.Game.Step;
+import lotr.Location;
+import lotr.Region;
+import static lotr.Risk.GAME;
 import lotr.TerritoryCard;
 import lotr.util.Dice;
+import lotr.util.Logger;
+import lotr.util.RingPathAction;
 
 public abstract class BaseBot {
 
@@ -46,25 +56,112 @@ public abstract class BaseBot {
 
     final Game game;
     final Army army;
-    final GameScreen gameScreen;
+    private Logger logger;
+    private RingPathAction rpa;
 
-    int attackerLosses;
-    int defenderLosses;
-    int attackerDice;
-    int defenderDice;
+    boolean conqueredTerritory;
 
-    int[] attackerRolls;
-    int[] defenderRolls;
-
-    public BaseBot(Game game, Army army, GameScreen gameScreen) {
+    public BaseBot(Game game, Army army) {
         this.game = game;
         this.army = army;
-        this.gameScreen = gameScreen;
+    }
+
+    public SequenceAction run() {
+
+        SequenceAction s = Actions.sequence();
+
+        if (army.claimedTerritories().isEmpty()) {
+            //TODO gome over remove me from game
+            s.addAction(Actions.delay(1));
+            return s;
+        }
+
+        RunnableAction r1 = new RunnableAction();
+        r1.setRunnable(() -> {
+            conqueredTerritory = false;
+            reinforce();
+            game.nextStep();//attack
+        });
+        s.addAction(r1);
+
+        s.addAction(Actions.delay(1));
+
+        RunnableAction r2 = new RunnableAction();
+        r2.setRunnable(() -> {
+            attack();
+            game.nextStep();//fortify
+        });
+        s.addAction(r2);
+
+        s.addAction(Actions.delay(1));
+
+        RunnableAction r3 = new RunnableAction();
+        r3.setRunnable(() -> {
+            TerritoryCard from = pickClaimedTerritory(Step.FORTIFY);
+            if (from != null) {
+                TerritoryCard to = pickTerritoryToFortify(from);
+                fortify(from, to);
+            } else {
+                log(String.format("%s could not fortify any territories.", army.armyType), army.armyType.color());
+            }
+            game.nextStep();//tcard
+        });
+        s.addAction(r3);
+
+        s.addAction(Actions.delay(1));
+
+        RunnableAction r4 = new RunnableAction();
+        r4.setRunnable(() -> {
+            if (conqueredTerritory) {
+                if (!game.territoryCards.isEmpty()) {
+                    TerritoryCard newCard = game.territoryCards.remove(0);
+                    game.current().territoryCards.add(newCard);
+                }
+            }
+            game.nextStep();//acard
+        });
+        s.addAction(r4);
+
+        s.addAction(Actions.delay(1));
+
+        RunnableAction r5 = new RunnableAction();
+        r5.setRunnable(() -> {
+            game.nextStep();//replace
+        });
+        s.addAction(r5);
+
+        s.addAction(Actions.delay(1));
+
+        RunnableAction r6 = new RunnableAction();
+        r6.setRunnable(() -> {
+            rpa.advance();
+            game.nextStep();//ring
+        });
+        s.addAction(r6);
+
+        s.addAction(Actions.delay(1));
+
+        RunnableAction r7 = new RunnableAction();
+        r7.setRunnable(() -> {
+            game.nextStep();//draft next player and start turn
+            if (GAME.current().isBot()) {
+                s.addAction(game.current().bot.run());
+            }
+        });
+        s.addAction(r7);
+
+        return s;
+
+    }
+
+    public void set(Logger logger, RingPathAction rpa) {
+        this.logger = logger;
+        this.rpa = rpa;
     }
 
     public void attack(TerritoryCard from, TerritoryCard to) {
+
         if (to == null) {
-            //Sounds.play(Sound.NEGATIVE_EFFECT);
             return;
         }
 
@@ -85,11 +182,9 @@ public abstract class BaseBot {
                     //TODO check mission card
                 }
 
-                if (this.gameScreen != null) {
-                    this.gameScreen.turnWidget.setConqueredTerritory(true);
-                }
+                conqueredTerritory = true;
 
-                log(String.format("%s conquered %s and reinforced with %d battalions.", army.armyType, to.title(), tempCount));
+                log(String.format("%s conquered %s and reinforced with %d battalions.", army.armyType, to.title(), tempCount), army.armyType.color());
 
             }
 
@@ -97,51 +192,7 @@ public abstract class BaseBot {
         }
     }
 
-    public void fortify(TerritoryCard from, TerritoryCard to) {
-
-        if (to == null) {
-            //Sounds.play(Sound.NEGATIVE_EFFECT);
-            return;
-        }
-
-        int fortifyCount = game.battalionCount(from) - 1;
-        for (Battalion b : army.getBattalions()) {
-            if (b.territory == from && fortifyCount > 0) {
-                b.territory = to;
-                fortifyCount--;
-            }
-        }
-
-        if (game.hasLeader(army, from)) {
-            game.moveLeader(army, from, to);
-            //TODO check mission card
-        }
-    }
-
-    public abstract void reinforce(TerritoryCard to);
-
-    public abstract TerritoryCard findClaimedTerritory(boolean mayInvadeFrom);
-
-    public abstract TerritoryCard pickTerritoryToAttack(TerritoryCard from);
-
-    public TerritoryCard pickTerritoryToFortify(TerritoryCard from) {
-        TerritoryCard picked = null;
-        List<SortWrapper> sorted = new ArrayList<>();
-        for (TerritoryCard adj : from.adjacents()) {
-            Army defender = game.getOccupyingArmy(adj);
-            if (defender == army) {
-                int count = game.battalionCount(adj);
-                sorted.add(new SortWrapper(count, adj));
-            }
-        }
-        Collections.sort(sorted);
-        picked = !sorted.isEmpty() ? sorted.get(0).territory : null;
-        return picked;
-    }
-
     protected boolean rollAttack(TerritoryCard from, TerritoryCard to) {
-        attackerLosses = 0;
-        defenderLosses = 0;
 
         int invaderCount = game.battalionCount(from);
         int defenderCount = game.battalionCount(to);
@@ -155,10 +206,14 @@ public abstract class BaseBot {
             return false;
         }
 
-        attackerDice = invaderCount == 2 ? 1 : invaderCount == 3 ? 2 : 3;
-        defenderDice = defenderCount == 1 ? 1 : 2;
+        int attackerLosses = 0;
+        int defenderLosses = 0;
+        int attackerDice = invaderCount == 2 ? 1 : invaderCount == 3 ? 2 : 3;
+        int defenderDice = defenderCount == 1 ? 1 : 2;
 
-        attackerRolls = new int[attackerDice];
+        int[] attackerRolls = new int[attackerDice];
+        int[] defenderRolls = new int[defenderDice];
+
         for (int i = 0; i < attackerDice; i++) {
             int r = dice.roll();
             if (game.hasLeader(army, from)) {
@@ -166,7 +221,7 @@ public abstract class BaseBot {
             }
             attackerRolls[i] = r;
         }
-        defenderRolls = new int[defenderDice];
+
         for (int i = 0; i < defenderDice; i++) {
             int r = dice.roll();
             if (game.hasLeader(defender, to)) {
@@ -193,24 +248,202 @@ public abstract class BaseBot {
         }
 
         for (int i = 0; i < attackerLosses; i++) {
-            //Sounds.play(Sound.NEGATIVE_EFFECT);
             army.removeBattalion(from);
         }
 
         for (int i = 0; i < defenderLosses; i++) {
-            //Sounds.play(Sound.POSITIVE_EFFECT);
             defender.removeBattalion(to);
         }
 
         log(String.format("%s lost %d battalion(s) from %s and %s lost %d battalion(s) from %s.",
-                army.armyType, attackerLosses, from, defender.armyType, defenderLosses, to));
+                army.armyType, attackerLosses, from, defender.armyType, defenderLosses, to), army.armyType.color());
 
         return true;
     }
 
-    public void log(String text) {
-        if (this.gameScreen != null) {
-            this.gameScreen.logs.add(text);
+    public abstract void attack();
+
+    public void reinforce() {
+
+        List<TerritoryCard> claimedTerritories = army.claimedTerritories();
+        List<Location> strongholds = army.ownedStrongholds(claimedTerritories);
+        List<Region> ownedRegions = new ArrayList<>();
+
+        int strongholdReinforcements = 0, territoryReinforcements = 0, regionReinforcements = 0, cardReinforcements = 0;
+        int sumArchers = 0, sumRiders = 0, sumEagles = 0;
+
+        strongholdReinforcements = strongholds.size();
+        territoryReinforcements = claimedTerritories.size() / 3 < 3 ? 3 : claimedTerritories.size() / 3;
+
+        for (Region r : Region.values()) {
+            if (claimedTerritories.containsAll(r.territories())) {
+                regionReinforcements += r.reinforcements();
+                ownedRegions.add(r);
+            }
+        }
+
+        for (TerritoryCard c : army.territoryCards) {
+            if (c.battalionType() == Constants.BattalionType.ELVEN_ARCHER || c.battalionType() == null) {
+                sumArchers++;
+            }
+            if (c.battalionType() == Constants.BattalionType.DARK_RIDER || c.battalionType() == null) {
+                sumRiders++;
+            }
+            if (c.battalionType() == Constants.BattalionType.EAGLE || c.battalionType() == null) {
+                sumEagles++;
+            }
+        }
+
+        if (sumArchers >= 3) {
+            cardReinforcements = 4;
+        }
+        if (sumRiders >= 3) {
+            cardReinforcements = 6;
+        }
+        if (sumEagles >= 3) {
+            cardReinforcements = 8;
+        }
+        if (sumArchers >= 1 && sumRiders >= 1 && sumEagles >= 1) {
+            cardReinforcements = 10;
+        }
+
+        log(String.format("%s is reinforcing territories with %d battalion(s).", army.armyType, 
+                strongholdReinforcements + territoryReinforcements + regionReinforcements + cardReinforcements), army.armyType.color());
+
+        if (strongholdReinforcements > 0) {
+            for (TerritoryCard c : claimedTerritories) {
+                if (Location.getStronghold(c) != null) {
+                    army.addBattalion(c);
+                    strongholdReinforcements--;
+                }
+            }
+        }
+
+        if (territoryReinforcements > 0) {
+            List<SortWrapper> sorted = new ArrayList<>();
+            for (TerritoryCard c : claimedTerritories) {
+                sorted.add(new SortWrapper(game.battalionCount(c), c));
+            }
+            //sort with highest batt count and totally reinforce that one only
+            Collections.sort(sorted);
+            for (int i = 0; i < territoryReinforcements; i++) {
+                army.addBattalion(sorted.get(0).territory);
+            }
+        }
+
+        if (regionReinforcements > 0) {
+            List<SortWrapper> sorted = new ArrayList<>();
+            for (Region region : ownedRegions) {
+                for (TerritoryCard c : claimedTerritories) {
+                    if (region.territories().contains(c)) {
+                        sorted.add(new SortWrapper(game.battalionCount(c), c));
+                    }
+                }
+
+            }
+            //sort with highest batt count and totally reinforce that one only
+            Collections.sort(sorted);
+            for (int i = 0; i < regionReinforcements; i++) {
+                army.addBattalion(sorted.get(0).territory);
+            }
+        }
+
+        if (cardReinforcements > 0) {
+            List<SortWrapper> sorted = new ArrayList<>();
+            for (TerritoryCard c : claimedTerritories) {
+                sorted.add(new SortWrapper(game.battalionCount(c), c));
+            }
+            //sort with highest batt count and totally reinforce that one only
+            Collections.sort(sorted);
+            for (int i = 0; i < cardReinforcements; i++) {
+                army.addBattalion(sorted.get(0).territory);
+            }
+
+            game.turnInTerritoryCards(army, sumArchers, sumRiders, sumEagles);
+        }
+
+    }
+
+    public abstract TerritoryCard pickClaimedTerritory(Step step);
+
+    protected List<SortWrapper> sortedClaimedTerritories(Step step) {
+        List<SortWrapper> sorted = new ArrayList<>();
+        List<TerritoryCard> owned = army.claimedTerritories();
+        for (TerritoryCard t : owned) {
+
+            if (step == Step.FORTIFY) {
+                //check if territory has connected adjacents
+                boolean friendlyadjacent = false;
+                for (TerritoryCard adj : t.adjacents()) {
+                    friendlyadjacent = !friendlyadjacent && game.isClaimed(adj) == army;
+                }
+                int count = game.battalionCount(t);
+                if (friendlyadjacent && count > 1) {
+                    sorted.add(new SortWrapper(count, t));
+                }
+            }
+
+            if (step == Step.COMBAT) {
+                //check if territory has enemy adjacents
+                boolean enemyadjacent = false;
+                for (TerritoryCard adj : t.adjacents()) {
+                    enemyadjacent = !enemyadjacent && game.isClaimed(adj) != army;
+                }
+                int count = game.battalionCount(t);
+                if (enemyadjacent && count > 1) {
+                    sorted.add(new SortWrapper(count, t));
+                }
+            }
+
+        }
+        Collections.sort(sorted);
+        return sorted;
+    }
+
+    public abstract TerritoryCard pickTerritoryToAttack(TerritoryCard from);
+
+    public void fortify(TerritoryCard from, TerritoryCard to) {
+
+        if (to == null) {
+            return;
+        }
+
+        int fortifyCount = game.battalionCount(from) - 1;
+
+        log(String.format("%s fortified from %s to %s with %d battalion(s).", army.armyType, from.title(), to.title(), fortifyCount), army.armyType.color());
+
+        for (Battalion b : army.getBattalions()) {
+            if (b.territory == from && fortifyCount > 0) {
+                b.territory = to;
+                fortifyCount--;
+            }
+        }
+
+        if (game.hasLeader(army, from)) {
+            game.moveLeader(army, from, to);
+            //TODO check mission card
+        }
+    }
+
+    private TerritoryCard pickTerritoryToFortify(TerritoryCard from) {
+        List<TerritoryCard> targets = new ArrayList<>();
+        List<TerritoryCard> owned = army.claimedTerritories();
+        for (TerritoryCard t : owned) {
+            if (army.isConnected(from, t)) {
+                int fromcount = game.battalionCount(from);
+                int tocount = game.battalionCount(t);
+                if (tocount < fromcount) {
+                    targets.add(t);
+                }
+            }
+        }
+        TerritoryCard picked = !targets.isEmpty() ? targets.get(rand.nextInt(targets.size())) : null;
+        return picked;
+    }
+
+    public void log(String text, Color color) {
+        if (this.logger != null) {
+            this.logger.log(text, color);
         } else {
             System.out.println(text);
         }
