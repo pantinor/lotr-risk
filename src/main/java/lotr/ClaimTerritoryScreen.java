@@ -43,6 +43,7 @@ import lotr.Constants.ArmyType;
 import static lotr.Risk.GREEN_BATTALION;
 import static lotr.Risk.BLACK_BATTALION;
 import static lotr.Risk.BLACK_CIRCLE;
+import static lotr.Risk.GAME;
 import static lotr.Risk.GREEN_CIRCLE;
 import static lotr.Risk.RED_BATTALION;
 import lotr.Risk.RegionWrapper;
@@ -139,11 +140,11 @@ public class ClaimTerritoryScreen implements Screen {
                 if (selectedTerritory != null) {
 
                     if (game.isClaimed(selectedTerritory.territory) == null) {
-                        addBattalion(selectedTerritory, false);
+                        addBattalion(selectedTerritory.territory, false);
                     } else if (claim.getText().toString().equals("REINFORCE")) {
 
                         if (game.getOccupyingArmy(selectedTerritory.territory).armyType == game.current().armyType) {
-                            addBattalion(selectedTerritory, false);
+                            addBattalion(selectedTerritory.territory, false);
                         } else {
                             Sounds.play(Sound.NEGATIVE_EFFECT);
                         }
@@ -154,11 +155,11 @@ public class ClaimTerritoryScreen implements Screen {
                             if (game.current().leader1.territory == null) {
                                 game.current().leader1.territory = selectedTerritory.territory;
                                 Sounds.play(Sound.TRIGGER);
-                                addBattalion(selectedTerritory, false); //just to advance the next player
+                                addBattalion(selectedTerritory.territory, false); //just to advance the next player
                             } else if (game.current().leader2.territory == null && game.current().leader1.territory != selectedTerritory.territory) {
                                 game.current().leader2.territory = selectedTerritory.territory;
                                 Sounds.play(Sound.TRIGGER);
-                                addBattalion(selectedTerritory, false); //just to advance the next player
+                                addBattalion(selectedTerritory.territory, false); //just to advance the next player
                             } else {
                                 Sounds.play(Sound.NEGATIVE_EFFECT);
                             }
@@ -231,6 +232,12 @@ public class ClaimTerritoryScreen implements Screen {
                 GameScreen gameScreen = new GameScreen(main, game);
                 main.setScreen(gameScreen);
 
+                for (int i = 0; i < 4; i++) {
+                    if (GAME.armies[i].botType != null) {
+                        GAME.armies[i].bot.set(gameScreen.logs, gameScreen.ringPathActor);
+                    }
+                }
+
             }
         });
         this.exit.setBounds(525, 600, 150, 40);
@@ -246,7 +253,6 @@ public class ClaimTerritoryScreen implements Screen {
                     InputEvent ev = (InputEvent) event;
                     if (ev.getType() == Type.touchDown && ev.getStageX() > 700) {
                         Vector3 tmp = camera.unproject(new Vector3(ev.getStageX(), ev.getStageY(), 0));
-                        //System.out.printf("screen  %f %f    unprojected  %f %f    translated  %f %f\n", ev.getStageX(), ev.getStageY(), tmp.x, tmp.y, tmp.x, MAP_VIEWPORT_HEIGHT - tmp.y - 32);
                         Vector2 v = new Vector2(tmp.x, MAP_VIEWPORT_HEIGHT - tmp.y - 32);
                         for (RegionWrapper w : regions) {
                             if (w.polygon.contains(v)) {
@@ -261,17 +267,31 @@ public class ClaimTerritoryScreen implements Screen {
 
     }
 
-    public void initArmies() {
-        armyCell(this.table, ArmyType.RED, redLabel);
-        armyCell(this.table, ArmyType.GREEN, greenLabel);
-        armyCell(this.table, ArmyType.BLACK, blackLabel);
+    public void init() {
+
+        if (this.game.red != null) {
+            armyCell(this.table, ArmyType.RED, redLabel);
+        }
+        if (this.game.green != null) {
+            armyCell(this.table, ArmyType.GREEN, greenLabel);
+        }
+        if (this.game.black != null) {
+            armyCell(this.table, ArmyType.BLACK, blackLabel);
+        }
         if (this.game.yellow != null) {
             armyCell(this.table, ArmyType.YELLOW, yellowLabel);
-            this.game.turnIndex = rand.nextInt(4);
-        } else {
-            this.game.turnIndex = rand.nextInt(3);
         }
+
+        //roll see who goes first
+        this.game.turnIndex = rand.nextInt(4);
+        this.game.nextPlayer();
+
         setActiveArmy();
+
+        if (game.current().isBot()) {
+            TerritoryCard t = game.findRandomEmptyTerritory(game.current().getClassType());
+            addBattalion(t, false);
+        }
     }
 
     private void armyCell(Table t, ArmyType type, Label label) {
@@ -297,21 +317,50 @@ public class ClaimTerritoryScreen implements Screen {
 
     private void setActiveArmy() {
 
-        int rlc = this.game.red.leader1.territory != null ? (this.game.red.leader2.territory != null ? 2 : 1) : 0;
-        redLabel.setText(this.game.red != null ? "Battalions: " + this.game.red.battalions.size() + " Leaders: " + rlc : "-");
-        redLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
+        if (this.game.red != null) {
+            int bc = 0;
+            for (Battalion b : this.game.red.battalions) {
+                if (b.territory == null) {
+                    bc++;
+                }
+            }
+            int rlc = this.game.red.leader1.territory != null ? (this.game.red.leader2.territory != null ? 2 : 1) : 0;
+            redLabel.setText(this.game.red != null ? "Battalions: " + bc + " Leaders: " + rlc : "-");
+            redLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
+        }
 
-        int blc = this.game.black.leader1.territory != null ? (this.game.black.leader2.territory != null ? 2 : 1) : 0;
-        blackLabel.setText(this.game.black != null ? "Battalions: " + this.game.black.battalions.size() + " Leaders: " + blc : "-");
-        blackLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
-
-        int glc = this.game.green.leader1.territory != null ? (this.game.green.leader2.territory != null ? 2 : 1) : 0;
-        greenLabel.setText(this.game.green != null ? "Battalions: " + this.game.green.battalions.size() + " Leaders: " + glc : "-");
-        greenLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
+        if (this.game.black != null) {
+            int bc = 0;
+            for (Battalion b : this.game.black.battalions) {
+                if (b.territory == null) {
+                    bc++;
+                }
+            }
+            int blc = this.game.black.leader1.territory != null ? (this.game.black.leader2.territory != null ? 2 : 1) : 0;
+            blackLabel.setText(this.game.black != null ? "Battalions: " + bc + " Leaders: " + blc : "-");
+            blackLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
+        }
+        if (this.game.green != null) {
+            int bc = 0;
+            for (Battalion b : this.game.green.battalions) {
+                if (b.territory == null) {
+                    bc++;
+                }
+            }
+            int glc = this.game.green.leader1.territory != null ? (this.game.green.leader2.territory != null ? 2 : 1) : 0;
+            greenLabel.setText(this.game.green != null ? "Battalions: " + bc + " Leaders: " + glc : "-");
+            greenLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
+        }
 
         if (this.game.yellow != null) {
+            int bc = 0;
+            for (Battalion b : this.game.yellow.battalions) {
+                if (b.territory == null) {
+                    bc++;
+                }
+            }
             int ylc = this.game.yellow.leader1.territory != null ? (this.game.yellow.leader2.territory != null ? 2 : 1) : 0;
-            yellowLabel.setText(this.game.yellow != null ? "Battalions: " + this.game.yellow.battalions.size() + " Leaders: " + ylc : "-");
+            yellowLabel.setText(this.game.yellow != null ? "Battalions: " + bc + " Leaders: " + ylc : "-");
             yellowLabel.setStyle(Risk.skin.get("default", Label.LabelStyle.class));
         }
 
@@ -345,9 +394,9 @@ public class ClaimTerritoryScreen implements Screen {
         }
     }
 
-    private void addBattalion(RegionWrapper w, boolean isAuto) {
+    private void addBattalion(TerritoryCard territory, boolean isAuto) {
 
-        boolean assigned = game.current().assignTerritory(w.territory);
+        boolean assigned = game.current().assignTerritory(territory);
 
         if (assigned && !isAuto) {
             Sounds.play(Sound.TRIGGER);
@@ -358,6 +407,29 @@ public class ClaimTerritoryScreen implements Screen {
         this.game.nextPlayer();
 
         setActiveArmy();
+
+        if (game.current().isBot()) {
+            TerritoryCard t = game.findRandomEmptyTerritory(game.current().getClassType());
+            if (t != null) {
+                addBattalion(t, false);
+            } else {
+                List<TerritoryCard> terrs = game.current().claimedTerritories();
+                List<Location> sh = game.current().ownedStrongholds(terrs);
+                if (sh.isEmpty()) {
+                    t = terrs.get(rand.nextInt(terrs.size()));
+                } else {
+                    t = sh.get(rand.nextInt(sh.size())).getTerritory();
+                }
+                if (game.current().leader1.territory == null) {
+                    game.current().leader1.territory = t;
+                }
+                if (game.current().leader2.territory == null) {
+                    terrs.remove(game.current().leader1.territory);
+                    game.current().leader2.territory = terrs.get(rand.nextInt(terrs.size()));
+                }
+                addBattalion(t, true);
+            }
+        }
 
         boolean reinforcedone = true;
         boolean leaderPlacementDone = true;
@@ -406,17 +478,7 @@ public class ClaimTerritoryScreen implements Screen {
 
             List<TerritoryCard> terrs = army.claimedTerritories();
             TerritoryCard t = terrs.get(rand.nextInt(terrs.size()));
-            RegionWrapper found = null;
-            for (RegionWrapper w : regions) {
-                if (w.territory == t) {
-                    found = w;
-                    break;
-                }
-            }
-
-            if (found != null) {
-                addBattalion(found, true);
-            }
+            addBattalion(t, true);
         }
 
         Sounds.play(Sound.DIVINE_INTERVENTION);
@@ -465,6 +527,8 @@ public class ClaimTerritoryScreen implements Screen {
                 float by = bp.y - 12;
                 float tx = tp.x - 12;
                 float ty = tp.y - 12;
+
+                Risk.smallFont.draw(hudbatch, w.territory.title(), tp.x - 20, tp.y + 16);
 
                 if (at == ArmyType.RED) {
                     if (w.territory == game.red.leader1.territory || w.territory == game.red.leader2.territory) {

@@ -202,7 +202,7 @@ public class AttackScreen implements Screen {
         allBulletReferences.add(collisionConfiguration);
 
         rollButton = new TextButton("ROLL", Risk.ccskin, "arcade");
-        rollButton.setBounds(900 - 50, 300, 84, 84);
+        rollButton.setBounds(900 - 100, 100, 84, 84);
         rollButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
@@ -288,8 +288,8 @@ public class AttackScreen implements Screen {
             }
         });
 
-        continueButton = new TextButton("CONTINUE", Risk.ccskin, "arcade");
-        continueButton.setBounds(900 - 50, 200, 84, 84);
+        continueButton = new TextButton("STAY", Risk.ccskin, "arcade");
+        continueButton.setBounds(900, 100, 84, 84);
         continueButton.setVisible(false);
         continueButton.addListener(new ChangeListener() {
             @Override
@@ -319,8 +319,8 @@ public class AttackScreen implements Screen {
             }
         });
 
-        TextButton done = new TextButton("FINISH", Risk.ccskin, "arcade");
-        done.setBounds(900 - 50, 100, 84, 84);
+        TextButton done = new TextButton("DONE", Risk.ccskin, "arcade");
+        done.setBounds(900 + 100, 100, 84, 84);
         done.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {

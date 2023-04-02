@@ -71,7 +71,7 @@ public class FourPlayerGameTest {
                 idx = 0;
             }
 
-            TerritoryCard tc = findRandomEmptyTerritory(game);
+            TerritoryCard tc = game.findRandomEmptyTerritory();
             if (tc != null) {
                 army.assignTerritory(tc);
             } else {
@@ -139,47 +139,6 @@ public class FourPlayerGameTest {
         //System.out.println(json2);
         assertEquals(json, json2);
 
-    }
-
-    public TerritoryCard findRandomEmptyTerritory(Game game) {
-
-        List<TerritoryCard> temp = new ArrayList<>();
-        Collections.addAll(temp, TerritoryCard.values());
-
-        for (Battalion b : game.red.getBattalions()) {
-            if (temp.contains(b.territory)) {
-                temp.remove(b.territory);
-            }
-        }
-
-        for (Battalion b : game.black.getBattalions()) {
-            if (temp.contains(b.territory)) {
-                temp.remove(b.territory);
-            }
-        }
-
-        for (Battalion b : game.green.getBattalions()) {
-            if (temp.contains(b.territory)) {
-                temp.remove(b.territory);
-            }
-        }
-
-        if (game.yellow != null) {
-            for (Battalion b : game.yellow.getBattalions()) {
-                if (temp.contains(b.territory)) {
-                    temp.remove(b.territory);
-                }
-            }
-        }
-
-        if (temp.isEmpty()) {
-            return null;
-        }
-
-        Random rand = new Random();
-        int r = rand.nextInt(temp.size());
-
-        return temp.get(r);
     }
 
     @Test

@@ -2,8 +2,11 @@ package lotr;
 
 import com.google.gson.annotations.Expose;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
+import lotr.Constants.ClassType;
 
 public class Game {
 
@@ -65,28 +68,31 @@ public class Game {
     }
 
     public Army nextPlayer() {
-        this.turnIndex++;
-        if (this.turnIndex > 3 || (this.turnIndex == 3 && this.yellow == null)) {
-            this.turnIndex = 0;
+        turnIndex++;
+        if (turnIndex > 3) {
+            turnIndex = 0;
+        }
+        if (armies[turnIndex] == null) {
+            turnIndex++;
         }
         return armies[turnIndex];
     }
-    
+
     public void registerListener(GameStepListener l) {
         this.listeners.add(l);
     }
-    
+
     public void nextStep() {
-        
+
         int next = this.currentStep.ordinal() + 1;
         if (next >= Step.values().length) {
             next = 0;
             nextPlayer();
         }
-        
+
         this.currentStep = Step.values()[next];
-        
-        for(GameStepListener l : this.listeners) {
+
+        for (GameStepListener l : this.listeners) {
             l.nextStep(currentStep);
         }
     }
@@ -171,26 +177,28 @@ public class Game {
     }
 
     public Army isClaimed(TerritoryCard tc) {
-
-        if (this.red == null) {
-            return null;
-        }
-
-        for (Battalion b : this.red.getBattalions()) {
-            if (b.territory == tc) {
-                return this.red;
+        
+        if (this.red != null) {
+            for (Battalion b : this.red.getBattalions()) {
+                if (b.territory == tc) {
+                    return this.red;
+                }
             }
         }
-
-        for (Battalion b : this.black.getBattalions()) {
-            if (b.territory == tc) {
-                return this.black;
+        
+        if (this.black != null) {
+            for (Battalion b : this.black.getBattalions()) {
+                if (b.territory == tc) {
+                    return this.black;
+                }
             }
         }
-
-        for (Battalion b : this.green.getBattalions()) {
-            if (b.territory == tc) {
-                return this.green;
+        
+        if (this.green != null) {
+            for (Battalion b : this.green.getBattalions()) {
+                if (b.territory == tc) {
+                    return this.green;
+                }
             }
         }
 
@@ -212,10 +220,11 @@ public class Game {
         }
 
         int count = 0;
-
-        for (Battalion b : this.red.getBattalions()) {
-            if (b.territory == tc) {
-                count++;
+        if (this.red != null) {
+            for (Battalion b : this.red.getBattalions()) {
+                if (b.territory == tc) {
+                    count++;
+                }
             }
         }
 
@@ -223,9 +232,11 @@ public class Game {
             return count;
         }
 
-        for (Battalion b : this.black.getBattalions()) {
-            if (b.territory == tc) {
-                count++;
+        if (this.black != null) {
+            for (Battalion b : this.black.getBattalions()) {
+                if (b.territory == tc) {
+                    count++;
+                }
             }
         }
 
@@ -233,9 +244,11 @@ public class Game {
             return count;
         }
 
-        for (Battalion b : this.green.getBattalions()) {
-            if (b.territory == tc) {
-                count++;
+        if (this.green != null) {
+            for (Battalion b : this.green.getBattalions()) {
+                if (b.territory == tc) {
+                    count++;
+                }
             }
         }
 
@@ -350,6 +363,59 @@ public class Game {
                 }
             }
         }
+    }
+
+    public TerritoryCard findRandomEmptyTerritory(ClassType hint) {
+
+        List<TerritoryCard> temp = new ArrayList<>();
+        Collections.addAll(temp, TerritoryCard.values());
+
+        if (red != null) {
+            for (Battalion b : red.getBattalions()) {
+                if (temp.contains(b.territory)) {
+                    temp.remove(b.territory);
+                }
+            }
+        }
+
+        if (black != null) {
+            for (Battalion b : black.getBattalions()) {
+                if (temp.contains(b.territory)) {
+                    temp.remove(b.territory);
+                }
+            }
+        }
+
+        if (green != null) {
+            for (Battalion b : green.getBattalions()) {
+                if (temp.contains(b.territory)) {
+                    temp.remove(b.territory);
+                }
+            }
+        }
+
+        if (yellow != null) {
+            for (Battalion b : yellow.getBattalions()) {
+                if (temp.contains(b.territory)) {
+                    temp.remove(b.territory);
+                }
+            }
+        }
+
+        if (temp.isEmpty()) {
+            return null;
+        }
+
+        Random rand = new Random();
+
+        for (int i = 0; i < 10; i++) {
+            TerritoryCard t = temp.get(rand.nextInt(temp.size()));
+            if (t.type() == hint) {
+                return t;
+            }
+        }
+
+        return temp.get(rand.nextInt(temp.size()));
     }
 
 }

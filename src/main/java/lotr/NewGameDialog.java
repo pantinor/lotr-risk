@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import lotr.ai.BaseBot;
+import lotr.ai.StrongBot;
 
 public class NewGameDialog extends Window {
 
@@ -44,62 +45,138 @@ public class NewGameDialog extends Window {
         defaults().pad(5);
 
         Table table = new Table();
-        table.align(Align.left | Align.top).pad(1);
+        table.align(Align.left | Align.top).pad(5);
         table.columnDefaults(0).expandX().left().uniformX();
         table.columnDefaults(1).expandX().left().uniformX();
 
         ScrollPane sp = new ScrollPane(table, Risk.skin);
         add(sp).expand().fill().minWidth(200);
 
-        table.add(new Label("Select the number of players.", Risk.skin));
+        table.add(new Label("Select 3 or 4 armies to play.", Risk.skin));
         table.row();
-        table.add(new Label("Each player chooses a color and takes all of the battalions of that color.", Risk.skin));
+        table.add(new Label("1 army may be controlled by the player.", Risk.skin));
         table.row();
-        table.add(new Label("The yellow and green armies represent the good armies while the black and red ones represent the evil armies.", Risk.skin));
+        table.add(new Label("The remaining armies will be controlled by AI Bot.", Risk.skin));
         table.row();
-        table.add(new Label("In a 3 player game, one player will control a good army while the remaining two players control the evil armies.", Risk.skin));
+
+        table.add(new Label("", Risk.skin));
         table.row();
-        CheckBox cb4 = new CheckBox("4 Players", Risk.skin, "selection-blue");
-        CheckBox cb3 = new CheckBox("3 Players", Risk.skin, "selection-blue");
-        ButtonGroup buttonGroup = new ButtonGroup(cb4, cb3);
-        buttonGroup.setMaxCheckCount(1);
-        buttonGroup.setMinCheckCount(1);
-        table.add(cb4);
-        table.row();
-        table.add(cb3);
+
+        Table inner = new Table();
+        inner.align(Align.left | Align.top).pad(1);
+        inner.columnDefaults(0).left();
+        inner.columnDefaults(1).left();
+
+        CheckBox cbr = new CheckBox("RED", Risk.skin, "selection-blue");
+        CheckBox cbb = new CheckBox("BLACK", Risk.skin, "selection-blue");
+        CheckBox cbg = new CheckBox("GREEN", Risk.skin, "selection-blue");
+        CheckBox cby = new CheckBox("YELLOW   ", Risk.skin, "selection-blue");
+        ButtonGroup buttonGroup1 = new ButtonGroup(cbr, cbb, cbg, cby);
+        buttonGroup1.setMaxCheckCount(4);
+        buttonGroup1.setMinCheckCount(3);
+        CheckBox cbrb = new CheckBox("BOT", Risk.skin, "selection-blue");
+        CheckBox cbbb = new CheckBox("BOT", Risk.skin, "selection-blue");
+        CheckBox cbgb = new CheckBox("BOT", Risk.skin, "selection-blue");
+        CheckBox cbyb = new CheckBox("BOT", Risk.skin, "selection-blue");
+        ButtonGroup buttonGroup2 = new ButtonGroup(cbrb, cbbb, cbgb, cbyb);
+        buttonGroup2.setMaxCheckCount(3);
+        buttonGroup2.setMinCheckCount(2);
+        inner.add(cbr);
+        inner.add(cbrb);
+        inner.row();
+        inner.add(cbb);
+        inner.add(cbbb);
+        inner.row();
+        inner.add(cbg);
+        inner.add(cbgb);
+        inner.row();
+        inner.add(cby);
+        inner.add(cbyb);
+        inner.row();
+
+        table.add(inner);
         table.row();
 
         table.add(new Label("", Risk.skin));
         table.row();
 
         TextButton close = new TextButton("OK", Risk.skin);
-        table.add(close).size(120, 25);
+        table.add(close).size(120, 25).center();
         close.addListener(new EventListener() {
             @Override
             public boolean handle(Event event) {
                 if (event.toString().equals("touchDown")) {
 
-                    if (cb4.isChecked()) {
+                    boolean fourplayers = buttonGroup1.getAllChecked().size == 4;
+                    if (fourplayers && buttonGroup2.getAllChecked().size != 3) {
+                        return false;
+                    } 
+                    
+                    if (!fourplayers && buttonGroup2.getAllChecked().size != 2) {
+                        return false;
+                    }
+
+                    if (fourplayers) {
                         Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, 45);
                         game.setRed(red);
+                        if (cbrb.isChecked()) {
+                            red.botType = BaseBot.Type.STRONG;
+                            red.bot = new StrongBot(game, red);
+                        }
 
                         Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 45);
                         game.setBlack(black);
+                        if (cbbb.isChecked()) {
+                            black.botType = BaseBot.Type.STRONG;
+                            black.bot = new StrongBot(game, black);
+                        }
 
                         Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 45);
                         game.setGreen(green);
+                        if (cbgb.isChecked()) {
+                            green.botType = BaseBot.Type.STRONG;
+                            green.bot = new StrongBot(game, green);
+                        }
 
                         Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, 45);
                         game.setYellow(yellow);
+                        if (cbyb.isChecked()) {
+                            yellow.botType = BaseBot.Type.STRONG;
+                            yellow.bot = new StrongBot(game, yellow);
+                        }
                     } else {
-                        Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, 52);
-                        game.setRed(red);
-
-                        Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 52);
-                        game.setBlack(black);
-
-                        Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 52);
-                        game.setGreen(green);
+                        if (cbr.isChecked()) {
+                            Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, 52);
+                            game.setRed(red);
+                            if (cbrb.isChecked()) {
+                                red.botType = BaseBot.Type.STRONG;
+                                red.bot = new StrongBot(game, red);
+                            }
+                        }
+                        if (cbb.isChecked()) {
+                            Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 52);
+                            game.setBlack(black);
+                            if (cbbb.isChecked()) {
+                                black.botType = BaseBot.Type.STRONG;
+                                black.bot = new StrongBot(game, black);
+                            }
+                        }
+                        if (cbg.isChecked()) {
+                            Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 52);
+                            game.setGreen(green);
+                            if (cbgb.isChecked()) {
+                                green.botType = BaseBot.Type.STRONG;
+                                green.bot = new StrongBot(game, green);
+                            }
+                        }
+                        if (cby.isChecked()) {
+                            Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, 52);
+                            game.setYellow(yellow);
+                            if (cbyb.isChecked()) {
+                                yellow.botType = BaseBot.Type.STRONG;
+                                yellow.bot = new StrongBot(game, yellow);
+                            }
+                        }
                     }
 
                     //split deck into good and evil territories
@@ -107,42 +184,34 @@ public class NewGameDialog extends Window {
                     List<TerritoryCard> good = TerritoryCard.shuffledTerritoriesOfClass(Constants.ClassType.GOOD);
                     List<TerritoryCard> neutral = TerritoryCard.shuffledTerritoriesOfClass(Constants.ClassType.NEUTRAL);
 
-                    if (cb4.isChecked()) {
+                    if (fourplayers) {
                         game.red.pickTerritories(evil, 8);
                         game.black.pickTerritories(evil, 8);
                         game.green.pickTerritories(good, 8);
                         game.yellow.pickTerritories(good, 8);
-
-                        int humanPlayer = new Random().nextInt(4);
-                        if (humanPlayer != 0) {
-                            game.red.botType = BaseBot.Type.values()[new Random().nextInt(3)];
-                        }
-                        if (humanPlayer != 1) {
-                            game.green.botType = BaseBot.Type.values()[new Random().nextInt(3)];
-                        }
-                        if (humanPlayer != 2) {
-                            game.black.botType = BaseBot.Type.values()[new Random().nextInt(3)];
-                        }
-                        if (humanPlayer != 3) {
-                            game.yellow.botType = BaseBot.Type.values()[new Random().nextInt(3)];
-                        }
                     } else {
-                        game.red.pickTerritories(evil, 8);
-                        game.black.pickTerritories(evil, 8);
-                        game.red.pickTerritories(neutral, 8);
-                        game.black.pickTerritories(neutral, 8);
-                        game.green.pickTerritories(good, 16);
-                        
-                        int humanPlayer = new Random().nextInt(3);
-                        if (humanPlayer != 0) {
-                            game.red.botType = BaseBot.Type.values()[new Random().nextInt(3)];
+                        if (game.red == null || game.black == null) {
+                            game.green.pickTerritories(good, 8);
+                            game.yellow.pickTerritories(good, 8);
+                            game.green.pickTerritories(neutral, 8);
+                            game.yellow.pickTerritories(neutral, 8);
+                            if (game.red == null) {
+                                game.black.pickTerritories(evil, 16);
+                            } else {
+                                game.red.pickTerritories(evil, 16);
+                            }
+                        } else {
+                            game.red.pickTerritories(evil, 8);
+                            game.black.pickTerritories(evil, 8);
+                            game.red.pickTerritories(neutral, 8);
+                            game.black.pickTerritories(neutral, 8);
+                            if (game.green == null) {
+                                game.yellow.pickTerritories(good, 16);
+                            } else {
+                                game.green.pickTerritories(good, 16);
+                            }
                         }
-                        if (humanPlayer != 1) {
-                            game.green.botType = BaseBot.Type.values()[new Random().nextInt(3)];
-                        }
-                        if (humanPlayer != 2) {
-                            game.black.botType = BaseBot.Type.values()[new Random().nextInt(3)];
-                        }
+
                     }
 
                     List<TerritoryCard> temp = new ArrayList<>();
@@ -162,6 +231,16 @@ public class NewGameDialog extends Window {
                 return false;
             }
         });
+
+        cbr.setChecked(true);
+        cbb.setChecked(true);
+        cbg.setChecked(true);
+        cby.setChecked(true);
+        
+        cbrb.setChecked(true);
+        cbbb.setChecked(true);
+        cbgb.setChecked(false);
+        cbyb.setChecked(true);
 
         focusListener = new FocusListener() {
             @Override
@@ -237,7 +316,7 @@ public class NewGameDialog extends Window {
             remove();
         }
 
-        this.screen.initArmies();
+        this.screen.init();
     }
 
     protected InputListener ignoreTouchDown = new InputListener() {
