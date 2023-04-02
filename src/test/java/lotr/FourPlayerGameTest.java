@@ -71,7 +71,7 @@ public class FourPlayerGameTest {
                 idx = 0;
             }
 
-            TerritoryCard tc = game.findRandomEmptyTerritory();
+            TerritoryCard tc = game.findRandomEmptyTerritory(army.getClassType());
             if (tc != null) {
                 army.assignTerritory(tc);
             } else {

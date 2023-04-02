@@ -21,7 +21,7 @@ public class ExplosionTriangle {
         this.position = new Vector2(position);
         this.angle = angle;
         this.f = MathUtils.random(0.5f, 1.2f);
-        this.color = new Color(MathUtils.random(), MathUtils.random(), MathUtils.random(), 1);
+        this.color = new Color(MathUtils.random(0.3f, .9f), 0, 0, 1);
         this.speedFactor = MathUtils.random(1f, 2f);
     }
 

@@ -27,7 +27,7 @@ import lotr.util.RingPathAction;
 import lotr.util.Sound;
 import lotr.util.Sounds;
 
-public class RingPathActor extends Actor implements RingPathAction {
+public class RingPath implements RingPathAction {
 
     private final ShapeRenderer shapeRenderer;
     private final CatmullRomSpline<Vector2> path;
@@ -35,7 +35,7 @@ public class RingPathActor extends Actor implements RingPathAction {
     private final AnimatedSpriteActor frodo, sam;
     private static final List<RingPathWrapper> RING_PATHS = new ArrayList<>();
 
-    public RingPathActor(Stage stage, ShapeRenderer shapeRenderer, MapLayer pathLayer, Logger logger) {
+    public RingPath(Stage stage, ShapeRenderer shapeRenderer, MapLayer pathLayer, Logger logger) {
         this.shapeRenderer = shapeRenderer;
         this.logger = logger;
 

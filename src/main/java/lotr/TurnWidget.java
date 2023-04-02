@@ -110,13 +110,16 @@ public class TurnWidget extends Table implements GameStepListener {
         acardListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                game.nextStep();//replace
+                game.nextStep();//replace leader
             }
         };
 
         replaceListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                if (game.current().leader1.territory == null && game.current().leader2.territory == null && gameScreen.selectedAttackingTerritory != null) {
+                    game.current().leader1.territory = gameScreen.selectedAttackingTerritory.territory;
+                }
                 game.nextStep();//ring
             }
         };
@@ -124,7 +127,7 @@ public class TurnWidget extends Table implements GameStepListener {
         ringListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                gameScreen.ringPathActor.advance();
+                gameScreen.ringPath.advance();
                 game.nextStep();//draft for next player
                 if (GAME.current().isBot()) {
                     STAGE.addAction(GAME.current().bot.run());

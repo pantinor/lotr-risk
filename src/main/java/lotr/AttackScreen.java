@@ -288,7 +288,7 @@ public class AttackScreen implements Screen {
             }
         });
 
-        continueButton = new TextButton("STAY", Risk.ccskin, "arcade");
+        continueButton = new TextButton("BLITZ", Risk.ccskin, "arcade");
         continueButton.setBounds(900, 100, 84, 84);
         continueButton.setVisible(false);
         continueButton.addListener(new ChangeListener() {

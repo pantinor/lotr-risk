@@ -35,12 +35,14 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import lotr.ai.StrongBot;
-import lotr.ai.WeakBot;
-import lotr.ai.RandomBot;
 import org.apache.commons.io.IOUtils;
 
 public class Risk extends Game {
@@ -154,16 +156,16 @@ public class Risk extends Game {
             GAME.setYellow(GAME.yellow);
 
             for (int i = 0; i < 4; i++) {
-                if (GAME.armies[i].botType != null) {
+                if (GAME.armies[i] != null && GAME.armies[i].botType != null) {
                     switch (GAME.armies[i].botType) {
                         case STRONG:
                             GAME.armies[i].bot = new StrongBot(GAME, GAME.armies[i]);
                             break;
                         case RANDOM:
-                            GAME.armies[i].bot = new WeakBot(GAME, GAME.armies[i]);
+                            GAME.armies[i].bot = new StrongBot(GAME, GAME.armies[i]);
                             break;
                         case WEAK:
-                            GAME.armies[i].bot = new RandomBot(GAME, GAME.armies[i]);
+                            GAME.armies[i].bot = new StrongBot(GAME, GAME.armies[i]);
                             break;
                     }
                 }
@@ -173,10 +175,12 @@ public class Risk extends Game {
             setScreen(gameScreen);
 
             for (int i = 0; i < 4; i++) {
-                if (GAME.armies[i].botType != null) {
-                    GAME.armies[i].bot.set(gameScreen.logs, gameScreen.ringPathActor);
+                if (GAME.armies[i] != null && GAME.armies[i].botType != null) {
+                    GAME.armies[i].bot.set(gameScreen.logs, gameScreen.ringPath);
                 }
             }
+            
+            GAME.updateStandings();
 
         }
 
@@ -218,8 +222,9 @@ public class Risk extends Game {
         Vector3 textPosition;
         Vector3 namePosition;
     }
-    
+
     public static class FortifyRegionWrapper extends RegionWrapper {
+
         boolean isConnected;
     }
 
@@ -348,6 +353,14 @@ public class Risk extends Game {
         mpb.rect(1f, -1f, -1f, 1f, 1f, -1f, 1f, 1f, 1f, 1f, -1f, 1f, 1, 0, 0);
         Model boxModel = modelBuilder.end();
         return boxModel;
+    }
+
+    public static <K, V extends Comparable<V>> Map<K, V> sortByDescendingValues(Map<K, V> map) {
+        Map<K, V> sortedMapReverseOrder = map.entrySet().
+                stream().
+                sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).
+                collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+        return sortedMapReverseOrder;
     }
 
 }

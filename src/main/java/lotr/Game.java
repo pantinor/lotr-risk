@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import lotr.Constants.ClassType;
 
@@ -20,6 +21,7 @@ public class Game {
     public Army yellow;
 
     public final Army[] armies = new Army[4];
+    public final Status[] status = new Status[]{new Status(), new Status(), new Status(), new Status()};
 
     public Step currentStep = Step.DRAFT;
     private List<GameStepListener> listeners = new ArrayList<>();
@@ -75,6 +77,9 @@ public class Game {
         if (armies[turnIndex] == null) {
             turnIndex++;
         }
+
+        updateStandings();
+
         return armies[turnIndex];
     }
 
@@ -95,6 +100,9 @@ public class Game {
         for (GameStepListener l : this.listeners) {
             l.nextStep(currentStep);
         }
+
+        updateStandings();
+
     }
 
     public Army getRed() {
@@ -177,7 +185,7 @@ public class Game {
     }
 
     public Army isClaimed(TerritoryCard tc) {
-        
+
         if (this.red != null) {
             for (Battalion b : this.red.getBattalions()) {
                 if (b.territory == tc) {
@@ -185,7 +193,7 @@ public class Game {
                 }
             }
         }
-        
+
         if (this.black != null) {
             for (Battalion b : this.black.getBattalions()) {
                 if (b.territory == tc) {
@@ -193,7 +201,7 @@ public class Game {
                 }
             }
         }
-        
+
         if (this.green != null) {
             for (Battalion b : this.green.getBattalions()) {
                 if (b.territory == tc) {
@@ -369,6 +377,8 @@ public class Game {
 
         List<TerritoryCard> temp = new ArrayList<>();
         Collections.addAll(temp, TerritoryCard.values());
+        temp.remove(TerritoryCard.WILD_CARD_1);
+        temp.remove(TerritoryCard.WILD_CARD_2);
 
         if (red != null) {
             for (Battalion b : red.getBattalions()) {
@@ -416,6 +426,93 @@ public class Game {
         }
 
         return temp.get(rand.nextInt(temp.size()));
+    }
+
+    public static class Status {
+
+        Army army;
+        int bcount;
+        int rcount;
+        int tcount;
+        int ccount;
+        int scount;
+        int threat;
+        Map<Region, Integer> percentOwnershipInEachRegion;
+    }
+
+    public void updateStandings() {
+        if (red != null) {
+            status[0].army = red;
+            status[0].bcount = red.battalions.size();
+            List<TerritoryCard> claimedTerritories = red.claimedTerritories();
+            List<Region> ownedRegions = red.ownedRegions(claimedTerritories);
+            status[0].rcount = ownedRegions.size();
+            status[0].tcount = claimedTerritories.size();
+            status[0].ccount = red.territoryCards.size();
+            status[0].scount = red.ownedStrongholds(claimedTerritories).size();
+            status[0].threat = 0;
+            status[0].threat += status[0].bcount;
+            status[0].threat += (Math.floor(status[0].tcount / 2));
+            status[0].threat += (status[0].ccount * 2);
+            for (Region r : ownedRegions) {
+                status[0].threat += r.reinforcements() * 1.5;
+            }
+            status[0].percentOwnershipInEachRegion = red.percentOwnershipInEachRegion(claimedTerritories);
+        }
+        if (green != null) {
+            status[1].army = green;
+            status[1].bcount = green.battalions.size();
+            List<TerritoryCard> claimedTerritories = green.claimedTerritories();
+            List<Region> ownedRegions = green.ownedRegions(claimedTerritories);
+            status[1].rcount = ownedRegions.size();
+            status[1].tcount = claimedTerritories.size();
+            status[1].ccount = green.territoryCards.size();
+            status[1].scount = green.ownedStrongholds(claimedTerritories).size();
+            status[1].threat = 0;
+            status[1].threat += status[0].bcount;
+            status[1].threat += (Math.floor(status[0].tcount / 2));
+            status[1].threat += (status[0].ccount * 2);
+            for (Region r : ownedRegions) {
+                status[1].threat += r.reinforcements() * 1.5;
+            }
+            status[1].percentOwnershipInEachRegion = red.percentOwnershipInEachRegion(claimedTerritories);
+        }
+        if (black != null) {
+            status[2].army = black;
+            status[2].bcount = black.battalions.size();
+            List<TerritoryCard> claimedTerritories = black.claimedTerritories();
+            List<Region> ownedRegions = black.ownedRegions(claimedTerritories);
+            status[2].rcount = ownedRegions.size();
+            status[2].tcount = claimedTerritories.size();
+            status[2].ccount = black.territoryCards.size();
+            status[2].scount = black.ownedStrongholds(claimedTerritories).size();
+            status[2].threat = 0;
+            status[2].threat += status[0].bcount;
+            status[2].threat += (Math.floor(status[0].tcount / 2));
+            status[2].threat += (status[0].ccount * 2);
+            for (Region r : ownedRegions) {
+                status[2].threat += r.reinforcements() * 1.5;
+            }
+            status[2].percentOwnershipInEachRegion = red.percentOwnershipInEachRegion(claimedTerritories);
+        }
+        if (yellow != null) {
+            status[3].army = yellow;
+            status[3].bcount = yellow.battalions.size();
+            List<TerritoryCard> claimedTerritories = yellow.claimedTerritories();
+            List<Region> ownedRegions = yellow.ownedRegions(claimedTerritories);
+            status[3].rcount = ownedRegions.size();
+            status[3].tcount = claimedTerritories.size();
+            status[3].ccount = yellow.territoryCards.size();
+            status[3].scount = yellow.ownedStrongholds(claimedTerritories).size();
+            status[3].threat = 0;
+            status[3].threat += status[0].bcount;
+            status[3].threat += (Math.floor(status[0].tcount / 2));
+            status[3].threat += (status[0].ccount * 2);
+            for (Region r : ownedRegions) {
+                status[3].threat += r.reinforcements() * 1.5;
+            }
+            status[3].percentOwnershipInEachRegion = red.percentOwnershipInEachRegion(claimedTerritories);
+        }
     }
 
 }

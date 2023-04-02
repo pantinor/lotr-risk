@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.9" tiledversion="1.9.2" orientation="hexagonal" renderorder="right-down" width="84" height="96" tilewidth="32" tileheight="28" infinite="0" hexsidelength="16" staggeraxis="x" staggerindex="odd" nextlayerid="20" nextobjectid="164">
+<map version="1.9" tiledversion="1.9.2" orientation="hexagonal" renderorder="right-down" width="84" height="96" tilewidth="32" tileheight="28" infinite="0" hexsidelength="16" staggeraxis="x" staggerindex="odd" nextlayerid="25" nextobjectid="214">
  <tileset firstgid="1" name="tiles" tilewidth="32" tileheight="48" tilecount="48" columns="8">
   <tileoffset x="0" y="2"/>
   <image source="borderless.png" width="256" height="288"/>
@@ -7,12 +7,45 @@
  <tileset firstgid="49" name="uf_heroes" tilewidth="48" tileheight="48" tilecount="1400" columns="40">
   <image source="uf_heroes.png" width="1920" height="1680"/>
  </tileset>
- <imagelayer id="7" name="OriginalMapImage" visible="0" locked="1">
-  <image source="risk-map.png" width="2048" height="2688"/>
- </imagelayer>
- <imagelayer id="16" name="rendered-image">
-  <image source="map-rendered.png" width="2048" height="2688"/>
- </imagelayer>
+ <objectgroup id="24" name="ship-route-4" visible="0">
+  <object id="192" x="314" y="660"/>
+  <object id="193" x="166" y="722"/>
+  <object id="194" x="38" y="642"/>
+  <object id="195" x="30" y="416"/>
+  <object id="196" x="216" y="226"/>
+  <object id="197" x="544" y="114"/>
+  <object id="198" x="829" y="100" width="2"/>
+ </objectgroup>
+ <objectgroup id="23" name="ship-route-3" visible="0">
+  <object id="186" x="644" y="1278"/>
+  <object id="187" x="358" y="1312"/>
+  <object id="188" x="106" y="1102"/>
+  <object id="189" x="76" y="812"/>
+  <object id="211" x="154" y="740" width="1"/>
+  <object id="212" x="239" y="722" width="2"/>
+  <object id="213" x="336" y="640"/>
+ </objectgroup>
+ <objectgroup id="22" name="ship-route-2" visible="0">
+  <object id="199" x="843" y="2512"/>
+  <object id="200" x="816" y="2469"/>
+  <object id="201" x="815" y="2413"/>
+  <object id="202" x="832" y="2353" width="3"/>
+  <object id="203" x="880" y="2285"/>
+  <object id="204" x="885" y="2236"/>
+  <object id="205" x="797" y="2276"/>
+  <object id="206" x="713" y="2292"/>
+  <object id="207" x="619" y="2285"/>
+ </objectgroup>
+ <objectgroup id="21" name="ship-route-1" visible="0">
+  <object id="174" x="840" y="2518"/>
+  <object id="175" x="620" y="2284"/>
+  <object id="176" x="306" y="2296"/>
+  <object id="177" x="96" y="2214" height="2"/>
+  <object id="178" x="120" y="1930"/>
+  <object id="179" x="380" y="1768"/>
+  <object id="180" x="596" y="1552"/>
+  <object id="181" x="644" y="1265"/>
+ </objectgroup>
  <objectgroup id="13" name="ring-path" visible="0">
   <object id="131" name="mount doom" x="1752" y="1891" width="21" height="21">
    <properties>
@@ -57,6 +90,12 @@
   <object id="115" name="buckland" x="678" y="735" width="23" height="22"/>
   <object id="113" name="the shire" x="529" y="721" width="29" height="26"/>
  </objectgroup>
+ <imagelayer id="7" name="OriginalMapImage" visible="0" locked="1">
+  <image source="risk-map.png" width="2048" height="2688"/>
+ </imagelayer>
+ <imagelayer id="16" name="rendered-image">
+  <image source="map-rendered.png" width="2048" height="2688"/>
+ </imagelayer>
  <objectgroup id="19" name="locations" visible="0">
   <object id="133" name="RIVENDELL" gid="39" x="1177" y="659" width="32" height="48"/>
   <object id="134" name="MINES_OF_MORIA" gid="48" x="1201" y="981" width="32" height="48"/>

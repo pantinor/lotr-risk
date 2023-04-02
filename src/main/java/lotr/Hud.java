@@ -30,7 +30,7 @@ public class Hud {
 
         batch.draw(this.background, 0, 0);
         batch.draw(this.frame, 0, 0);
-
+        
         for (Army a : game.armies) {
 
             if (a == game.current()) {
@@ -62,10 +62,14 @@ public class Hud {
                     break;
             }
 
-            String row1 = String.format("Battalions %d Territories %d", a.battalions.size(), claimedTerritories.size());
-            String row2 = String.format("Regions %s Strongholds %d %s", a.ownedRegions(claimedTerritories).size(), a.ownedStrongholds(claimedTerritories).size(), a.isBot());
+            String row1 = String.format("B: %d  T: %d  R: %d  S: %d", 
+                    game.status[a.armyType.ordinal()].bcount, game.status[a.armyType.ordinal()].tcount,
+                    game.status[a.armyType.ordinal()].rcount, game.status[a.armyType.ordinal()].scount);
+            
+            String row2 = String.format("Cards: %d  Threat: %d", 
+                    game.status[a.armyType.ordinal()].ccount, game.status[a.armyType.ordinal()].threat);
 
-            Risk.font.setColor(a.armyType.color());
+            //Risk.font.setColor(a.armyType.color());
             Risk.font.draw(batch, row1, 50, y);
             Risk.font.draw(batch, row2, 50, y - 20);
 

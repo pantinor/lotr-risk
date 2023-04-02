@@ -73,7 +73,8 @@ public class GameScreen implements Screen {
     private final List<RegionWrapper> regions = new ArrayList<>();
     public RegionWrapper selectedAttackingTerritory, selectedDefendingTerritory;
 
-    public RingPathActor ringPathActor;
+    public RingPath ringPath;
+    private ShippingRoutes shippingRoutes;
     public MissionCardWidget missionCardSlider;
     public LogScrollPane logs;
 
@@ -139,7 +140,8 @@ public class GameScreen implements Screen {
         logs = new LogScrollPane();
         widgetStage.addActor(logs);
 
-        ringPathActor = new RingPathActor(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"), logs);
+        ringPath = new RingPath(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"), logs);
+        shippingRoutes = new ShippingRoutes(shapeRenderer);
 
         input = new InputMultiplexer(widgetStage, new InputAdapter() {
 
@@ -220,6 +222,14 @@ public class GameScreen implements Screen {
         }
     }
 
+    public void lookAt(TerritoryCard t) {
+        for (RegionWrapper w : regions) {
+            if (w.territory == t) {
+                camera.position.set(w.battalionPosition.x, w.battalionPosition.y, 0);
+            }
+        }
+    }
+
     @Override
     public void show() {
         Gdx.input.setInputProcessor(input);
@@ -247,8 +257,10 @@ public class GameScreen implements Screen {
         renderer.render();
 
         shapeRenderer.setProjectionMatrix(camera.combined);
-        ringPathActor.render();
-
+        
+        ringPath.render();
+        shippingRoutes.render();
+        
         if (selectedAttackingTerritory != null) {
             if (selectedDefendingTerritory == null) {
                 for (TerritoryCard adj : selectedAttackingTerritory.territory.adjacents()) {

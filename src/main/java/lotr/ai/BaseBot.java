@@ -126,6 +126,10 @@ public abstract class BaseBot {
 
         RunnableAction r5 = new RunnableAction();
         r5.setRunnable(() -> {
+            if (game.current().leader1.territory == null && game.current().leader2.territory == null) {
+                TerritoryCard from = pickClaimedTerritory(Step.FORTIFY);
+                game.current().leader1.territory = from;
+            }
             game.nextStep();//replace
         });
         s.addAction(r5);
@@ -307,7 +311,7 @@ public abstract class BaseBot {
             cardReinforcements = 10;
         }
 
-        log(String.format("%s is reinforcing territories with %d battalion(s).", army.armyType, 
+        log(String.format("%s is reinforcing territories with %d battalion(s).", army.armyType,
                 strongholdReinforcements + territoryReinforcements + regionReinforcements + cardReinforcements), army.armyType.color());
 
         if (strongholdReinforcements > 0) {
@@ -364,8 +368,25 @@ public abstract class BaseBot {
 
     }
 
+    /**
+     * The purpose of fortification is to strengthen territories which are
+     * potentially attacked by enemies, so it is natural to limit the action
+     * space to only these.
+     *
+     * @param step the step
+     * @return the territory
+     */
     public abstract TerritoryCard pickClaimedTerritory(Step step);
 
+    /**
+     * Pick a territory from which battalions may be sent from in the fortify
+     * phase, or from which an attack may be made from in the attack phase.
+     * 
+     * For fortify phase, return a list of owned territories sorted by battalion count which have adjacent
+     *
+     * @param step
+     * @return
+     */
     protected List<SortWrapper> sortedClaimedTerritories(Step step) {
         List<SortWrapper> sorted = new ArrayList<>();
         List<TerritoryCard> owned = army.claimedTerritories();

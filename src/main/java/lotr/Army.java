@@ -9,6 +9,7 @@ import java.util.Random;
 import lotr.Constants.ArmyType;
 import lotr.Constants.ClassType;
 import lotr.ai.BaseBot;
+import org.apache.commons.collections.CollectionUtils;
 
 public class Army {
 
@@ -150,6 +151,16 @@ public class Army {
             }
         }
         return tmp;
+    }
+    
+    public Map<Region, Integer> percentOwnershipInEachRegion(List<TerritoryCard> claimedTerritories) {
+        Map<Region, Integer> tmp = new HashMap<>();
+        for (Region r : Region.values()) {
+            int numberOfTerritoriesInRegion = r.territories().size();
+            int territoriesOwnedInRegion = CollectionUtils.intersection(r.territories(), claimedTerritories).size();
+            tmp.put(r, numberOfTerritoriesInRegion / (territoriesOwnedInRegion + 1));
+        }
+        return Risk.sortByDescendingValues(tmp);
     }
 
     public ArmyType getArmyType() {
