@@ -19,6 +19,8 @@ public class Hud {
     private final Texture frame = new Texture(Gdx.files.classpath("assets/data/hud-frame.png"));
     private final Texture background = Risk.fillRectangle(300, 62 * 4, new Color(0, 0, .62f, .8f));
     private final Texture highlighter = Risk.fillRectangle(296, 58, new Color(.7f, .3f, .5f, .7f));
+    private final Texture defeated = Risk.fillRectangle(296, 58, new Color(.7f, .7f, .7f, .7f));
+    
     protected float time = 0;
 
     public void render(Batch batch, Game game, float delta) {
@@ -35,6 +37,10 @@ public class Hud {
 
             if (a == game.current()) {
                 batch.draw(this.highlighter, 2, y - 47);
+            }
+            
+            if (a.battalions.size() == 0) {
+                batch.draw(this.defeated, 2, y - 47);
             }
 
             if (a == null) {

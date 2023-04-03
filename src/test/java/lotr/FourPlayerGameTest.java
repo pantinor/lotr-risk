@@ -7,7 +7,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import lotr.Game.Step;
@@ -18,6 +17,7 @@ import lotr.ai.WeakBot;
 import org.apache.commons.io.IOUtils;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.Test;
 
@@ -168,10 +168,15 @@ public class FourPlayerGameTest {
         game.black.bot = new RandomBot(game, game.red);
         game.yellow.bot = new StrongBot(game, game.red);
 
-        TerritoryCard pickedFromTerritory = game.black.bot.pickClaimedTerritory(Step.COMBAT);
-        TerritoryCard pickedToTerritory = game.black.bot.pickTerritoryToAttack(pickedFromTerritory);
+        TerritoryCard pickedFromTerritory = game.red.bot.pickClaimedTerritory(Step.COMBAT);
+        assertNotNull(pickedFromTerritory);
+        TerritoryCard pickedToTerritory = game.red.bot.pickTerritoryToAttack(pickedFromTerritory);
+        assertNotNull(pickedToTerritory);
         game.black.bot.reinforce();
         game.black.bot.attack(pickedFromTerritory, pickedToTerritory);
+        
+        TerritoryCard f = game.red.bot.pickClaimedTerritory(Step.FORTIFY);
+        assertNotNull(f);
 
     }
 

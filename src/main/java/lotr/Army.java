@@ -32,6 +32,9 @@ public class Army {
 
     @Expose
     public BaseBot.Type botType;
+    
+    public TerritoryCard missionIndication1 = null;
+    public TerritoryCard missionIndication2 = null;
 
     public Army() {
 

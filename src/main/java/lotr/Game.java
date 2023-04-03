@@ -80,6 +80,10 @@ public class Game {
 
         updateStandings();
 
+        if (armies[turnIndex].battalions.size() == 0) {
+            nextPlayer();
+        }
+
         return armies[turnIndex];
     }
 
@@ -168,10 +172,18 @@ public class Game {
 
         if (a.leader1 != null && a.leader1.territory == from) {
             a.leader1.territory = to;
+            Location sop = Location.getSiteOfPower(to);
+            if (sop != null) {
+                a.missionIndication1 = to;
+            }
         }
 
         if (a.leader2 != null && a.leader2.territory == from) {
             a.leader2.territory = to;
+            Location sop = Location.getSiteOfPower(to);
+            if (sop != null) {
+                a.missionIndication2 = to;
+            }
         }
     }
 

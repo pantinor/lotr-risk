@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import lotr.AdventureCard;
 import lotr.Army;
 import lotr.Battalion;
 import lotr.Constants;
@@ -17,6 +18,7 @@ import lotr.Location;
 import lotr.Region;
 import static lotr.Risk.GAME;
 import lotr.TerritoryCard;
+import lotr.util.CardAction;
 import lotr.util.Dice;
 import lotr.util.Logger;
 import lotr.util.RingPathAction;
@@ -58,12 +60,19 @@ public abstract class BaseBot {
     final Army army;
     private Logger logger;
     private RingPathAction rpa;
+    private CardAction cardAction;
 
     boolean conqueredTerritory;
 
     public BaseBot(Game game, Army army) {
         this.game = game;
         this.army = army;
+    }
+
+    public void set(Logger logger, RingPathAction rpa, CardAction cardAction) {
+        this.logger = logger;
+        this.rpa = rpa;
+        this.cardAction = cardAction;
     }
 
     public SequenceAction run() {
@@ -126,9 +135,18 @@ public abstract class BaseBot {
 
         RunnableAction r5 = new RunnableAction();
         r5.setRunnable(() -> {
-            if (game.current().leader1.territory == null && game.current().leader2.territory == null) {
+
+            int count = game.current().adventureCards.size();
+            if (rand.nextInt(2) == 1 && count > 0) {
+                AdventureCard c = game.current().adventureCards.get(rand.nextInt(count));
                 TerritoryCard from = pickClaimedTerritory(Step.FORTIFY);
-                game.current().leader1.territory = from;
+                cardAction.process(c, game.current(), null, from, null);
+            }
+
+            if (game.current().leader1.territory == null && game.current().leader2.territory == null) {
+                List<TerritoryCard> claimedTerritories = game.current().claimedTerritories();
+                List<Location> strongholds = game.current().ownedStrongholds(claimedTerritories);
+                game.current().leader1.territory = strongholds.size() > 0 ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
             }
             game.nextStep();//replace
         });
@@ -156,11 +174,6 @@ public abstract class BaseBot {
 
         return s;
 
-    }
-
-    public void set(Logger logger, RingPathAction rpa) {
-        this.logger = logger;
-        this.rpa = rpa;
     }
 
     public void attack(TerritoryCard from, TerritoryCard to) {
@@ -259,9 +272,8 @@ public abstract class BaseBot {
             defender.removeBattalion(to);
         }
 
-        log(String.format("%s lost %d battalion(s) from %s and %s lost %d battalion(s) from %s.",
-                army.armyType, attackerLosses, from, defender.armyType, defenderLosses, to), army.armyType.color());
-
+        //log(String.format("%s lost %d battalion(s) from %s and %s lost %d battalion(s) from %s.",
+        //        army.armyType, attackerLosses, from, defender.armyType, defenderLosses, to), army.armyType.color());
         return true;
     }
 
@@ -271,7 +283,6 @@ public abstract class BaseBot {
 
         List<TerritoryCard> claimedTerritories = army.claimedTerritories();
         List<Location> strongholds = army.ownedStrongholds(claimedTerritories);
-        List<Region> ownedRegions = new ArrayList<>();
 
         int strongholdReinforcements = 0, territoryReinforcements = 0, regionReinforcements = 0, cardReinforcements = 0;
         int sumArchers = 0, sumRiders = 0, sumEagles = 0;
@@ -282,7 +293,6 @@ public abstract class BaseBot {
         for (Region r : Region.values()) {
             if (claimedTerritories.containsAll(r.territories())) {
                 regionReinforcements += r.reinforcements();
-                ownedRegions.add(r);
             }
         }
 
@@ -323,46 +333,24 @@ public abstract class BaseBot {
             }
         }
 
+        List<SortWrapper> sorted = sortedClaimedTerritories(Step.COMBAT);
+
         if (territoryReinforcements > 0) {
-            List<SortWrapper> sorted = new ArrayList<>();
-            for (TerritoryCard c : claimedTerritories) {
-                sorted.add(new SortWrapper(game.battalionCount(c), c));
-            }
-            //sort with highest batt count and totally reinforce that one only
-            Collections.sort(sorted);
             for (int i = 0; i < territoryReinforcements; i++) {
-                army.addBattalion(sorted.get(0).territory);
+                army.addBattalion(sorted.get(rand.nextInt(sorted.size())).territory);
             }
         }
 
         if (regionReinforcements > 0) {
-            List<SortWrapper> sorted = new ArrayList<>();
-            for (Region region : ownedRegions) {
-                for (TerritoryCard c : claimedTerritories) {
-                    if (region.territories().contains(c)) {
-                        sorted.add(new SortWrapper(game.battalionCount(c), c));
-                    }
-                }
-
-            }
-            //sort with highest batt count and totally reinforce that one only
-            Collections.sort(sorted);
-            for (int i = 0; i < regionReinforcements; i++) {
-                army.addBattalion(sorted.get(0).territory);
+            for (int i = 0; i < territoryReinforcements; i++) {
+                army.addBattalion(sorted.get(rand.nextInt(sorted.size())).territory);
             }
         }
 
         if (cardReinforcements > 0) {
-            List<SortWrapper> sorted = new ArrayList<>();
-            for (TerritoryCard c : claimedTerritories) {
-                sorted.add(new SortWrapper(game.battalionCount(c), c));
+            for (int i = 0; i < territoryReinforcements; i++) {
+                army.addBattalion(sorted.get(rand.nextInt(sorted.size())).territory);
             }
-            //sort with highest batt count and totally reinforce that one only
-            Collections.sort(sorted);
-            for (int i = 0; i < cardReinforcements; i++) {
-                army.addBattalion(sorted.get(0).territory);
-            }
-
             game.turnInTerritoryCards(army, sumArchers, sumRiders, sumEagles);
         }
 
@@ -381,8 +369,9 @@ public abstract class BaseBot {
     /**
      * Pick a territory from which battalions may be sent from in the fortify
      * phase, or from which an attack may be made from in the attack phase.
-     * 
-     * For fortify phase, return a list of owned territories sorted by battalion count which have adjacent
+     *
+     * For fortify phase, return a list of owned territories sorted by battalion
+     * count which have adjacent
      *
      * @param step
      * @return
@@ -396,7 +385,10 @@ public abstract class BaseBot {
                 //check if territory has connected adjacents
                 boolean friendlyadjacent = false;
                 for (TerritoryCard adj : t.adjacents()) {
-                    friendlyadjacent = !friendlyadjacent && game.isClaimed(adj) == army;
+                    if (game.isClaimed(adj) == army) {
+                        friendlyadjacent = true;
+                        break;
+                    }
                 }
                 int count = game.battalionCount(t);
                 if (friendlyadjacent && count > 1) {
@@ -408,7 +400,10 @@ public abstract class BaseBot {
                 //check if territory has enemy adjacents
                 boolean enemyadjacent = false;
                 for (TerritoryCard adj : t.adjacents()) {
-                    enemyadjacent = !enemyadjacent && game.isClaimed(adj) != army;
+                    if (game.isClaimed(adj) != army) {
+                        enemyadjacent = true;
+                        break;
+                    }
                 }
                 int count = game.battalionCount(t);
                 if (enemyadjacent && count > 1) {

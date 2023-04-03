@@ -283,6 +283,11 @@ public class AttackScreen implements Screen {
                             game.removeLeader(defender, to);
                             AttackScreen.this.animateRemovalActor(defenderIcons.get(defenderIcons.size() - 1));
                         }
+                        game.updateStandings();
+                        if (defender.battalions.size() == 0) {
+                            //defeated from game, take all territory cards
+                            invader.territoryCards.addAll(defender.territoryCards);
+                        }
                     }
                 }
             }

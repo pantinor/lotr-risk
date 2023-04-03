@@ -10,6 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
+import java.util.List;
 import lotr.Game.GameStepListener;
 import lotr.Game.Step;
 import static lotr.Risk.GAME;
@@ -110,6 +111,7 @@ public class TurnWidget extends Table implements GameStepListener {
         acardListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                //use the missions dialog
                 game.nextStep();//replace leader
             }
         };
@@ -117,8 +119,10 @@ public class TurnWidget extends Table implements GameStepListener {
         replaceListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                if (game.current().leader1.territory == null && game.current().leader2.territory == null && gameScreen.selectedAttackingTerritory != null) {
-                    game.current().leader1.territory = gameScreen.selectedAttackingTerritory.territory;
+                if (game.current().leader1.territory == null && game.current().leader2.territory == null) {
+                    List<TerritoryCard> claimedTerritories = game.current().claimedTerritories();
+                    List<Location> strongholds = game.current().ownedStrongholds(claimedTerritories);
+                    game.current().leader1.territory = strongholds.size() > 0 ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
                 }
                 game.nextStep();//ring
             }

@@ -92,5 +92,14 @@ public enum Location {
         }
         return null;
     }
+    
+    public static Location getSiteOfPower(TerritoryCard c) {
+        for (Location l : Location.values()) {
+            if (l.isSiteOfPower() && l.territory == c) {
+                return l;
+            }
+        }
+        return null;
+    }
 
 }
