@@ -99,6 +99,7 @@ public class RingPath implements RingPathAction {
                     logger.log("The FELLOWSHIP advances to " + RING_PATHS.get(i + 1).name.toUpperCase(), Color.YELLOW);
                 } else {
                     logger.log("Sam and Frodo have thrown the ONE RING into MOUNT DOOM!", Color.YELLOW);
+                    Sounds.play(Sound.ARMAGEDDON);
                     return true;
                 }
                 break;

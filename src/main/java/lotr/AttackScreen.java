@@ -283,8 +283,9 @@ public class AttackScreen implements Screen {
                             game.removeLeader(defender, to);
                             AttackScreen.this.animateRemovalActor(defenderIcons.get(defenderIcons.size() - 1));
                         }
-                        game.updateStandings();
-                        if (defender.battalions.size() == 0) {
+                        parent.turnWidget.conqueredTerritory = true;
+
+                        if (defender.battalions.isEmpty()) {
                             //defeated from game, take all territory cards
                             invader.territoryCards.addAll(defender.territoryCards);
                         }
@@ -299,7 +300,7 @@ public class AttackScreen implements Screen {
         continueButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                
+
                 for (Image im : invaderIcons) {
                     im.remove();
                 }
@@ -308,7 +309,7 @@ public class AttackScreen implements Screen {
                     im.remove();
                 }
                 defenderIcons.clear();
-                
+
                 int invaderCount = game.battalionCount(from);
                 int defenderCount = game.battalionCount(to);
 
@@ -317,7 +318,7 @@ public class AttackScreen implements Screen {
 
                 addIcons(invaderIcons, invader, attackerDice, invaderPosition.x - 10, 380, game.hasLeader(invader, from));
                 addIcons(defenderIcons, defender, defenderDice, defenderPosition.x - 10, 380, game.hasLeader(defender, to));
-                
+
                 rollButton.setVisible(true);
                 continueButton.setVisible(false);
 
@@ -343,20 +344,13 @@ public class AttackScreen implements Screen {
                         reinforceRadial.centerOnMouse();
                         reinforceRadial.animateOpening(.4f);
                     }
-                    if (game.hasLeader(invader, from)) {
-                        game.moveLeader(invader, from, to);
-                        //TODO check mission card
-                    }
                 } else {
+                    game.updateStandings();
                     main.setScreen(AttackScreen.this.parent);
                     dispose();
                 }
             }
         });
-
-        this.stage.addActor(done);
-        this.stage.addActor(rollButton);
-        this.stage.addActor(continueButton);
 
         PieMenu.PieMenuStyle style = new PieMenu.PieMenuStyle();
         style.backgroundColor = new Color(1, 1, 1, .3f);
@@ -377,6 +371,8 @@ public class AttackScreen implements Screen {
                 Actor child = reinforceRadial.getChild(index);
                 Integer reinforceCount = (Integer) child.getUserObject();
 
+                parent.logs.log(String.format("%s conquered %s and reinforced with %d battalions.", invader.armyType, to.title(), reinforceCount), invader.armyType.color());
+
                 for (Battalion b : invader.getBattalions()) {
                     if (b.territory == from && reinforceCount > 0) {
                         b.territory = to;
@@ -384,13 +380,25 @@ public class AttackScreen implements Screen {
                     }
                 }
 
+                if (game.hasLeader(invader, from)) {
+                    game.moveLeader(invader, from, to);
+                    if (Location.getSiteOfPower(to) != null) {
+                        parent.turnWidget.conqueredSOPWithLeader = true;
+                    }
+                }
+
+                game.updateStandings();
                 main.setScreen(AttackScreen.this.parent);
                 dispose();
 
             }
         });
 
+        this.stage.addActor(done);
+        this.stage.addActor(rollButton);
+        this.stage.addActor(continueButton);
         this.stage.addActor(reinforceRadial);
+        //this.stage.addActor(moveLeader);
 
         addIcons(invaderIcons, invader, attackerDice, invaderPosition.x - 10, 380, game.hasLeader(invader, from));
         addIcons(defenderIcons, defender, defenderDice, defenderPosition.x - 10, 380, game.hasLeader(defender, to));
@@ -471,7 +479,7 @@ public class AttackScreen implements Screen {
 
     private void animateRemovalActor(Image im) {
         im.addAction(sequence(
-                moveTo(Risk.SCREEN_WIDTH / 2, Risk.SCREEN_HEIGHT / 2, 2),
+                moveTo(Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight() / 2, 2),
                 new Action() {
             @Override
             public boolean act(float delta) {

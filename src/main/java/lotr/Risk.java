@@ -40,7 +40,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lotr.ai.StrongBot;
 import org.apache.commons.io.IOUtils;
@@ -170,7 +169,7 @@ public class Risk extends Game {
                     }
                 }
             }
-
+            
             GameScreen gameScreen = new GameScreen(this, GAME);
             setScreen(gameScreen);
 

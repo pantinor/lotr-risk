@@ -141,6 +141,9 @@ public class ReinforceScreen implements Screen {
             cardReinforcements = 10;
         }
 
+        gameScreen.logs.log(String.format("%s is reinforcing territories with %d battalion(s).", army.armyType,
+                strongholdReinforcements + territoryReinforcements + regionReinforcements + cardReinforcements), army.armyType.color());
+
         this.camera = new OrthographicCamera(MAP_VIEWPORT_WIDTH, MAP_VIEWPORT_HEIGHT);
         this.mapViewport = new ScreenViewport(this.camera);
         this.camera.position.set(MAP_VIEWPORT_WIDTH / 2 - 200, MAP_VIEWPORT_HEIGHT / 2 - 15, 0);
@@ -385,7 +388,7 @@ public class ReinforceScreen implements Screen {
         }
 
         int x = 15;
-        int y = Risk.SCREEN_HEIGHT - 15;
+        int y = Gdx.graphics.getHeight() - 15;
 
         for (String text : TEXTS) {
             layout.setText(Risk.font, text, Color.WHITE, 320, Align.left, true);

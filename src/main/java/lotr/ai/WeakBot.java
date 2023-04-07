@@ -40,7 +40,7 @@ public class WeakBot extends BaseBot {
                 sorted.add(new SortWrapper(count, adj));
             }
         }
-        Collections.sort(sorted);
+        Collections.sort(sorted, Collections.reverseOrder());
         picked = !sorted.isEmpty() ? sorted.get(sorted.size() - 1).territory : null;
         return picked;
     }

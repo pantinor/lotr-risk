@@ -27,20 +27,20 @@ public abstract class BaseBot {
 
     public static class SortWrapper implements Comparable {
 
-        int count;
+        int factor;
         TerritoryCard territory;
 
-        public SortWrapper(int count, TerritoryCard c) {
-            this.count = count;
+        public SortWrapper(int factor, TerritoryCard c) {
+            this.factor = factor;
             this.territory = c;
         }
 
         @Override
         public int compareTo(Object obj) {
             SortWrapper other = (SortWrapper) obj;
-            if (this.count > other.count) {
+            if (this.factor > other.factor) {
                 return 1;
-            } else if (this.count < other.count) {
+            } else if (this.factor < other.factor) {
                 return -1;
             } else {
                 return 0;
@@ -62,7 +62,7 @@ public abstract class BaseBot {
     private RingPathAction rpa;
     private CardAction cardAction;
 
-    boolean conqueredTerritory;
+    boolean conqueredTerritory, conqueredSOPWithLeader;
 
     public BaseBot(Game game, Army army) {
         this.game = game;
@@ -85,9 +85,11 @@ public abstract class BaseBot {
             return s;
         }
 
+        conqueredTerritory = false;
+        conqueredSOPWithLeader = false;
+
         RunnableAction r1 = new RunnableAction();
         r1.setRunnable(() -> {
-            conqueredTerritory = false;
             reinforce();
             game.nextStep();//attack
         });
@@ -125,6 +127,7 @@ public abstract class BaseBot {
                 if (!game.territoryCards.isEmpty()) {
                     TerritoryCard newCard = game.territoryCards.remove(0);
                     game.current().territoryCards.add(newCard);
+                    log(String.format("%s collected territory card [%s].", game.current().armyType, newCard.title()), game.current().armyType.color());
                 }
             }
             game.nextStep();//acard
@@ -141,6 +144,14 @@ public abstract class BaseBot {
                 AdventureCard c = game.current().adventureCards.get(rand.nextInt(count));
                 TerritoryCard from = pickClaimedTerritory(Step.FORTIFY);
                 cardAction.process(c, game.current(), null, from, null);
+            }
+
+            if (conqueredSOPWithLeader) {
+                if (!game.adventureCards.isEmpty()) {
+                    AdventureCard newCard = game.adventureCards.remove(0);
+                    game.current().adventureCards.add(newCard);
+                    log(String.format("%s conquered a Site of Power and collects an adventure card [%s].", game.current().armyType, newCard.title()), game.current().armyType.color());
+                }
             }
 
             if (game.current().leader1.territory == null && game.current().leader2.territory == null) {
@@ -194,9 +205,12 @@ public abstract class BaseBot {
                         reinforceCount--;
                     }
                 }
+                
                 if (game.hasLeader(army, from)) {
                     game.moveLeader(army, from, to);
-                    //TODO check mission card
+                    if (Location.getSiteOfPower(to) != null) {
+                        conqueredSOPWithLeader = true;
+                    }
                 }
 
                 conqueredTerritory = true;
@@ -335,19 +349,19 @@ public abstract class BaseBot {
 
         List<SortWrapper> sorted = sortedClaimedTerritories(Step.COMBAT);
 
-        if (territoryReinforcements > 0) {
+        if (territoryReinforcements > 0 && sorted.size() > 0) {
             for (int i = 0; i < territoryReinforcements; i++) {
                 army.addBattalion(sorted.get(rand.nextInt(sorted.size())).territory);
             }
         }
 
-        if (regionReinforcements > 0) {
+        if (regionReinforcements > 0 && sorted.size() > 0) {
             for (int i = 0; i < territoryReinforcements; i++) {
                 army.addBattalion(sorted.get(rand.nextInt(sorted.size())).territory);
             }
         }
 
-        if (cardReinforcements > 0) {
+        if (cardReinforcements > 0 && sorted.size() > 0) {
             for (int i = 0; i < territoryReinforcements; i++) {
                 army.addBattalion(sorted.get(rand.nextInt(sorted.size())).territory);
             }
@@ -412,7 +426,7 @@ public abstract class BaseBot {
             }
 
         }
-        Collections.sort(sorted);
+        Collections.sort(sorted, Collections.reverseOrder());
         return sorted;
     }
 

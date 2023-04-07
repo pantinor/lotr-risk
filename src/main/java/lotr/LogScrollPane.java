@@ -1,5 +1,6 @@
 package lotr;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -20,7 +21,7 @@ public class LogScrollPane extends ScrollPane implements Logger {
         super(new Table(), Risk.skin);
 
         setSize(WIDTH, HEIGHT);
-        setPosition(Risk.SCREEN_WIDTH - WIDTH, -HEIGHT);
+        setPosition(Gdx.graphics.getWidth() - WIDTH, -HEIGHT);
 
         internalTable = (Table) this.getActor();
         internalTable.align(Align.topLeft);
@@ -51,7 +52,7 @@ public class LogScrollPane extends ScrollPane implements Logger {
         if (getActions().size > 0) {
             clearActions();
         }
-        setPosition(Risk.SCREEN_WIDTH - WIDTH, -HEIGHT);
+        setPosition(Gdx.graphics.getWidth() - WIDTH, -HEIGHT);
         addAction(Actions.sequence(Actions.moveBy(0, HEIGHT, 1f, Interpolation.sine)));
     }
 

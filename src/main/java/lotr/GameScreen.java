@@ -34,8 +34,6 @@ import lotr.Constants.ArmyType;
 import lotr.Game.Step;
 import static lotr.Risk.GREEN_BATTALION;
 import static lotr.Risk.GREEN_LEADER;
-import static lotr.Risk.SCREEN_HEIGHT;
-import static lotr.Risk.SCREEN_WIDTH;
 import static lotr.Risk.BLACK_BATTALION;
 import static lotr.Risk.BLACK_LEADER;
 import static lotr.Risk.RED_BATTALION;
@@ -83,7 +81,7 @@ public class GameScreen implements Screen {
         this.game = game;
         this.main = main;
 
-        this.camera = new OrthographicCamera(SCREEN_WIDTH, SCREEN_HEIGHT);
+        this.camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         this.viewport = new ScreenViewport(this.camera);
         this.renderer = new HexagonalTiledMapRenderer(TMX_MAP, 1f);
         this.mapStage = new Stage(this.viewport, this.renderer.getBatch());
@@ -123,7 +121,7 @@ public class GameScreen implements Screen {
             mapStage.addActor(la);
         }
 
-        this.widgetStage = Risk.STAGE = new Stage();
+        this.widgetStage = Risk.STAGE = new Stage(new ScreenViewport());
 
         this.turnWidget = new TurnWidget(main, this, game);
         this.widgetStage.addActor(turnWidget);
@@ -134,10 +132,10 @@ public class GameScreen implements Screen {
         style.sliceColor = new Color(0, .7f, 0, 1);
         style.alternateSliceColor = new Color(.7f, 0, 0, 1);
 
-        missionCardSlider = new MissionCardWidget(widgetStage, game);
-        widgetStage.addActor(missionCardSlider);
-
         logs = new LogScrollPane();
+        missionCardSlider = new MissionCardWidget(widgetStage, game, logs);
+        
+        widgetStage.addActor(missionCardSlider);
         widgetStage.addActor(logs);
 
         ringPath = new RingPath(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"), logs);
@@ -165,7 +163,7 @@ public class GameScreen implements Screen {
             public boolean touchDown(int x, int y, int pointer, int button) {
                 last.set(-1, -1, -1);
 
-                turnWidget.clearCombat(false);
+                turnWidget.clearCombat();
 
                 Vector3 tmp = camera.unproject(new Vector3(x, y, 0));
                 Vector2 v = new Vector2(tmp.x, tmp.y - 0);
@@ -234,7 +232,7 @@ public class GameScreen implements Screen {
     public void show() {
         Gdx.input.setInputProcessor(input);
 
-        turnWidget.clearCombat(false);
+        turnWidget.clearCombat();
         selectedAttackingTerritory = null;
         selectedDefendingTerritory = null;
     }
@@ -242,6 +240,10 @@ public class GameScreen implements Screen {
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, false);
+
+        widgetStage.getViewport().setWorldWidth(width);
+        widgetStage.getViewport().setWorldHeight(height);
+        widgetStage.getViewport().update(width, height, true);
     }
 
     @Override
@@ -257,10 +259,10 @@ public class GameScreen implements Screen {
         renderer.render();
 
         shapeRenderer.setProjectionMatrix(camera.combined);
-        
+
         ringPath.render();
         shippingRoutes.render();
-        
+
         if (selectedAttackingTerritory != null) {
             if (selectedDefendingTerritory == null) {
                 for (TerritoryCard adj : selectedAttackingTerritory.territory.adjacents()) {
@@ -328,9 +330,9 @@ public class GameScreen implements Screen {
 
         }
 
-        this.batch.begin();
-        this.hud.render(this.batch, this.game, delta);
-        this.batch.end();
+        this.widgetStage.getBatch().begin();
+        this.hud.render(this.widgetStage.getBatch(), this.game, delta);
+        this.widgetStage.getBatch().end();
 
         this.widgetStage.act();
         this.widgetStage.draw();

@@ -41,7 +41,7 @@ public class RandomBot extends BaseBot {
                 sorted.add(new SortWrapper(count, adj));
             }
         }
-        Collections.sort(sorted);
+        Collections.sort(sorted, Collections.reverseOrder());
         picked = !sorted.isEmpty() ? sorted.get(rand.nextInt(sorted.size())).territory : null;
         return picked;
     }

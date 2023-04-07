@@ -8,6 +8,8 @@ public enum Sound {
     EVADE("evade.ogg", false, 0.3f),
     POSITIVE_EFFECT("PositiveEffect.ogg", false, 0.3f),
     NEGATIVE_EFFECT("NegativeEffect.ogg", false, 0.3f),
+    ARMAGEDDON("Armageddon.ogg", false, 0.3f),
+    ARMY_UPGRADE("ArmyUpgrade.ogg", false, 0.3f),
     DIVINE_INTERVENTION("divineint.ogg", false, 0.3f);
 
     String file;

@@ -30,11 +30,11 @@ public class StrongBot extends BaseBot {
         for (TerritoryCard adj : from.adjacents()) {
             Army defender = game.getOccupyingArmy(adj);
             if (defender != army) {
-                int count = game.battalionCount(adj);
-                sorted.add(new SortWrapper(count, adj));
+                int threat = game.status[defender.armyType.ordinal()].threat;
+                sorted.add(new SortWrapper(threat, adj));
             }
         }
-        Collections.sort(sorted);
+        Collections.sort(sorted, Collections.reverseOrder());
         picked = !sorted.isEmpty() ? sorted.get(0).territory : null;
         return picked;
     }

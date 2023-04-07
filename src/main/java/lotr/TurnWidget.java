@@ -1,5 +1,6 @@
 package lotr;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
@@ -14,7 +15,6 @@ import java.util.List;
 import lotr.Game.GameStepListener;
 import lotr.Game.Step;
 import static lotr.Risk.GAME;
-import static lotr.Risk.SCREEN_WIDTH;
 import static lotr.Risk.STAGE;
 import lotr.util.Sound;
 import lotr.util.Sounds;
@@ -46,14 +46,14 @@ public class TurnWidget extends Table implements GameStepListener {
 
     public Army invader, defender;
     public TerritoryCard from, to;
-    boolean conqueredTerritory;
+    public boolean conqueredTerritory, conqueredSOPWithLeader;
 
     public TurnWidget(Risk main, GameScreen gameScreen, Game game) {
         this.game = game;
         this.main = main;
         this.gameScreen = gameScreen;
 
-        setBounds(SCREEN_WIDTH / 2 - 150, 0, 300, 160);
+        setBounds(Gdx.graphics.getWidth() / 2 - 150, 0, 300, 160);
 
         setBackground(new TextureRegionDrawable(Risk.fillRectangle(1, 1, new Color(0, 0, .62f, .8f))));
 
@@ -71,7 +71,6 @@ public class TurnWidget extends Table implements GameStepListener {
         draftListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                conqueredTerritory = false;
                 ReinforceScreen rsc = new ReinforceScreen(main, game, game.current(), gameScreen, TurnWidget.this);
                 main.setScreen(rsc);
                 game.nextStep();//attack
@@ -101,7 +100,8 @@ public class TurnWidget extends Table implements GameStepListener {
                     if (!game.territoryCards.isEmpty()) {
                         TerritoryCard newCard = game.territoryCards.remove(0);
                         game.current().territoryCards.add(newCard);
-                        Sounds.play(Sound.POSITIVE_EFFECT);
+                        Sounds.play(Sound.ARMY_UPGRADE);
+                        gameScreen.logs.log(String.format("%s collected territory card [%s].", game.current().armyType, newCard.title()), game.current().armyType.color());
                     }
                 }
                 game.nextStep();//acard
@@ -111,7 +111,16 @@ public class TurnWidget extends Table implements GameStepListener {
         acardListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                //use the missions dialog
+                //use the adventure card slider to use advernture cards
+                //here we check if the site of power was conquered with a leader and add a card if so
+                if (conqueredSOPWithLeader) {
+                    if (!game.adventureCards.isEmpty()) {
+                        AdventureCard newCard = game.adventureCards.remove(0);
+                        game.current().adventureCards.add(newCard);
+                        Sounds.play(Sound.ARMY_UPGRADE);
+                        gameScreen.logs.log(String.format("%s conquered a Site of Power and collects an adventure card [%s].", game.current().armyType, newCard.title()), game.current().armyType.color());
+                    }
+                }
                 game.nextStep();//replace leader
             }
         };
@@ -172,14 +181,14 @@ public class TurnWidget extends Table implements GameStepListener {
         add(progressBar[6]).expand().uniform().center().minWidth(35).pad(3);
         row();
 
-        add(stepLabel).colspan(6).center();
+        add(stepLabel).colspan(7).center();
         row();
 
         add(combatButton).colspan(3).center();
-        add(nextButton).colspan(3).center();
+        add(nextButton).colspan(4).center();
         row();
 
-        CheckBox missions = new CheckBox(" Missions", Risk.skin, "selection-small");
+        CheckBox missions = new CheckBox(" Cards ", Risk.skin, "selection-small");
         missions.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
@@ -187,9 +196,8 @@ public class TurnWidget extends Table implements GameStepListener {
                 gameScreen.setMissions(p.isChecked());
             }
         });
-        add(missions).colspan(2).left();
 
-        CheckBox cbtext = new CheckBox(" Labels", Risk.skin, "selection-small");
+        CheckBox cbtext = new CheckBox(" Labels ", Risk.skin, "selection-small");
         cbtext.setChecked(true);
         cbtext.addListener(new ChangeListener() {
             @Override
@@ -197,9 +205,8 @@ public class TurnWidget extends Table implements GameStepListener {
                 Risk.textToggle = ((CheckBox) actor).isChecked();
             }
         });
-        add(cbtext).colspan(2).right();
 
-        CheckBox logs = new CheckBox(" Log", Risk.skin, "selection-small");
+        CheckBox logs = new CheckBox(" Log ", Risk.skin, "selection-small");
         logs.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
@@ -207,7 +214,28 @@ public class TurnWidget extends Table implements GameStepListener {
                 gameScreen.toggleLog(p.isChecked());
             }
         });
-        add(logs).colspan(2).left();
+
+        CheckBox fullscreen = new CheckBox(" Screen ", Risk.skin, "selection-small");
+        fullscreen.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                CheckBox p = (CheckBox) actor;
+                if (p.isChecked()) {
+                    Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
+                } else {
+                    Gdx.graphics.setWindowedMode(Risk.SCREEN_WIDTH, Risk.SCREEN_HEIGHT);
+                }
+            }
+        });
+
+        Table inner = new Table();
+
+        inner.add(missions).expand().uniform().center().minWidth(50).pad(3);
+        inner.add(cbtext).expand().uniform().center().minWidth(50).pad(3);
+        inner.add(logs).expand().uniform().center().minWidth(50).pad(3);
+        inner.add(fullscreen).expand().uniform().center().minWidth(50).pad(3);
+
+        add(inner).colspan(7);
 
         nextStep(Step.DRAFT);
     }
@@ -230,6 +258,10 @@ public class TurnWidget extends Table implements GameStepListener {
         }
 
         if (step == Step.DRAFT) {
+            
+            this.conqueredTerritory = false;
+            this.conqueredSOPWithLeader = false;
+            
             if (!game.current().isBot()) {
                 currentListener = draftListener;
                 nextButton.addListener(draftListener);
@@ -282,12 +314,7 @@ public class TurnWidget extends Table implements GameStepListener {
         this.combatButton.setVisible(true);
     }
 
-    public void setConqueredTerritory(boolean conqueredTerritory) {
-        this.conqueredTerritory = conqueredTerritory;
-    }
-
-    public void clearCombat(boolean conqueredTerritory) {
-        this.conqueredTerritory = conqueredTerritory;
+    public void clearCombat() {
         this.combatButton.setVisible(false);
         this.invader = null;
         this.defender = null;

@@ -27,8 +27,8 @@ public class Hud {
 
         time += delta;
 
-        int y = Risk.SCREEN_HEIGHT - 815;
-        int py = Risk.SCREEN_HEIGHT - 855;
+        int y = frame.getHeight() - 13;
+        int py = frame.getHeight() - 55;
 
         batch.draw(this.background, 0, 0);
         batch.draw(this.frame, 0, 0);

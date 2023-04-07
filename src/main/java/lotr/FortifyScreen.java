@@ -353,7 +353,7 @@ public class FortifyScreen implements Screen {
         }
 
         int x = 15;
-        int y = Risk.SCREEN_HEIGHT - 15;
+        int y = Gdx.graphics.getHeight() - 15;
 
         for (String text : TEXTS) {
             layout.setText(Risk.font, text, Color.WHITE, 320, Align.left, true);
