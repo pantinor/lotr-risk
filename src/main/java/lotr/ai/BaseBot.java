@@ -138,26 +138,14 @@ public abstract class BaseBot {
 
         RunnableAction r5 = new RunnableAction();
         r5.setRunnable(() -> {
+            if (conqueredSOPWithLeader) {
+                cardAction.drawAdventureCard();
+            }
 
             int count = game.current().adventureCards.size();
             if (rand.nextInt(2) == 1 && count > 0) {
                 AdventureCard c = game.current().adventureCards.get(rand.nextInt(count));
-                TerritoryCard from = pickClaimedTerritory(Step.FORTIFY);
-                cardAction.process(c, game.current(), null, from, null);
-            }
-
-            if (conqueredSOPWithLeader) {
-                if (!game.adventureCards.isEmpty()) {
-                    AdventureCard newCard = game.adventureCards.remove(0);
-                    game.current().adventureCards.add(newCard);
-                    log(String.format("%s conquered a Site of Power and collects an adventure card [%s].", game.current().armyType, newCard.title()), game.current().armyType.color());
-                }
-            }
-
-            if (game.current().leader1.territory == null && game.current().leader2.territory == null) {
-                List<TerritoryCard> claimedTerritories = game.current().claimedTerritories();
-                List<Location> strongholds = game.current().ownedStrongholds(claimedTerritories);
-                game.current().leader1.territory = strongholds.size() > 0 ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
+                cardAction.process(c);
             }
             game.nextStep();//replace
         });
@@ -167,7 +155,11 @@ public abstract class BaseBot {
 
         RunnableAction r6 = new RunnableAction();
         r6.setRunnable(() -> {
-            rpa.advance();
+            if (game.current().leader1.territory == null && game.current().leader2.territory == null) {
+                List<TerritoryCard> claimedTerritories = game.current().claimedTerritories();
+                List<Location> strongholds = game.current().ownedStrongholds(claimedTerritories);
+                game.current().leader1.territory = strongholds.size() > 0 ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
+            }
             game.nextStep();//ring
         });
         s.addAction(r6);
@@ -176,6 +168,7 @@ public abstract class BaseBot {
 
         RunnableAction r7 = new RunnableAction();
         r7.setRunnable(() -> {
+            rpa.advance();//advance the ring
             game.nextStep();//draft next player and start turn
             if (GAME.current().isBot()) {
                 s.addAction(game.current().bot.run());
@@ -205,7 +198,7 @@ public abstract class BaseBot {
                         reinforceCount--;
                     }
                 }
-                
+
                 if (game.hasLeader(army, from)) {
                     game.moveLeader(army, from, to);
                     if (Location.getSiteOfPower(to) != null) {

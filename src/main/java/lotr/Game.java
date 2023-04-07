@@ -22,7 +22,7 @@ public class Game {
 
     public final Army[] armies = new Army[4];
     public final Status[] status = new Status[]{new Status(), new Status(), new Status(), new Status()};
-
+    
     public Step currentStep = Step.DRAFT;
     private List<GameStepListener> listeners = new ArrayList<>();
 

@@ -88,6 +88,7 @@ public enum AdventureCard {
 
     private final String title;
     private final String capitalized;
+    private boolean used;
 
     private AdventureCard(Type t, Region region, TerritoryCard terr, int eb, int gb, boolean drawExtraCard) {
         this.type = t;
@@ -132,6 +133,14 @@ public enum AdventureCard {
 
     public Region region() {
         return region;
+    }
+
+    public boolean isUsed() {
+        return used;
+    }
+
+    public void setUsed(boolean used) {
+        this.used = used;
     }
 
     public TerritoryCard territory() {

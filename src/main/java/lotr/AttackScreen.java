@@ -119,6 +119,8 @@ public class AttackScreen implements Screen {
     private List<Image> invaderIcons = new ArrayList<>();
     private List<Image> defenderIcons = new ArrayList<>();
 
+    private boolean strongholdBonusSuppressed;
+
     static {
         Bullet.init();
     }
@@ -133,8 +135,56 @@ public class AttackScreen implements Screen {
         this.from = from;
         this.to = to;
 
+        if (AdventureCard.THE_ENEMY_IS_AT_HAND.isUsed()) {
+            AdventureCard.THE_ENEMY_IS_AT_HAND.setUsed(false);
+            strongholdBonusSuppressed = true;
+        }
+
+        if (AdventureCard.SIEGE_MACHINES.isUsed()) {
+            AdventureCard.SIEGE_MACHINES.setUsed(false);
+            strongholdBonusSuppressed = true;
+        }
+
         int invaderCount = game.battalionCount(from);
         int defenderCount = game.battalionCount(to);
+
+        if (AdventureCard.GRIMA_WORMTONGUE_1.isUsed()) {
+            AdventureCard.GRIMA_WORMTONGUE_1.setUsed(false);
+            if (defenderCount > 2) {
+                invader.addBattalion(from);
+                invader.addBattalion(from);
+                defender.removeBattalion(to);
+                defender.removeBattalion(to);
+            }
+            if (defenderCount == 2) {
+                invader.addBattalion(from);
+                defender.removeBattalion(to);
+            }
+        }
+
+        if (AdventureCard.GRIMA_WORMTONGUE_2.isUsed()) {
+            AdventureCard.GRIMA_WORMTONGUE_2.setUsed(false);
+            if (defenderCount > 2) {
+                invader.addBattalion(from);
+                invader.addBattalion(from);
+                defender.removeBattalion(to);
+                defender.removeBattalion(to);
+            }
+            if (defenderCount == 2) {
+                invader.addBattalion(from);
+                defender.removeBattalion(to);
+            }
+        }
+
+        if (AdventureCard.AMBUSH.isUsed()) {
+            AdventureCard.AMBUSH.setUsed(false);
+            invader.addBattalion(from);
+            invader.addBattalion(from);
+            invader.addBattalion(from);
+        }
+
+        invaderCount = game.battalionCount(from);
+        defenderCount = game.battalionCount(to);
 
         attackerDice = invaderCount == 2 ? 1 : invaderCount == 3 ? 2 : 3;
         defenderDice = defenderCount == 1 ? 1 : 2;
@@ -228,7 +278,7 @@ public class AttackScreen implements Screen {
                     if (game.hasLeader(defender, to)) {
                         r++;
                     }
-                    if (game.isDefendingStrongHold(to)) {
+                    if (game.isDefendingStrongHold(to) && !strongholdBonusSuppressed) {
                         r++;
                     }
                     rollsDefenderWithBonus.add(r);

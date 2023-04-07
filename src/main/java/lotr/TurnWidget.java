@@ -111,15 +111,10 @@ public class TurnWidget extends Table implements GameStepListener {
         acardListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                //use the adventure card slider to use advernture cards
+                //use the adventure card slider to use adventure cards
                 //here we check if the site of power was conquered with a leader and add a card if so
                 if (conqueredSOPWithLeader) {
-                    if (!game.adventureCards.isEmpty()) {
-                        AdventureCard newCard = game.adventureCards.remove(0);
-                        game.current().adventureCards.add(newCard);
-                        Sounds.play(Sound.ARMY_UPGRADE);
-                        gameScreen.logs.log(String.format("%s conquered a Site of Power and collects an adventure card [%s].", game.current().armyType, newCard.title()), game.current().armyType.color());
-                    }
+                    gameScreen.cardSlider.drawAdventureCard();
                 }
                 game.nextStep();//replace leader
             }
@@ -188,12 +183,12 @@ public class TurnWidget extends Table implements GameStepListener {
         add(nextButton).colspan(4).center();
         row();
 
-        CheckBox missions = new CheckBox(" Cards ", Risk.skin, "selection-small");
-        missions.addListener(new ChangeListener() {
+        CheckBox adventureCards = new CheckBox(" Cards ", Risk.skin, "selection-small");
+        adventureCards.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
                 CheckBox p = (CheckBox) actor;
-                gameScreen.setMissions(p.isChecked());
+                gameScreen.setCards(p.isChecked());
             }
         });
 
@@ -230,7 +225,7 @@ public class TurnWidget extends Table implements GameStepListener {
 
         Table inner = new Table();
 
-        inner.add(missions).expand().uniform().center().minWidth(50).pad(3);
+        inner.add(adventureCards).expand().uniform().center().minWidth(50).pad(3);
         inner.add(cbtext).expand().uniform().center().minWidth(50).pad(3);
         inner.add(logs).expand().uniform().center().minWidth(50).pad(3);
         inner.add(fullscreen).expand().uniform().center().minWidth(50).pad(3);

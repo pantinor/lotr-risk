@@ -73,7 +73,7 @@ public class GameScreen implements Screen {
 
     public RingPath ringPath;
     private ShippingRoutes shippingRoutes;
-    public MissionCardWidget missionCardSlider;
+    public AdventureCardWidget cardSlider;
     public LogScrollPane logs;
 
     public GameScreen(Risk main, Game game) {
@@ -133,9 +133,9 @@ public class GameScreen implements Screen {
         style.alternateSliceColor = new Color(.7f, 0, 0, 1);
 
         logs = new LogScrollPane();
-        missionCardSlider = new MissionCardWidget(widgetStage, game, logs);
+        cardSlider = new AdventureCardWidget(widgetStage, game, logs);
         
-        widgetStage.addActor(missionCardSlider);
+        widgetStage.addActor(cardSlider);
         widgetStage.addActor(logs);
 
         ringPath = new RingPath(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"), logs);
@@ -355,15 +355,12 @@ public class GameScreen implements Screen {
     public void dispose() {
     }
 
-    public void setMissions(boolean show) {
+    public void setCards(boolean show) {
         if (show) {
-            TerritoryCard to = selectedDefendingTerritory != null ? selectedDefendingTerritory.territory : null;
-            TerritoryCard from = selectedAttackingTerritory != null ? selectedAttackingTerritory.territory : null;
-            Army occupyingArmy = selectedDefendingTerritory != null ? game.getOccupyingArmy(selectedDefendingTerritory.territory) : null;
-            missionCardSlider.set(game.current(), occupyingArmy, from, to);
-            missionCardSlider.show();
+            cardSlider.set();
+            cardSlider.show();
         } else {
-            missionCardSlider.hide();
+            cardSlider.hide();
         }
     }
 

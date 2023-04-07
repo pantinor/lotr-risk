@@ -175,7 +175,7 @@ public class Risk extends Game {
 
             for (int i = 0; i < 4; i++) {
                 if (GAME.armies[i] != null && GAME.armies[i].botType != null) {
-                    GAME.armies[i].bot.set(gameScreen.logs, gameScreen.ringPath, gameScreen.missionCardSlider);
+                    GAME.armies[i].bot.set(gameScreen.logs, gameScreen.ringPath, gameScreen.cardSlider);
                 }
             }
             

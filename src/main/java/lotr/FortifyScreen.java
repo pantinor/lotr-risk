@@ -77,6 +77,8 @@ public class FortifyScreen implements Screen {
 
     private final GlyphLayout layout = new GlyphLayout();
     private static final List<String> TEXTS = new ArrayList<>();
+    
+    private int fortifyCount = 1;
 
     static {
         TEXTS.add("You get ONE fortification with your battalions.  To fortify your position, take as many battalions as you'd like from one of your territories and move them to another connected territory.  You MUST leave at least one battalion behind - you cannot abandon a territory.");
@@ -137,6 +139,11 @@ public class FortifyScreen implements Screen {
         this.exit.setBounds(400, 560, 84, 84);
 
         this.stage.addActor(this.exit);
+        
+        if (AdventureCard.MOVE_BY_NIGHT.isUsed()) {
+            fortifyCount += 3;
+            AdventureCard.MOVE_BY_NIGHT.setUsed(false);
+        }
 
         PieMenu.PieMenuStyle style = new PieMenu.PieMenuStyle();
         style.backgroundColor = new Color(1, 1, 1, .3f);
@@ -156,13 +163,13 @@ public class FortifyScreen implements Screen {
                 }
                 
                 Actor child = fortifyRadial.getChild(index);
-                Integer fortifyCount = (Integer) child.getUserObject();
+                Integer count = (Integer) child.getUserObject();
 
-                if (fortifyCount > 0) {
+                if (count > 0) {
                     for (Battalion b : army.getBattalions()) {
-                        if (b.territory == selectedTerritory.territory && fortifyCount > 0) {
+                        if (b.territory == selectedTerritory.territory && count > 0) {
                             b.territory = selectedFortifyTerritory.territory;
-                            fortifyCount--;
+                            count--;
                         }
                     }
                 }
@@ -174,10 +181,13 @@ public class FortifyScreen implements Screen {
                     }
                     //TODO check mission card
                 }
+                
+                fortifyCount --;
 
-                //only one fortification allowed!
-                fortifyRadial.remove();
-                done = true;
+                if (fortifyCount == 0) {
+                    fortifyRadial.remove();
+                    done = true;
+                }
 
                 selectedFortifyTerritory = null;
                 selectedTerritory = null;
@@ -360,6 +370,10 @@ public class FortifyScreen implements Screen {
             Risk.font.draw(hudbatch, layout, 15, y);
             y -= layout.height + 30;
         }
+        
+        y -= layout.height + 30;
+        
+        Risk.font.draw(hudbatch, "Foritfy Count: " + fortifyCount, 15, y);
 
         hudbatch.end();
 
