@@ -7,8 +7,8 @@ With AI for strong, weak and random bots.
 
 Some of the POWER cards are not fully implemented.
 
-![screenshot of the example](https://raw.github.com/pantinor/lotr-risk/master/shot1.png)
+![screenshot of the example](https://raw.github.com/pantinor/lotr-risk/main/shot1.png)
 
-![screenshot of the example](https://raw.github.com/pantinor/lotr-risk/master/shot2.png)
+![screenshot of the example](https://raw.github.com/pantinor/lotr-risk/main/shot2.png)
 
-![screenshot of the example](https://raw.github.com/pantinor/lotr-risk/master/shot3.png)
+![screenshot of the example](https://raw.github.com/pantinor/lotr-risk/main/shot3.png)
