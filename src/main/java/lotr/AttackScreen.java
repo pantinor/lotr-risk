@@ -251,7 +251,7 @@ public class AttackScreen implements Screen {
         allBulletReferences.add(dispatcher);
         allBulletReferences.add(collisionConfiguration);
 
-        rollButton = new TextButton("ROLL", Risk.ccskin, "arcade");
+        rollButton = new TextButton("ROLL", Risk.ccskin, "green-button");
         rollButton.setBounds(900 - 100, 100, 84, 84);
         rollButton.addListener(new ChangeListener() {
             @Override
@@ -344,7 +344,7 @@ public class AttackScreen implements Screen {
             }
         });
 
-        continueButton = new TextButton("BLITZ", Risk.ccskin, "arcade");
+        continueButton = new TextButton("BLITZ", Risk.ccskin, "blue-button");
         continueButton.setBounds(900, 100, 84, 84);
         continueButton.setVisible(false);
         continueButton.addListener(new ChangeListener() {
@@ -375,7 +375,7 @@ public class AttackScreen implements Screen {
             }
         });
 
-        TextButton done = new TextButton("DONE", Risk.ccskin, "arcade");
+        TextButton done = new TextButton("DONE", Risk.ccskin, "black-button");
         done.setBounds(900 + 100, 100, 84, 84);
         done.addListener(new ChangeListener() {
             @Override

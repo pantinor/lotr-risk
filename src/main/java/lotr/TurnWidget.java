@@ -143,9 +143,9 @@ public class TurnWidget extends Table implements GameStepListener {
             }
         };
 
-        nextButton = new TextButton(">>", Risk.ccskin, "arcade");
+        nextButton = new TextButton("NEXT", Risk.ccskin, "green-button");
 
-        combatButton = new TextButton("", Risk.ccskin, "arcade-sword");
+        combatButton = new TextButton("", Risk.ccskin, "red-button-sword");
         combatButton.setVisible(false);
         combatButton.addListener(new ChangeListener() {
             @Override

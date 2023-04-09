@@ -17,8 +17,6 @@ button-arcade
   rotate: false
   xy: 115, 427
   size: 84, 84
-  split: 0, 0, 0, 0
-  pad: 18, 18, 25, 38
   orig: 84, 84
   offset: 0, 0
   index: -1
@@ -26,26 +24,6 @@ button-arcade-pressed
   rotate: false
   xy: 1, 213
   size: 84, 84
-  split: 0, 0, 0, 0
-  pad: 18, 18, 30, 33
-  orig: 84, 84
-  offset: 0, 0
-  index: -1
-button-sword-arcade
-  rotate: false
-  xy: 168, 252
-  size: 84, 84
-  split: 0, 0, 0, 0
-  pad: 18, 18, 25, 38
-  orig: 84, 84
-  offset: 0, 0
-  index: -1
-button-sword-arcade-pressed
-  rotate: false
-  xy: 252, 252
-  size: 84, 84
-  split: 0, 0, 0, 0
-  pad: 18, 18, 30, 33
   orig: 84, 84
   offset: 0, 0
   index: -1
@@ -526,5 +504,89 @@ window-main
   split: 1, 1, 21, 16
   pad: -1, -1, 23, 1
   orig: 15, 58
+  offset: 0, 0
+  index: -1
+button-sword
+  rotate: false
+  xy: 168, 252
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+button-sword-hover
+  rotate: false
+  xy: 252, 252
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+button-red
+  rotate: false
+  xy: 168, 0
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+button-red-hover
+  rotate: false
+  xy: 252, 0
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+button-blue
+  rotate: false
+  xy: 336, 0
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+button-blue-hover
+  rotate: false
+  xy: 420, 0
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+button-green
+  rotate: false
+  xy: 168, 84
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+button-green-hover
+  rotate: false
+  xy: 252, 84
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+button-yellow
+  rotate: false
+  xy: 336, 84
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+button-yellow-hover
+  rotate: false
+  xy: 420, 84
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+button-black
+  rotate: false
+  xy: 168, 168
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+button-black-hover
+  rotate: false
+  xy: 252, 168
+  size: 84, 84
+  orig: 84, 84
   offset: 0, 0
   index: -1

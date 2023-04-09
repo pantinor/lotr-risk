@@ -1,7 +1,7 @@
 {
 com.badlogic.gdx.graphics.g2d.BitmapFont: {
 	font: {
-		file: font-export.fnt
+		file: default.fnt
 	}
 }
 com.badlogic.gdx.graphics.Color: {
@@ -461,10 +461,41 @@ com.badlogic.gdx.scenes.scene2d.ui.TextButton$TextButtonStyle: {
 		up: button-arcade
 		down: button-arcade-pressed
 	}
-        arcade-sword: {
+        red-button-sword: {
 		font: font
-		up: button-sword-arcade
-		down: button-sword-arcade-pressed
+		up: button-sword
+		down: button-sword
+                over: button-sword-hover
+	}
+        red-button: {
+		font: font
+		up: button-red
+		down: button-red
+                over: button-red-hover
+	}
+        blue-button: {
+		font: font
+		up: button-blue
+		down: button-blue
+                over: button-blue-hover
+	}
+        green-button: {
+		font: font
+		up: button-green
+		down: button-green
+                over: button-green-hover
+	}
+        yellow-button: {
+		font: font
+		up: button-yellow
+		down: button-yellow
+                over: button-yellow-hover
+	}
+        black-button: {
+		font: font
+		up: button-black
+		down: button-black
+                over: button-black-hover
 	}
 }
 com.badlogic.gdx.scenes.scene2d.ui.TextField$TextFieldStyle: {
