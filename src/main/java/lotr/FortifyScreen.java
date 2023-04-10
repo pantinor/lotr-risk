@@ -128,7 +128,7 @@ public class FortifyScreen implements Screen {
 
         this.claimedTerritories = army.claimedTerritories();
 
-        this.exit = new TextButton("FINISH", Risk.ccskin, "arcade");
+        this.exit = new TextButton("FINISH", Risk.ccskin, "blue-button");
         this.exit.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {

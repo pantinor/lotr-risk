@@ -79,6 +79,9 @@ public class Game {
         }
 
         updateStandings();
+        for (AdventureCard c : AdventureCard.values()) {
+            c.setUsed(false);
+        }
 
         if (armies[turnIndex].battalions.size() == 0) {
             nextPlayer();
@@ -430,13 +433,23 @@ public class Game {
 
         Random rand = new Random();
 
+        //first try find one with the same class type as the army with 10 tries
         for (int i = 0; i < 10; i++) {
             TerritoryCard t = temp.get(rand.nextInt(temp.size()));
             if (t.type() == hint) {
                 return t;
             }
         }
+        
+        //otherwise try find one that is neutral with 10 tries
+        for (int i = 0; i < 10; i++) {
+            TerritoryCard t = temp.get(rand.nextInt(temp.size()));
+            if (t.type() == ClassType.NEUTRAL) {
+                return t;
+            }
+        }
 
+        //otherwise pick any random one
         return temp.get(rand.nextInt(temp.size()));
     }
 

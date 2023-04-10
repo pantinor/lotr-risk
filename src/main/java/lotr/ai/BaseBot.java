@@ -303,16 +303,33 @@ public abstract class BaseBot {
             }
         }
 
+        int wildcardcount = 0;
         for (TerritoryCard c : army.territoryCards) {
-            if (c.battalionType() == Constants.BattalionType.ELVEN_ARCHER || c.battalionType() == null) {
+            if (c.battalionType() == Constants.BattalionType.ELVEN_ARCHER) {
                 sumArchers++;
             }
-            if (c.battalionType() == Constants.BattalionType.DARK_RIDER || c.battalionType() == null) {
+            if (c.battalionType() == Constants.BattalionType.DARK_RIDER) {
                 sumRiders++;
             }
-            if (c.battalionType() == Constants.BattalionType.EAGLE || c.battalionType() == null) {
+            if (c.battalionType() == Constants.BattalionType.EAGLE) {
                 sumEagles++;
             }
+            if (c.battalionType() == null) {
+                wildcardcount++;
+            }
+        }
+
+        if (sumEagles == 2 && wildcardcount > 0) {
+            sumEagles++;
+            wildcardcount--;
+        }
+        if (sumRiders == 2 && wildcardcount > 0) {
+            sumRiders++;
+            wildcardcount--;
+        }
+        if (sumArchers == 2 && wildcardcount > 0) {
+            sumArchers++;
+            wildcardcount--;
         }
 
         if (sumArchers >= 3) {
