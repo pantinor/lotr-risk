@@ -47,7 +47,7 @@ import org.apache.commons.io.IOUtils;
 public class Risk extends Game {
 
     public static Skin skin, ccskin;
-    public static BitmapFont font, smallFont;
+    public static BitmapFont font, blackFont, defaultFont;
     public static boolean textToggle = true;
 
     public static final int SCREEN_WIDTH = 1800;
@@ -85,14 +85,15 @@ public class Risk extends Game {
         skin = new Skin(Gdx.files.classpath("assets/skin/uiskin.json"));
         ccskin = new Skin(Gdx.files.classpath("assets/skin/clean-crispy/clean-crispy-ui.json"));
 
-        font = skin.get("default-font", BitmapFont.class);
+        defaultFont = skin.get("default-font", BitmapFont.class);
 
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/gnuolane.ttf"));
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/aniron.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.size = 14;
-        smallFont = generator.generateFont(parameter);
-        skin.add("small", smallFont, BitmapFont.class);
-
+        parameter.size = 12;
+        font = generator.generateFont(parameter);
+        parameter.color = Color.BLACK;
+        blackFont = generator.generateFont(parameter);
+        
         TerritoryCard.init();
 
         TmxMapLoader loader = new TmxMapLoader(CLASSPTH_RSLVR);

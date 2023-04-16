@@ -24,6 +24,7 @@ public class LocationActor extends Actor {
     public void draw(Batch batch, float parentAlpha) {
         batch.draw(tr, getX(), getY());
         if (Risk.textToggle) {
+            Risk.blackFont.draw(batch, this.label, getX() - 19, getY() + 42);
             Risk.font.draw(batch, this.label, getX() - 20, getY() + 43);
         }
     }

@@ -500,7 +500,7 @@ public class ClaimTerritoryScreen implements Screen {
                 float tx = tp.x - 12;
                 float ty = tp.y - 12;
 
-                Risk.smallFont.draw(hudbatch, w.territory.title(), tp.x - 20, tp.y + 16);
+                Risk.font.draw(hudbatch, w.territory.title(), tp.x - 20, tp.y + 16);
 
                 if (at == ArmyType.RED) {
                     if (w.territory == game.red.leader1.territory || w.territory == game.red.leader2.territory) {
@@ -529,7 +529,7 @@ public class ClaimTerritoryScreen implements Screen {
 
                 int bc = game.battalionCount(w.territory);
                 if (bc > 0) {
-                    Risk.font.draw(hudbatch, bc + "", tp.x - 8, tp.y + 6);
+                    Risk.defaultFont.draw(hudbatch, bc + "", tp.x - 8, tp.y + 6);
                 }
 
             }

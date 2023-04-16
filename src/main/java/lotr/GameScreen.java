@@ -286,6 +286,7 @@ public class GameScreen implements Screen {
                 renderer.getBatch().begin();
 
                 if (Risk.textToggle) {
+                    Risk.blackFont.draw(renderer.getBatch(), w.name, w.namePosition.x + 1, w.namePosition.y - 1);
                     Risk.font.draw(renderer.getBatch(), w.name, w.namePosition.x + 0, w.namePosition.y + 0);
                 }
 
@@ -322,7 +323,7 @@ public class GameScreen implements Screen {
 
                 int bc = game.battalionCount(w.territory);
                 if (bc > 0) {
-                    Risk.font.draw(renderer.getBatch(), bc + "", w.textPosition.x + 20, w.textPosition.y + 19);
+                    Risk.defaultFont.draw(renderer.getBatch(), bc + "", w.textPosition.x + 20, w.textPosition.y + 19);
                 }
 
                 renderer.getBatch().end();

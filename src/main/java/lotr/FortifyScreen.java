@@ -356,7 +356,7 @@ public class FortifyScreen implements Screen {
 
                 int bc = game.battalionCount(w.territory);
                 if (bc > 0) {
-                    Risk.font.draw(hudbatch, bc + "", tp.x - 8, tp.y + 6);
+                    Risk.defaultFont.draw(hudbatch, bc + "", tp.x - 8, tp.y + 6);
                 }
 
             }

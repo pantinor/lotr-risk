@@ -76,8 +76,8 @@ public class Hud {
                     game.status[a.armyType.ordinal()].ccount, game.status[a.armyType.ordinal()].threat);
 
             //Risk.font.setColor(a.armyType.color());
-            Risk.font.draw(batch, row1, 50, y);
-            Risk.font.draw(batch, row2, 50, y - 20);
+            Risk.defaultFont.draw(batch, row1, 50, y);
+            Risk.defaultFont.draw(batch, row2, 50, y - 20);
 
             y -= 62;
             py -= 62;
