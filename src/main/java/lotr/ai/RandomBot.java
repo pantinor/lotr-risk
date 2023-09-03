@@ -38,7 +38,8 @@ public class RandomBot extends BaseBot {
             Army defender = game.getOccupyingArmy(adj);
             if (defender != army) {
                 int count = game.battalionCount(adj);
-                sorted.add(new SortWrapper(count, adj));
+                boolean hasLeader = game.hasLeader(defender, adj);
+                sorted.add(new SortWrapper(count, hasLeader, adj));
             }
         }
         Collections.sort(sorted, Collections.reverseOrder());

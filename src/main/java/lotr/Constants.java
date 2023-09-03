@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.Color;
 public class Constants {
 
     public static enum ArmyType {
-        RED(Color.RED), GREEN(Color.GREEN), BLACK(Color.GRAY), YELLOW(Color.YELLOW);
+        RED(Color.RED), GREEN(Color.GREEN), BLACK(Color.GRAY), YELLOW(Color.GOLDENROD);
         private Color color;
 
         private ArmyType(Color c) {

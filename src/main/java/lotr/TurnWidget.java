@@ -126,7 +126,12 @@ public class TurnWidget extends Table implements GameStepListener {
                 if (game.current().leader1.territory == null && game.current().leader2.territory == null) {
                     List<TerritoryCard> claimedTerritories = game.current().claimedTerritories();
                     List<Location> strongholds = game.current().ownedStrongholds(claimedTerritories);
-                    game.current().leader1.territory = strongholds.size() > 0 ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
+                    game.current().leader1.territory = !strongholds.isEmpty() ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
+                    gameScreen.logs.log(String.format("%s replaced a leader to %s.", game.current().armyType, game.current().leader1.territory), game.current().armyType.color());
+                } else if (game.current().leader1.territory != null || game.current().leader2.territory != null) {
+                    gameScreen.logs.log(String.format("%s is only missing one leader, and cannot replace a leader at this time.", game.current().armyType), game.current().armyType.color());
+                } else {
+                    gameScreen.logs.log(String.format("%s has both leaders on the map.", game.current().armyType), game.current().armyType.color());
                 }
                 game.nextStep();//ring
             }
@@ -253,10 +258,10 @@ public class TurnWidget extends Table implements GameStepListener {
         }
 
         if (step == Step.DRAFT) {
-            
+
             this.conqueredTerritory = false;
             this.conqueredSOPWithLeader = false;
-            
+
             if (!game.current().isBot()) {
                 currentListener = draftListener;
                 nextButton.addListener(draftListener);

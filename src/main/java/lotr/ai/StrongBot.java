@@ -31,7 +31,8 @@ public class StrongBot extends BaseBot {
             Army defender = game.getOccupyingArmy(adj);
             if (defender != army) {
                 int threat = game.status[defender.armyType.ordinal()].threat;
-                sorted.add(new SortWrapper(threat, adj));
+                boolean hasLeader = game.hasLeader(defender, adj);
+                sorted.add(new SortWrapper(threat, hasLeader, adj));
             }
         }
         Collections.sort(sorted, Collections.reverseOrder());

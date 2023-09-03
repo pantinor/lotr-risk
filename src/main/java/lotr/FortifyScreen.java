@@ -243,6 +243,9 @@ public class FortifyScreen implements Screen {
 
                     for (RegionWrapper w : regions) {
                         FortifyRegionWrapper frw = (FortifyRegionWrapper) w;
+                        if (selectedTerritory.territory == frw.territory) {
+                            continue;
+                        }
                         if (w.polygon.contains(v) && frw.isConnected) {
                             selectedFortifyTerritory = frw;
 

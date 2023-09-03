@@ -28,23 +28,33 @@ public abstract class BaseBot {
     public static class SortWrapper implements Comparable {
 
         int factor;
+        boolean hasLeader;
         TerritoryCard territory;
 
-        public SortWrapper(int factor, TerritoryCard c) {
+        public SortWrapper(int factor, boolean hasLeader, TerritoryCard c) {
             this.factor = factor;
             this.territory = c;
+            this.hasLeader = hasLeader;
         }
 
         @Override
         public int compareTo(Object obj) {
             SortWrapper other = (SortWrapper) obj;
-            if (this.factor > other.factor) {
+
+            if (this.hasLeader && !other.hasLeader) {
                 return 1;
-            } else if (this.factor < other.factor) {
+            } else if (!this.hasLeader && other.hasLeader) {
                 return -1;
             } else {
-                return 0;
+                if (this.factor > other.factor) {
+                    return 1;
+                } else if (this.factor < other.factor) {
+                    return -1;
+                } else {
+                    return 0;
+                }
             }
+
         }
 
     }
@@ -158,7 +168,12 @@ public abstract class BaseBot {
             if (game.current().leader1.territory == null && game.current().leader2.territory == null) {
                 List<TerritoryCard> claimedTerritories = game.current().claimedTerritories();
                 List<Location> strongholds = game.current().ownedStrongholds(claimedTerritories);
-                game.current().leader1.territory = strongholds.size() > 0 ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
+                game.current().leader1.territory = !strongholds.isEmpty() ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
+                log(String.format("%s replaced a leader to %s.", army.armyType, game.current().leader1.territory), army.armyType.color());
+            } else if (game.current().leader1.territory != null || game.current().leader2.territory != null) {
+                log(String.format("%s is only missing one leader, and cannot replace a leader at this time.", army.armyType), army.armyType.color());
+            } else {
+                log(String.format("%s has both leaders on the map.", army.armyType), army.armyType.color());
             }
             game.nextStep();//ring
         });
@@ -395,43 +410,66 @@ public abstract class BaseBot {
      * phase, or from which an attack may be made from in the attack phase.
      *
      * For fortify phase, return a list of owned territories sorted by battalion
-     * count which have adjacent
+     * count which have friendly adjacents.
+     *
+     * For combat phase, return a list of owned territories sorted by battalion
+     * count which have enemy adjacents.
      *
      * @param step
      * @return
      */
     protected List<SortWrapper> sortedClaimedTerritories(Step step) {
+
         List<SortWrapper> sorted = new ArrayList<>();
         List<TerritoryCard> owned = army.claimedTerritories();
+
         for (TerritoryCard t : owned) {
 
-            if (step == Step.FORTIFY) {
-                //check if territory has connected adjacents
-                boolean friendlyadjacent = false;
-                for (TerritoryCard adj : t.adjacents()) {
-                    if (game.isClaimed(adj) == army) {
-                        friendlyadjacent = true;
-                        break;
-                    }
-                }
-                int count = game.battalionCount(t);
-                if (friendlyadjacent && count > 1) {
-                    sorted.add(new SortWrapper(count, t));
+            boolean hasLeader = game.hasLeader(army, t);
+            int count = game.battalionCount(t);
+
+            //check if territory has connected adjacents
+            boolean friendlyadjacent = false;
+            for (TerritoryCard adj : t.adjacents()) {
+                if (game.isClaimed(adj) == army) {
+                    friendlyadjacent = true;
+                    break;
                 }
             }
 
-            if (step == Step.COMBAT) {
-                //check if territory has enemy adjacents
-                boolean enemyadjacent = false;
-                for (TerritoryCard adj : t.adjacents()) {
-                    if (game.isClaimed(adj) != army) {
-                        enemyadjacent = true;
-                        break;
+            //check if territory has enemy adjacents
+            boolean enemyadjacent = false;
+            for (TerritoryCard adj : t.adjacents()) {
+                if (game.isClaimed(adj) != army) {
+                    enemyadjacent = true;
+                    break;
+                }
+            }
+
+            if (step == Step.FORTIFY) {
+
+                //a territory with a leader and single battalion with no enemy adjacents 
+                //should qualify highest to fortify the leader to a better territory
+                if (count == 1 && hasLeader && !enemyadjacent && friendlyadjacent) {
+                    sorted.clear();
+                    sorted.add(new SortWrapper(count, hasLeader, t));
+                    break;
+                } else if (count > 1 && hasLeader && !enemyadjacent && friendlyadjacent) {
+                    //move the leader to a better territory that has enemy adjacents
+                    sorted.add(new SortWrapper(count, hasLeader, t));
+                } else if (hasLeader && enemyadjacent) {
+                    //leave the leader there - no need to move him
+                } else {
+                    if (friendlyadjacent && count > 1) {
+                        sorted.add(new SortWrapper(count, hasLeader, t));
                     }
                 }
-                int count = game.battalionCount(t);
+
+            }
+
+            if (step == Step.COMBAT) {
                 if (enemyadjacent && count > 1) {
-                    sorted.add(new SortWrapper(count, t));
+                    sorted.add(new SortWrapper(count, hasLeader, t));
                 }
             }
 
@@ -444,11 +482,12 @@ public abstract class BaseBot {
 
     public void fortify(TerritoryCard from, TerritoryCard to) {
 
+        int fortifyCount = game.battalionCount(from) - 1;
+
         if (to == null) {
+            log(String.format("%s did NOT find territory to fortify from %s with %d battalion(s).", army.armyType, from.title(), fortifyCount), army.armyType.color());
             return;
         }
-
-        int fortifyCount = game.battalionCount(from) - 1;
 
         log(String.format("%s fortified from %s to %s with %d battalion(s).", army.armyType, from.title(), to.title(), fortifyCount), army.armyType.color());
 
@@ -468,8 +507,42 @@ public abstract class BaseBot {
     private TerritoryCard pickTerritoryToFortify(TerritoryCard from) {
         List<TerritoryCard> targets = new ArrayList<>();
         List<TerritoryCard> owned = army.claimedTerritories();
+
+        boolean fromTerritoryIsStronghold = game.isDefendingStrongHold(from);
+
+        boolean fromTerritoryHasEnemyadjacents = false;
+        for (TerritoryCard adj : from.adjacents()) {
+            if (game.isClaimed(adj) != army) {
+                fromTerritoryHasEnemyadjacents = true;
+                break;
+            }
+        }
+
         for (TerritoryCard t : owned) {
-            if (army.isConnected(from, t)) {
+
+            if (from == t) {
+                continue;
+            }
+
+            if (!army.isConnected(from, t)) {
+                continue;
+            }
+
+            boolean toTerritoryIsStronghold = game.isDefendingStrongHold(t);
+
+            boolean toTerritoryHasEnemyadjacents = false;
+            for (TerritoryCard adj : t.adjacents()) {
+                if (game.isClaimed(adj) != army) {
+                    toTerritoryHasEnemyadjacents = true;
+                    break;
+                }
+            }
+
+            if (toTerritoryIsStronghold && toTerritoryHasEnemyadjacents && !fromTerritoryIsStronghold && !fromTerritoryHasEnemyadjacents) {
+                targets.clear();
+                targets.add(t);
+                break;
+            } else if (!fromTerritoryHasEnemyadjacents && toTerritoryHasEnemyadjacents) {
                 int fromcount = game.battalionCount(from);
                 int tocount = game.battalionCount(t);
                 if (tocount < fromcount) {
@@ -477,7 +550,11 @@ public abstract class BaseBot {
                 }
             }
         }
-        TerritoryCard picked = !targets.isEmpty() ? targets.get(rand.nextInt(targets.size())) : null;
+
+        TerritoryCard picked = !targets.isEmpty() ? targets.get(0) : null;
+
+        log(String.format("%s picked territory %s to fortify to.", army.armyType, picked != null ? picked.title() : "NONE"), army.armyType.color());
+
         return picked;
     }
 

@@ -82,7 +82,7 @@ public class RingPath implements RingPathAction {
                 if (w.roll) {
                     Dice d = new Dice();
                     int r = d.roll();
-                    logger.log("The FELLOWSHIP rolls a " + r + " at " + w.name.toUpperCase(), Color.YELLOW);
+                    logger.log("The FELLOWSHIP rolls a " + r + " at " + w.name.toUpperCase(), Color.PURPLE);
                     if (r > 3) {
                         //advance
                         Sounds.play(Sound.POSITIVE_EFFECT);
@@ -96,9 +96,9 @@ public class RingPath implements RingPathAction {
                     RING_PATHS.get(i + 1).current = true;
                     frodo.addAction(moveTo(RING_PATHS.get(i + 1).x + 10, RING_PATHS.get(i + 1).y + 10, 6));
                     sam.addAction(moveTo(RING_PATHS.get(i + 1).x - 10, RING_PATHS.get(i + 1).y - 10, 6));
-                    logger.log("The FELLOWSHIP advances to " + RING_PATHS.get(i + 1).name.toUpperCase(), Color.YELLOW);
+                    logger.log("The FELLOWSHIP advances to " + RING_PATHS.get(i + 1).name.toUpperCase(), Color.PURPLE);
                 } else {
-                    logger.log("Sam and Frodo have thrown the ONE RING into MOUNT DOOM!", Color.YELLOW);
+                    logger.log("Sam and Frodo have thrown the ONE RING into MOUNT DOOM!", Color.PURPLE);
                     Sounds.play(Sound.ARMAGEDDON);
                     return true;
                 }
