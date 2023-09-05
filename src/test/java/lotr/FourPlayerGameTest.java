@@ -347,9 +347,9 @@ public class FourPlayerGameTest {
 
         game.adventureCards.addAll(adventureCards);
 
-        red.botType = BaseBot.Type.STRONG;
-        black.botType = BaseBot.Type.STRONG;
-        yellow.botType = BaseBot.Type.STRONG;
+        red.botType = BaseBot.Type.HEURISTIC;
+        black.botType = BaseBot.Type.HEURISTIC;
+        yellow.botType = BaseBot.Type.HEURISTIC;
         green.botType = null;
 
         GsonBuilder builder = new GsonBuilder();

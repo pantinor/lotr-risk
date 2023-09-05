@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import lotr.ai.BaseBot;
-import lotr.ai.StrongBot;
+import lotr.ai.HeuristicBot;
 
 public class NewGameDialog extends Window {
 
@@ -120,61 +120,61 @@ public class NewGameDialog extends Window {
                         Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, 45);
                         game.setRed(red);
                         if (cbrb.isChecked()) {
-                            red.botType = BaseBot.Type.STRONG;
-                            red.bot = new StrongBot(game, red);
+                            red.botType = BaseBot.Type.HEURISTIC;
+                            red.bot = new HeuristicBot(game, red);
                         }
 
                         Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 45);
                         game.setBlack(black);
                         if (cbbb.isChecked()) {
-                            black.botType = BaseBot.Type.STRONG;
-                            black.bot = new StrongBot(game, black);
+                            black.botType = BaseBot.Type.HEURISTIC;
+                            black.bot = new HeuristicBot(game, black);
                         }
 
                         Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 45);
                         game.setGreen(green);
                         if (cbgb.isChecked()) {
-                            green.botType = BaseBot.Type.STRONG;
-                            green.bot = new StrongBot(game, green);
+                            green.botType = BaseBot.Type.HEURISTIC;
+                            green.bot = new HeuristicBot(game, green);
                         }
 
                         Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, 45);
                         game.setYellow(yellow);
                         if (cbyb.isChecked()) {
-                            yellow.botType = BaseBot.Type.STRONG;
-                            yellow.bot = new StrongBot(game, yellow);
+                            yellow.botType = BaseBot.Type.HEURISTIC;
+                            yellow.bot = new HeuristicBot(game, yellow);
                         }
                     } else {
                         if (cbr.isChecked()) {
                             Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, 52);
                             game.setRed(red);
                             if (cbrb.isChecked()) {
-                                red.botType = BaseBot.Type.STRONG;
-                                red.bot = new StrongBot(game, red);
+                                red.botType = BaseBot.Type.HEURISTIC;
+                                red.bot = new HeuristicBot(game, red);
                             }
                         }
                         if (cbb.isChecked()) {
                             Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 52);
                             game.setBlack(black);
                             if (cbbb.isChecked()) {
-                                black.botType = BaseBot.Type.STRONG;
-                                black.bot = new StrongBot(game, black);
+                                black.botType = BaseBot.Type.HEURISTIC;
+                                black.bot = new HeuristicBot(game, black);
                             }
                         }
                         if (cbg.isChecked()) {
                             Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 52);
                             game.setGreen(green);
                             if (cbgb.isChecked()) {
-                                green.botType = BaseBot.Type.STRONG;
-                                green.bot = new StrongBot(game, green);
+                                green.botType = BaseBot.Type.HEURISTIC;
+                                green.bot = new HeuristicBot(game, green);
                             }
                         }
                         if (cby.isChecked()) {
                             Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, 52);
                             game.setYellow(yellow);
                             if (cbyb.isChecked()) {
-                                yellow.botType = BaseBot.Type.STRONG;
-                                yellow.bot = new StrongBot(game, yellow);
+                                yellow.botType = BaseBot.Type.HEURISTIC;
+                                yellow.bot = new HeuristicBot(game, yellow);
                             }
                         }
                     }

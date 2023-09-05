@@ -41,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lotr.ai.HeuristicBot;
 import lotr.ai.StrongBot;
 import org.apache.commons.io.IOUtils;
 
@@ -159,13 +160,13 @@ public class Risk extends Game {
                 if (GAME.armies[i] != null && GAME.armies[i].botType != null) {
                     switch (GAME.armies[i].botType) {
                         case STRONG:
-                            GAME.armies[i].bot = new StrongBot(GAME, GAME.armies[i]);
+                            GAME.armies[i].bot = new HeuristicBot(GAME, GAME.armies[i]);
                             break;
                         case RANDOM:
-                            GAME.armies[i].bot = new StrongBot(GAME, GAME.armies[i]);
+                            GAME.armies[i].bot = new HeuristicBot(GAME, GAME.armies[i]);
                             break;
                         case WEAK:
-                            GAME.armies[i].bot = new StrongBot(GAME, GAME.armies[i]);
+                            GAME.armies[i].bot = new HeuristicBot(GAME, GAME.armies[i]);
                             break;
                     }
                 }
