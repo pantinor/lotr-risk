@@ -288,6 +288,51 @@ public abstract class BaseBot {
     public void reinforce() {
 
         List<TerritoryCard> claimedTerritories = army.claimedTerritories();
+
+        int[] r = getReinforcementCounts();
+
+        int strongholdReinforcements = r[0];
+        int territoryReinforcements = r[1];
+        int regionReinforcements = r[2];
+        int cardReinforcements = r[3];
+        int sumArchers = r[4];
+        int sumRiders = r[5];
+        int sumEagles = r[6];
+
+        if (strongholdReinforcements > 0) {
+            for (TerritoryCard c : claimedTerritories) {
+                if (Location.getStronghold(c) != null) {
+                    army.addBattalion(c);
+                    strongholdReinforcements--;
+                }
+            }
+        }
+
+        List<SortWrapper> sorted = sortedClaimedTerritories(Step.COMBAT);
+
+        if (territoryReinforcements > 0 && !sorted.isEmpty()) {
+            for (int i = 0; i < territoryReinforcements; i++) {
+                army.addBattalion(sorted.get(rand.nextInt(sorted.size())).territory);
+            }
+        }
+
+        if (regionReinforcements > 0 && !sorted.isEmpty()) {
+            for (int i = 0; i < territoryReinforcements; i++) {
+                army.addBattalion(sorted.get(rand.nextInt(sorted.size())).territory);
+            }
+        }
+
+        if (cardReinforcements > 0 && !sorted.isEmpty()) {
+            for (int i = 0; i < territoryReinforcements; i++) {
+                army.addBattalion(sorted.get(rand.nextInt(sorted.size())).territory);
+            }
+            game.turnInTerritoryCards(army, sumArchers, sumRiders, sumEagles);
+        }
+    }
+
+    int[] getReinforcementCounts() {
+
+        List<TerritoryCard> claimedTerritories = army.claimedTerritories();
         List<Location> strongholds = army.ownedStrongholds(claimedTerritories);
 
         int strongholdReinforcements = 0, territoryReinforcements = 0, regionReinforcements = 0, cardReinforcements = 0;
@@ -347,36 +392,7 @@ public abstract class BaseBot {
         log(String.format("%s is reinforcing territories with %d battalion(s).", army.armyType,
                 strongholdReinforcements + territoryReinforcements + regionReinforcements + cardReinforcements), army.armyType.color());
 
-        if (strongholdReinforcements > 0) {
-            for (TerritoryCard c : claimedTerritories) {
-                if (Location.getStronghold(c) != null) {
-                    army.addBattalion(c);
-                    strongholdReinforcements--;
-                }
-            }
-        }
-
-        List<SortWrapper> sorted = sortedClaimedTerritories(Step.COMBAT);
-
-        if (territoryReinforcements > 0 && !sorted.isEmpty()) {
-            for (int i = 0; i < territoryReinforcements; i++) {
-                army.addBattalion(sorted.get(rand.nextInt(sorted.size())).territory);
-            }
-        }
-
-        if (regionReinforcements > 0 && !sorted.isEmpty()) {
-            for (int i = 0; i < territoryReinforcements; i++) {
-                army.addBattalion(sorted.get(rand.nextInt(sorted.size())).territory);
-            }
-        }
-
-        if (cardReinforcements > 0 && !sorted.isEmpty()) {
-            for (int i = 0; i < territoryReinforcements; i++) {
-                army.addBattalion(sorted.get(rand.nextInt(sorted.size())).territory);
-            }
-            game.turnInTerritoryCards(army, sumArchers, sumRiders, sumEagles);
-        }
-
+        return new int[]{strongholdReinforcements, territoryReinforcements, regionReinforcements, cardReinforcements, sumArchers, sumRiders, sumEagles};
     }
 
     /**

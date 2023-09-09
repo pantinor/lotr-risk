@@ -27,6 +27,25 @@ public class HeuristicMap {
         }
     }
 
+    public static class Pair {
+
+        double xBSR;
+        int xIndex;
+
+        public Pair(double xBSR, int xIndex) {
+            this.xBSR = xBSR;
+            this.xIndex = xIndex;
+        }
+    }
+
+    public static class SortArrDesc implements Comparator<Pair> {
+
+        @Override
+        public int compare(Pair a, Pair b) {
+            return (int) (b.xBSR - a.xBSR);
+        }
+    }
+
     private final TerritoryWrapper[] territories = new TerritoryWrapper[64];
 
     public HeuristicMap(Game game) {
@@ -219,13 +238,6 @@ public class HeuristicMap {
 
     }
 
-    private static final int DRAFT_TRESHOLD = 2;
-
-    private static final List<Pair> NBSRarr1 = new ArrayList<>();
-    private static final List<Pair> NBSRarr2 = new ArrayList<>();
-    private static final List<Pair> BSRXarr = new ArrayList<>();
-    private static final List<TerritoryWrapper> CLAIMED = new ArrayList<>();
-
     /**
      * 3.2.1. Drafting Phase
      *
@@ -288,60 +300,63 @@ public class HeuristicMap {
      * @param currentMap
      * @return
      */
-    public static TerritoryWrapper heuristicReinforce(ArmyType currentPlayer, HeuristicMap currentMap) {
+    static void heuristicReinforce(ArmyType currentPlayer, HeuristicMap currentMap) {
 
-        NBSRarr1.clear();
-        NBSRarr2.clear();
-        BSRXarr.clear();
-        CLAIMED.clear();
+        List<TerritoryWrapper> CLAIMED = new ArrayList<>();
 
         for (TerritoryWrapper t : currentMap.territories) {
             if (t.armyType == currentPlayer) {
                 CLAIMED.add(t);
             }
         }
+        
         int territoryCount = CLAIMED.size();
-
-        int BSTx = 0;//Border Security Threat
-        double BSRx = 0;//Border Security Ratio
-        double sumBSRz = 0;
-        double sumNBSRz = 0;
-
-        for (int i = 0; i < territoryCount; i++) {
-            BSTx = 0;
-            BSRx = 0;
-            TerritoryWrapper tx = CLAIMED.get(i);
-            for (TerritoryCard adj : tx.territory.adjacents()) {
-                TerritoryWrapper neighbour = currentMap.get(adj);
-                if (currentPlayer != neighbour.armyType) {
-                    BSTx += neighbour.battalionCount;
-                }
-            }
-            BSRx = BSTx / tx.battalionCount;
-            BSRXarr.add(new Pair(BSRx, i));
-        }
-
-        Collections.sort(BSRXarr, new SortArrDesc());
-
-        for (int i = 0; i < BSRXarr.size(); i++) {
-            Pair tempPair = BSRXarr.get(i);
-            sumBSRz += tempPair.xBSR;
-            if (NBSRarr1.size() < BSRXarr.size() / DRAFT_TRESHOLD) {
-                NBSRarr1.add(tempPair);
-            }
-        }
-
-        //Normalized Border Security Ratio
-        for (Pair pair : NBSRarr1) {
-            NBSRarr2.add(new Pair(pair.xBSR / sumBSRz, pair.xIndex));
-            sumNBSRz += pair.xBSR / sumBSRz;
-        }
 
         if (territoryCount == 1) {
             TerritoryWrapper fortify = CLAIMED.get(0);
             currentMap.incrementTerritoryBattalion(fortify, 1);
-            return fortify;
         } else {
+
+            List<Pair> NBSRarr1 = new ArrayList<>();
+            List<Pair> NBSRarr2 = new ArrayList<>();
+            List<Pair> BSRXarr = new ArrayList<>();
+
+            int BSTx = 0;//Border Security Threat
+            double BSRx = 0;//Border Security Ratio
+            double sumBSRz = 0;
+            double sumNBSRz = 0;
+
+            for (int i = 0; i < territoryCount; i++) {
+                BSTx = 0;
+                BSRx = 0;
+                TerritoryWrapper tx = CLAIMED.get(i);
+                for (TerritoryCard adj : tx.territory.adjacents()) {
+                    TerritoryWrapper neighbour = currentMap.get(adj);
+                    if (currentPlayer != neighbour.armyType) {
+                        BSTx += neighbour.battalionCount;
+                    }
+                }
+                BSRx = BSTx / tx.battalionCount;
+                BSRXarr.add(new Pair(BSRx, i));
+            }
+
+            Collections.sort(BSRXarr, new SortArrDesc());
+
+            for (int i = 0; i < BSRXarr.size(); i++) {
+                Pair tempPair = BSRXarr.get(i);
+                sumBSRz += tempPair.xBSR;
+                //only consider the top half of claimed and sorted territories for reinforcing
+                if (NBSRarr1.size() < BSRXarr.size() / 2) {
+                    NBSRarr1.add(tempPair);
+                }
+            }
+
+            //Normalized Border Security Ratio
+            for (Pair pair : NBSRarr1) {
+                NBSRarr2.add(new Pair(pair.xBSR / sumBSRz, pair.xIndex));
+                sumNBSRz += pair.xBSR / sumBSRz;
+            }
+
             while (territoryCount > 0) {
 
                 int tempUnitsToAdd = territoryCount;
@@ -371,26 +386,6 @@ public class HeuristicMap {
             }
         }
 
-        return null;
-    }
-
-    private static class Pair {
-
-        double xBSR;
-        int xIndex;
-
-        private Pair(double xBSR, int xIndex) {
-            this.xBSR = xBSR;
-            this.xIndex = xIndex;
-        }
-    }
-
-    private static class SortArrDesc implements Comparator<Pair> {
-
-        @Override
-        public int compare(Pair a, Pair b) {
-            return (int) (b.xBSR - a.xBSR);
-        }
     }
 
 }

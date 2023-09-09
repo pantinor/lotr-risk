@@ -4,13 +4,15 @@
  */
 package lotr;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import lotr.ai.Attack;
-import lotr.ai.HeuristicAI;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import lotr.ai.HeuristicBot;
+import lotr.ai.RandomBot;
 import lotr.ai.StrongBot;
+import org.apache.commons.io.IOUtils;
 import org.testng.annotations.Test;
 
 /**
@@ -22,98 +24,29 @@ public class HeuristicTest {
     @Test
     public void testAI() throws Exception {
 
-        Game game = new Game();
-
         TerritoryCard.init();
 
-        Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, 45);
-        Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 45);
-        Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 45);
-        Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, 45);
+        InputStream is = null;
+        String json = null;
 
-        game.setRed(red);
-        game.setGreen(green);
-        game.setBlack(black);
-        game.setYellow(yellow);
+        is = new FileInputStream("savedGame.json");
+        json = IOUtils.toString(is);
 
-        game.red.bot = new HeuristicBot(game, game.red);
-        game.black.bot = new HeuristicBot(game, game.black);
+        GsonBuilder builder = new GsonBuilder();
+        Gson gson = builder.excludeFieldsWithoutExposeAnnotation().create();
+
+        Game game = gson.fromJson(json, new TypeToken<lotr.Game>() {
+        }.getType());
+
+        game.setRed(game.red);
+        game.setGreen(game.green);
+        game.setBlack(game.black);
+        game.setYellow(game.yellow);
+
+        game.red.bot = new StrongBot(game, game.red);
         game.green.bot = new HeuristicBot(game, game.green);
+        game.black.bot = new HeuristicBot(game, game.black);
         game.yellow.bot = new HeuristicBot(game, game.yellow);
-
-        List<TerritoryCard> evil = TerritoryCard.shuffledTerritoriesOfClass(Constants.ClassType.EVIL);
-        List<TerritoryCard> good = TerritoryCard.shuffledTerritoriesOfClass(Constants.ClassType.GOOD);
-
-        red.pickTerritories(evil, 8);
-        black.pickTerritories(evil, 8);
-        green.pickTerritories(good, 8);
-        yellow.pickTerritories(good, 8);
-
-        Random rand = new Random();
-
-        List<TerritoryCard> temp = new ArrayList<>();
-        for (TerritoryCard c : TerritoryCard.values()) {
-            temp.add(c);
-        }
-
-        int count = temp.size();
-        for (int i = 0; i < count; i++) {
-            int r = rand.nextInt(temp.size());
-            TerritoryCard c = temp.remove(r);
-            game.territoryCards.add(c);
-        }
-
-        //claim empty territories
-        int idx = rand.nextInt(4);
-        while (true) {
-
-            Army army = game.armies[idx];
-
-            idx++;
-            if (idx >= 4) {
-                idx = 0;
-            }
-
-            TerritoryCard tc = game.findRandomEmptyTerritory(army.getClassType());
-            if (tc != null) {
-                army.assignTerritory(tc);
-            } else {
-                break;
-            }
-
-        }
-
-        //reinforce territories
-        while (true) {
-
-            Army army = game.armies[idx];
-
-            boolean done = true;
-            for (Army a : game.armies) {
-                for (Battalion b : a.battalions) {
-                    if (b.territory == null) {
-                        done = false;
-                    }
-                }
-            }
-            if (done) {
-                break;
-            }
-
-            idx++;
-            if (idx >= 4) {
-                idx = 0;
-            }
-
-            List<TerritoryCard> terrs = army.claimedTerritories();
-
-            if (terrs.isEmpty()) {
-                continue;
-            }
-
-            TerritoryCard t = terrs.get(rand.nextInt(terrs.size()));
-            army.assignTerritory(t);
-        }
 
         int round = 0;
         while (round < 20) {
@@ -124,7 +57,7 @@ public class HeuristicTest {
             }
 
             game.updateStandings();
-            
+
             System.out.printf("Round: %d\n", round);
             for (Army a : game.armies) {
                 System.out.printf("%s - B: %d  T: %d  R: %d  S: %d Cards: %d  Threat: %d\n", a.armyType,
