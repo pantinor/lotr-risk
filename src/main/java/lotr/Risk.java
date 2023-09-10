@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lotr.ai.HeuristicBot;
-import lotr.ai.StrongBot;
 import org.apache.commons.io.IOUtils;
 
 public class Risk extends Game {
@@ -172,12 +171,13 @@ public class Risk extends Game {
                 }
             }
             
+            //ThreeDGameScreen gameScreen = new ThreeDGameScreen();
             GameScreen gameScreen = new GameScreen(this, GAME);
             setScreen(gameScreen);
 
             for (int i = 0; i < 4; i++) {
                 if (GAME.armies[i] != null && GAME.armies[i].botType != null) {
-                    GAME.armies[i].bot.set(gameScreen.logs, gameScreen.ringPath, gameScreen.cardSlider);
+                    GAME.armies[i].bot.set(gameScreen, gameScreen.ringPath, gameScreen.cardSlider);
                 }
             }
             

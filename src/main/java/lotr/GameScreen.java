@@ -72,7 +72,7 @@ public class GameScreen implements Screen {
     public RegionWrapper selectedAttackingTerritory, selectedDefendingTerritory;
 
     public RingPath ringPath;
-    //private ShippingRoutes shippingRoutes;
+    private ShippingRoutes shippingRoutes;
     public AdventureCardWidget cardSlider;
     public LogScrollPane logs;
 
@@ -139,7 +139,7 @@ public class GameScreen implements Screen {
         widgetStage.addActor(logs);
 
         ringPath = new RingPath(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"), logs);
-        //shippingRoutes = new ShippingRoutes(shapeRenderer);
+        shippingRoutes = new ShippingRoutes(shapeRenderer);
 
         input = new InputMultiplexer(widgetStage, new InputAdapter() {
 
@@ -261,7 +261,7 @@ public class GameScreen implements Screen {
         shapeRenderer.setProjectionMatrix(camera.combined);
 
         ringPath.render();
-        //shippingRoutes.render();
+        shippingRoutes.render();
 
         if (selectedAttackingTerritory != null) {
             if (selectedDefendingTerritory == null) {

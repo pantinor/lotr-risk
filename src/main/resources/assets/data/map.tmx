@@ -94,7 +94,7 @@
   <image source="risk-map.png" width="2048" height="2688"/>
  </imagelayer>
  <imagelayer id="16" name="rendered-image">
-  <image source="risk-map.png" width="2048" height="2688"/>
+  <image source="map-rendered.png" width="2048" height="2688"/>
  </imagelayer>
  <objectgroup id="19" name="locations">
   <object id="133" name="RIVENDELL" gid="39" x="1177" y="659" width="32" height="48"/>

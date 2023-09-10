@@ -14,6 +14,7 @@ import lotr.Battalion;
 import lotr.Constants;
 import lotr.Game;
 import lotr.Game.Step;
+import lotr.GameScreen;
 import lotr.Location;
 import lotr.Region;
 import static lotr.Risk.GAME;
@@ -58,6 +59,7 @@ public abstract class BaseBot {
 
     final Game game;
     final Army army;
+    private GameScreen gameScreen;
     private Logger logger;
     private RingPathAction rpa;
     private CardAction cardAction;
@@ -69,8 +71,9 @@ public abstract class BaseBot {
         this.army = army;
     }
 
-    public void set(Logger logger, RingPathAction rpa, CardAction cardAction) {
-        this.logger = logger;
+    public void set(GameScreen gameScreen, RingPathAction rpa, CardAction cardAction) {
+        this.gameScreen = gameScreen;
+        this.logger = gameScreen.logs;
         this.rpa = rpa;
         this.cardAction = cardAction;
     }
@@ -206,6 +209,8 @@ public abstract class BaseBot {
                 }
 
                 conqueredTerritory = true;
+                
+                this.gameScreen.lookAt(to);
 
                 log(String.format("%s conquered %s and reinforced with %d battalions.", army.armyType, to.title(), tempCount), army.armyType.color());
 
@@ -518,6 +523,8 @@ public abstract class BaseBot {
             game.moveLeader(army, from, to);
             //TODO check mission card
         }
+        
+        this.gameScreen.lookAt(to);
     }
 
     private TerritoryCard pickTerritoryToFortify(TerritoryCard from) {
