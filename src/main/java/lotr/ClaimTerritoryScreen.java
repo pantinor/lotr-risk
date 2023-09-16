@@ -227,7 +227,7 @@ public class ClaimTerritoryScreen implements Screen {
 
                 for (int i = 0; i < 4; i++) {
                     if (GAME.armies[i].botType != null) {
-                        GAME.armies[i].bot.set(gameScreen.logs, gameScreen.ringPath, gameScreen.cardSlider);
+                        GAME.armies[i].bot.set(gameScreen, gameScreen.ringPath, gameScreen.cardSlider);
                     }
                 }
 

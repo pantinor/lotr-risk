@@ -7,6 +7,11 @@ With AI for strong, weak and random bots.
 
 Some of the POWER cards are not fully implemented.
 
+Download binary here: https://raw.github.com/pantinor/lotr-risk/main/gdx-risk-1.0.0-SNAPSHOT-bin.zip
+
+To run this, you will need to install java first (if not already installed), and then extract 
+this binary zip archive and double click on the main jar file (gdx-risk-1.0.0-SNAPSHOT/gdx-risk-1.0.0-SNAPSHOT.jar).
+
 ![screenshot of the example](https://raw.github.com/pantinor/lotr-risk/main/shot1.png)
 
 ![screenshot of the example](https://raw.github.com/pantinor/lotr-risk/main/shot2.png)
