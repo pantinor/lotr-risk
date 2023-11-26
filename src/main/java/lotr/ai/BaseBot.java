@@ -209,8 +209,10 @@ public abstract class BaseBot {
                 }
 
                 conqueredTerritory = true;
-                
-                this.gameScreen.lookAt(to);
+
+                if (this.gameScreen != null) {
+                    this.gameScreen.lookAt(to);
+                }
 
                 log(String.format("%s conquered %s and reinforced with %d battalions.", army.armyType, to.title(), tempCount), army.armyType.color());
 
@@ -523,8 +525,10 @@ public abstract class BaseBot {
             game.moveLeader(army, from, to);
             //TODO check mission card
         }
-        
-        this.gameScreen.lookAt(to);
+
+        if (this.gameScreen != null) {
+            this.gameScreen.lookAt(to);
+        }
     }
 
     private TerritoryCard pickTerritoryToFortify(TerritoryCard from) {
@@ -585,7 +589,7 @@ public abstract class BaseBot {
         if (this.logger != null) {
             this.logger.log(text, color);
         } else {
-            System.out.println(text);
+            //System.out.println(text);
         }
     }
 
