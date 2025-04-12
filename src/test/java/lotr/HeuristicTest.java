@@ -53,8 +53,8 @@ public class HeuristicTest {
 
             game.red.bot = new StrongBot(game, game.red);
             game.green.bot = new StrongBot(game, game.green);
-            game.black.bot = new StrongBot(game, game.black);
-            game.yellow.bot = new HeuristicBot(game, game.yellow);
+            game.black.bot = new HeuristicBot(game, game.black, 100);
+            game.yellow.bot = new HeuristicBot(game, game.yellow, 85);
 
             List<Army> players = new ArrayList<>();
             Random r = new Random();
@@ -92,7 +92,6 @@ public class HeuristicTest {
 //                            game.status[a.armyType.ordinal()].rcount, game.status[a.armyType.ordinal()].scount,
 //                            game.status[a.armyType.ordinal()].ccount, game.status[a.armyType.ordinal()].threat);
 //                }
-
                 round++;
             }
 

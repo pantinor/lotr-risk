@@ -121,28 +121,28 @@ public class NewGameDialog extends Window {
                         game.setRed(red);
                         if (cbrb.isChecked()) {
                             red.botType = BaseBot.Type.HEURISTIC;
-                            red.bot = new HeuristicBot(game, red);
+                            red.bot = new HeuristicBot(game, red, 85);
                         }
 
                         Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 45);
                         game.setBlack(black);
                         if (cbbb.isChecked()) {
                             black.botType = BaseBot.Type.HEURISTIC;
-                            black.bot = new HeuristicBot(game, black);
+                            black.bot = new HeuristicBot(game, black, 85);
                         }
 
                         Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 45);
                         game.setGreen(green);
                         if (cbgb.isChecked()) {
                             green.botType = BaseBot.Type.HEURISTIC;
-                            green.bot = new HeuristicBot(game, green);
+                            green.bot = new HeuristicBot(game, green, 85);
                         }
 
                         Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, 45);
                         game.setYellow(yellow);
                         if (cbyb.isChecked()) {
                             yellow.botType = BaseBot.Type.HEURISTIC;
-                            yellow.bot = new HeuristicBot(game, yellow);
+                            yellow.bot = new HeuristicBot(game, yellow, 85);
                         }
                     } else {
                         if (cbr.isChecked()) {
@@ -150,7 +150,7 @@ public class NewGameDialog extends Window {
                             game.setRed(red);
                             if (cbrb.isChecked()) {
                                 red.botType = BaseBot.Type.HEURISTIC;
-                                red.bot = new HeuristicBot(game, red);
+                                red.bot = new HeuristicBot(game, red, 85);
                             }
                         }
                         if (cbb.isChecked()) {
@@ -158,7 +158,7 @@ public class NewGameDialog extends Window {
                             game.setBlack(black);
                             if (cbbb.isChecked()) {
                                 black.botType = BaseBot.Type.HEURISTIC;
-                                black.bot = new HeuristicBot(game, black);
+                                black.bot = new HeuristicBot(game, black, 85);
                             }
                         }
                         if (cbg.isChecked()) {
@@ -166,7 +166,7 @@ public class NewGameDialog extends Window {
                             game.setGreen(green);
                             if (cbgb.isChecked()) {
                                 green.botType = BaseBot.Type.HEURISTIC;
-                                green.bot = new HeuristicBot(game, green);
+                                green.bot = new HeuristicBot(game, green, 85);
                             }
                         }
                         if (cby.isChecked()) {
@@ -174,7 +174,7 @@ public class NewGameDialog extends Window {
                             game.setYellow(yellow);
                             if (cbyb.isChecked()) {
                                 yellow.botType = BaseBot.Type.HEURISTIC;
-                                yellow.bot = new HeuristicBot(game, yellow);
+                                yellow.bot = new HeuristicBot(game, yellow, 85);
                             }
                         }
                     }

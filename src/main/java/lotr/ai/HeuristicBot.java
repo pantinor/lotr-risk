@@ -15,15 +15,18 @@ import lotr.TerritoryCard;
 import org.apache.commons.collections.CollectionUtils;
 
 public class HeuristicBot extends BaseBot {
+    
+    private final int attackQuitThreshold;
 
-    public HeuristicBot(Game game, Army army) {
+    public HeuristicBot(Game game, Army army, int attackQuitThreshold) {
         super(game, army);
+        this.attackQuitThreshold = attackQuitThreshold;
     }
 
     @Override
     public void attack() {
         AttackChoice choice = evaluateAttackAlternatives(army.armyType, game);
-        while (choice != null && rand.nextInt(100) < 85) {
+        while (choice != null && rand.nextInt(100) < this.attackQuitThreshold) {
             army.bot.attack(choice.from.territory, choice.to.territory);
             choice = evaluateAttackAlternatives(army.armyType, game);
         }

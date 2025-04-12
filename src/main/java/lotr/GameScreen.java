@@ -20,10 +20,13 @@ import com.badlogic.gdx.maps.tiled.renderers.HexagonalTiledMapRenderer;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.delay;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
+import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.payne.games.piemenu.PieMenu;
@@ -134,9 +137,26 @@ public class GameScreen implements Screen {
 
         logs = new LogScrollPane();
         cardSlider = new AdventureCardWidget(widgetStage, game, logs);
-        
+
+        CheckBox fullscreen = new CheckBox(" Screen ", Risk.skin, "selection-small");
+        fullscreen.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                CheckBox p = (CheckBox) actor;
+                if (p.isChecked()) {
+                    Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
+                    fullscreen.setPosition(10, Gdx.graphics.getDisplayMode().height - 30);
+                } else {
+                    Gdx.graphics.setWindowedMode(Risk.SCREEN_WIDTH, Risk.SCREEN_HEIGHT);
+                    fullscreen.setPosition(10, Risk.SCREEN_HEIGHT - 30);
+                }
+            }
+        });
+        fullscreen.setPosition(10, Risk.SCREEN_HEIGHT - 30);
+
         widgetStage.addActor(cardSlider);
         widgetStage.addActor(logs);
+        widgetStage.addActor(fullscreen);
 
         ringPath = new RingPath(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"), logs);
         shippingRoutes = new ShippingRoutes(shapeRenderer);

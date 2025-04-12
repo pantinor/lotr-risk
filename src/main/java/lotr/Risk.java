@@ -2,6 +2,7 @@ package lotr;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.assets.loaders.FileHandleResolver;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
@@ -42,6 +43,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lotr.ai.HeuristicBot;
+import lotr.ai.RandomBot;
+import lotr.ai.StrongBot;
+import lotr.ai.WeakBot;
 import org.apache.commons.io.IOUtils;
 
 public class Risk extends Game {
@@ -50,8 +54,8 @@ public class Risk extends Game {
     public static BitmapFont font, blackFont, defaultFont;
     public static boolean textToggle = true;
 
-    public static final int SCREEN_WIDTH = 1800;
-    public static final int SCREEN_HEIGHT = 1050;
+    public static int SCREEN_WIDTH = 1800;
+    public static int SCREEN_HEIGHT = 1050;
 
     public static Risk mainGame;
     public static TiledMap TMX_MAP;
@@ -73,8 +77,14 @@ public class Risk extends Game {
         LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
 
         cfg.title = "LOTR Risk";
-        cfg.width = SCREEN_WIDTH;
-        cfg.height = SCREEN_HEIGHT;
+
+        Graphics.DisplayMode displayMode = LwjglApplicationConfiguration.getDesktopDisplayMode();
+
+        cfg.width = SCREEN_WIDTH = displayMode.width - 20;
+        cfg.height = SCREEN_HEIGHT = displayMode.height - 100;
+       
+        cfg.x = 0;
+        cfg.y = 0;
 
         new LwjglApplication(new Risk(), cfg);
     }
@@ -93,7 +103,7 @@ public class Risk extends Game {
         font = generator.generateFont(parameter);
         parameter.color = Color.BLACK;
         blackFont = generator.generateFont(parameter);
-        
+
         TerritoryCard.init();
 
         TmxMapLoader loader = new TmxMapLoader(CLASSPTH_RSLVR);
@@ -159,18 +169,21 @@ public class Risk extends Game {
                 if (GAME.armies[i] != null && GAME.armies[i].botType != null) {
                     switch (GAME.armies[i].botType) {
                         case STRONG:
-                            GAME.armies[i].bot = new HeuristicBot(GAME, GAME.armies[i]);
+                            GAME.armies[i].bot = new StrongBot(GAME, GAME.armies[i]);
                             break;
                         case RANDOM:
-                            GAME.armies[i].bot = new HeuristicBot(GAME, GAME.armies[i]);
+                            GAME.armies[i].bot = new RandomBot(GAME, GAME.armies[i]);
                             break;
                         case WEAK:
-                            GAME.armies[i].bot = new HeuristicBot(GAME, GAME.armies[i]);
+                            GAME.armies[i].bot = new WeakBot(GAME, GAME.armies[i]);
+                            break;
+                        case HEURISTIC:
+                            GAME.armies[i].bot = new HeuristicBot(GAME, GAME.armies[i], 85);
                             break;
                     }
                 }
             }
-            
+
             //ThreeDGameScreen gameScreen = new ThreeDGameScreen();
             GameScreen gameScreen = new GameScreen(this, GAME);
             setScreen(gameScreen);
@@ -180,7 +193,7 @@ public class Risk extends Game {
                     GAME.armies[i].bot.set(gameScreen, gameScreen.ringPath, gameScreen.cardSlider);
                 }
             }
-            
+
             GAME.updateStandings();
 
         }

@@ -3,6 +3,7 @@ package lotr;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -11,7 +12,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import lotr.Game.GameStepListener;
 import lotr.Game.Step;
 import static lotr.Risk.GAME;
@@ -53,7 +60,7 @@ public class TurnWidget extends Table implements GameStepListener {
         this.main = main;
         this.gameScreen = gameScreen;
 
-        setBounds(Gdx.graphics.getWidth() / 2 - 150, 0, 300, 160);
+        setBounds(Gdx.graphics.getWidth() / 2 - 175, 0, 350, 170);
 
         setBackground(new TextureRegionDrawable(Risk.fillRectangle(1, 1, new Color(0, 0, .62f, .8f))));
 
@@ -123,6 +130,11 @@ public class TurnWidget extends Table implements GameStepListener {
         replaceListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+
+                gameScreen.logs.log(String.format("%s leader 1 territory [%s] ldr 2 territory [%s].",
+                        game.current().armyType, game.current().leader1.territory, game.current().leader2.territory
+                ), game.current().armyType.color());
+
                 if (game.current().leader1.territory == null && game.current().leader2.territory == null) {
                     List<TerritoryCard> claimedTerritories = game.current().claimedTerritories();
                     List<Location> strongholds = game.current().ownedStrongholds(claimedTerritories);
@@ -215,16 +227,19 @@ public class TurnWidget extends Table implements GameStepListener {
             }
         });
 
-        CheckBox fullscreen = new CheckBox(" Screen ", Risk.skin, "selection-small");
-        fullscreen.addListener(new ChangeListener() {
+        TextButton save = new TextButton("Save", Risk.skin, "blue");
+        save.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                CheckBox p = (CheckBox) actor;
-                if (p.isChecked()) {
-                    Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
-                } else {
-                    Gdx.graphics.setWindowedMode(Risk.SCREEN_WIDTH, Risk.SCREEN_HEIGHT);
+
+                GsonBuilder builder = new GsonBuilder();
+                Gson gson = builder.setPrettyPrinting().excludeFieldsWithoutExposeAnnotation().create();
+                String json = gson.toJson(TurnWidget.this.game);
+                try ( FileOutputStream fos = new FileOutputStream("savedGame.json")) {
+                    fos.write(json.getBytes("UTF-8"));
+                } catch (Throwable ex) {
                 }
+
             }
         });
 
@@ -233,7 +248,7 @@ public class TurnWidget extends Table implements GameStepListener {
         inner.add(adventureCards).expand().uniform().center().minWidth(50).pad(3);
         inner.add(cbtext).expand().uniform().center().minWidth(50).pad(3);
         inner.add(logs).expand().uniform().center().minWidth(50).pad(3);
-        inner.add(fullscreen).expand().uniform().center().minWidth(50).pad(3);
+        inner.add(save).expand().uniform().center().minWidth(50).pad(3);
 
         add(inner).colspan(7);
 
