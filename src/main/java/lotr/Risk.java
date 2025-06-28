@@ -1,5 +1,6 @@
 package lotr;
 
+import com.badlogic.gdx.Files;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Graphics;
@@ -62,7 +63,7 @@ public class Risk extends Game {
     public static Animation<TextureRegion> RED_BATTALION, BLACK_BATTALION, GREEN_BATTALION, YELLOW_BATTALION;
     public static Animation<TextureRegion> RED_LEADER, BLACK_LEADER, GREEN_LEADER, YELLOW_LEADER;
     public static Animation<TextureRegion> FRODO, SAM;
-    public static Texture RED_CIRCLE, GREEN_CIRCLE, BLACK_CIRCLE, YELLOW_CIRCLE, LEADER_CIRCLE;
+    public static Texture RED_CIRCLE, GREEN_CIRCLE, BLACK_CIRCLE, YELLOW_CIRCLE, LEADER_CIRCLE, DISPLAY_CIRCLE;
 
     public static TextureRegion[][] DICE_TEXTURES;
 
@@ -76,7 +77,7 @@ public class Risk extends Game {
 
         LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
 
-        cfg.title = "LOTR Risk";
+        cfg.title = "Lord of the Rings RISK";
 
         Graphics.DisplayMode displayMode = LwjglApplicationConfiguration.getDesktopDisplayMode();
 
@@ -85,7 +86,7 @@ public class Risk extends Game {
        
         cfg.x = 0;
         cfg.y = 0;
-
+        cfg.addIcon("assets/data/icon.png", Files.FileType.Classpath);
         new LwjglApplication(new Risk(), cfg);
     }
 
@@ -129,6 +130,7 @@ public class Risk extends Game {
         GREEN_CIRCLE = fillCircle(Color.FOREST, 24);
         YELLOW_CIRCLE = fillCircle(Color.GOLDENROD, 24);
         LEADER_CIRCLE = fillCircle(Color.BLUE, 28);
+        DISPLAY_CIRCLE = fillCircle(Color.LIGHT_GRAY, 24);
 
         DICE_TEXTURES = TextureRegion.split(new Texture(Gdx.files.classpath("assets/data/dice-sheet.png")), 64, 64);
 

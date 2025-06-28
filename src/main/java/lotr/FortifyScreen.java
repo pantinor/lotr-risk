@@ -376,7 +376,7 @@ public class FortifyScreen implements Screen {
         
         y -= layout.height + 30;
         
-        Risk.font.draw(hudbatch, "Foritfy Count: " + fortifyCount, 15, y);
+        Risk.font.draw(hudbatch, "Remaining Fortifications: " + fortifyCount, 15, y);
 
         hudbatch.end();
 

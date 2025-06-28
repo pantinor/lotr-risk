@@ -231,7 +231,7 @@ public class TurnWidget extends Table implements GameStepListener {
                 GsonBuilder builder = new GsonBuilder();
                 Gson gson = builder.setPrettyPrinting().excludeFieldsWithoutExposeAnnotation().create();
                 String json = gson.toJson(TurnWidget.this.game);
-                try ( FileOutputStream fos = new FileOutputStream("savedGame.json")) {
+                try (FileOutputStream fos = new FileOutputStream("savedGame.json")) {
                     fos.write(json.getBytes("UTF-8"));
                 } catch (Throwable ex) {
                 }

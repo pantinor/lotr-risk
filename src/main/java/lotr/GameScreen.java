@@ -1,14 +1,13 @@
 package lotr;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapLayer;
@@ -57,7 +56,6 @@ public class GameScreen implements Screen {
     private float time = 0;
 
     private final Stage mapStage, widgetStage;
-    private final Batch batch = new SpriteBatch();
     private final InputMultiplexer input;
 
     private final HexagonalTiledMapRenderer renderer;
@@ -230,6 +228,14 @@ public class GameScreen implements Screen {
                     }
                 }
 
+                return false;
+            }
+
+            @Override
+            public boolean keyDown(int keycode) {
+                if (keycode == Keys.ENTER || keycode == Keys.SPACE || keycode == Keys.ESCAPE) {
+                    new PreviewDialog(GameScreen.this, game).show(widgetStage);
+                }
                 return false;
             }
 

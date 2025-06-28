@@ -9,6 +9,8 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttributes;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Material;
@@ -75,9 +77,10 @@ public class AttackScreen implements Screen {
     public static final Dice DICE = new Dice();
 
     private final Stage stage = new Stage();
+    private final Batch batch = new SpriteBatch();
 
-    private final Texture frameLeft;
-    private final Texture frameRight;
+    private final Texture fromCircle;
+    private final Texture toCircle;
 
     private final Risk main;
     private final GameScreen parent;
@@ -189,8 +192,8 @@ public class AttackScreen implements Screen {
         attackerDice = invaderCount == 2 ? 1 : invaderCount == 3 ? 2 : 3;
         defenderDice = defenderCount == 1 ? 1 : 2;
 
-        frameLeft = Risk.fillCircle(invader.armyType.color(), 300);
-        frameRight = Risk.fillCircle(defender.armyType.color(), 300);
+        fromCircle = Risk.fillCircle(invader.armyType.color(), 300);
+        toCircle = Risk.fillCircle(defender.armyType.color(), 300);
 
         environment = new Environment();
         environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.25f, 0.25f, 0.25f, 1f));
@@ -226,7 +229,7 @@ public class AttackScreen implements Screen {
         btRigidBody.btRigidBodyConstructionInfo boxInfo = new btRigidBody.btRigidBodyConstructionInfo(1f, null, btboxShape, tempVector);
 
         ModelBuilder modelBuilder = new ModelBuilder();
-        Texture txt = new Texture(Gdx.files.classpath("assets/data/risk-map.png"));
+        Texture txt = new Texture(Gdx.files.classpath("assets/data/map-rendered.png"));
         groundModel = modelBuilder.createRect(20f, 0f, -20f, -20f, 0f, -20f, -20f, 0f, 20f, 20f, 0f, 20f, 0, 1, 0,
                 new Material(TextureAttribute.createDiffuse(txt), ColorAttribute.createSpecular(1, 1, 1, 1), FloatAttribute.createShininess(8f)),
                 VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
@@ -344,7 +347,7 @@ public class AttackScreen implements Screen {
             }
         });
 
-        continueButton = new TextButton("BLITZ", Risk.ccskin, "blue-button");
+        continueButton = new TextButton("CONTINUE", Risk.ccskin, "blue-button");
         continueButton.setBounds(900, 100, 84, 84);
         continueButton.setVisible(false);
         continueButton.addListener(new ChangeListener() {
@@ -448,7 +451,6 @@ public class AttackScreen implements Screen {
         this.stage.addActor(rollButton);
         this.stage.addActor(continueButton);
         this.stage.addActor(reinforceRadial);
-        //this.stage.addActor(moveLeader);
 
         addIcons(invaderIcons, invader, attackerDice, invaderPosition.x - 10, 380, game.hasLeader(invader, from));
         addIcons(defenderIcons, defender, defenderDice, defenderPosition.x - 10, 380, game.hasLeader(defender, to));
@@ -591,24 +593,41 @@ public class AttackScreen implements Screen {
         }
         explosionTriangles.end();
 
-        this.stage.getBatch().begin();
-        this.stage.getBatch().draw(this.frameLeft, invaderPosition.x, invaderPosition.y);
-        this.stage.getBatch().draw(this.frameRight, defenderPosition.x, defenderPosition.y);
+        this.batch.begin();
 
-        int y = 400;
+        this.batch.draw(this.fromCircle, invaderPosition.x, invaderPosition.y);
+        this.batch.draw(this.toCircle, defenderPosition.x, defenderPosition.y);
 
-        Risk.font.draw(this.stage.getBatch(), String.format("%s", from.title()), invaderPosition.x + 70, y -= 20);
-        Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(from)), invaderPosition.x + 70, y -= 20);
+        int x = 30;
+        int y = Risk.SCREEN_HEIGHT - 20;
+
+        for (int i = 0; i < from.adjacents().length; i++) {
+            TerritoryCard tc = from.adjacents()[i];
+            Army a = game.getOccupyingArmy(tc);
+            if (a != null) {
+                Risk.font.setColor(a.armyType.color());
+                Risk.font.draw(this.batch, String.format("%s", tc.title()), x, y);
+                Risk.font.draw(this.batch, String.format("Battalions %d", game.battalionCount(tc)), x, y - 20);
+            }
+            x += 200;
+        }
+
+        Risk.font.setColor(Color.WHITE);
 
         y = 400;
 
-        Risk.font.draw(this.stage.getBatch(), String.format("%s", to.title()), defenderPosition.x + 70, y -= 20);
-        Risk.font.draw(this.stage.getBatch(), String.format("Battalions %d", game.battalionCount(to)), defenderPosition.x + 70, y -= 20);
+        Risk.font.draw(this.batch, String.format("%s", from.title()), invaderPosition.x + 70, y -= 20);
+        Risk.font.draw(this.batch, String.format("Battalions %d", game.battalionCount(from)), invaderPosition.x + 70, y -= 20);
+
+        y = 400;
+
+        Risk.font.draw(this.batch, String.format("%s", to.title()), defenderPosition.x + 70, y -= 20);
+        Risk.font.draw(this.batch, String.format("Battalions %d", game.battalionCount(to)), defenderPosition.x + 70, y -= 20);
         if (game.isDefendingStrongHold(to)) {
-            Risk.font.draw(this.stage.getBatch(), "Stronghold Defender Bonus", defenderPosition.x + 70, y -= 20);
+            Risk.font.draw(this.batch, "Stronghold Defender Bonus", defenderPosition.x + 70, y -= 20);
         }
 
-        this.stage.getBatch().end();
+        this.batch.end();
 
         this.stage.act();
         this.stage.draw();

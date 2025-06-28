@@ -111,7 +111,7 @@ public class Game {
         }
 
         updateStandings();
-        
+
         if (isGameOver()) {
             Sounds.play(Sound.FANFARE);
         }
@@ -207,34 +207,13 @@ public class Game {
 
     public Army isClaimed(TerritoryCard tc) {
 
-        if (this.red != null) {
-            for (Battalion b : this.red.getBattalions()) {
-                if (b.territory == tc) {
-                    return this.red;
-                }
+        for (Army army : armies) {
+            if (army == null) {
+                continue;
             }
-        }
-
-        if (this.black != null) {
-            for (Battalion b : this.black.getBattalions()) {
+            for (Battalion b : army.getBattalions()) {
                 if (b.territory == tc) {
-                    return this.black;
-                }
-            }
-        }
-
-        if (this.green != null) {
-            for (Battalion b : this.green.getBattalions()) {
-                if (b.territory == tc) {
-                    return this.green;
-                }
-            }
-        }
-
-        if (this.yellow != null) {
-            for (Battalion b : this.yellow.getBattalions()) {
-                if (b.territory == tc) {
-                    return this.yellow;
+                    return army;
                 }
             }
         }
@@ -243,93 +222,48 @@ public class Game {
     }
 
     public int battalionCount(TerritoryCard tc) {
+        int total = 0;
 
-        if (this.red == null) {
-            return 0;
-        }
-
-        int count = 0;
-        if (this.red != null) {
-            for (Battalion b : this.red.getBattalions()) {
+        for (Army army : armies) {
+            if (army == null) {
+                continue;
+            }
+            for (Battalion b : army.getBattalions()) {
                 if (b.territory == tc) {
-                    count++;
+                    total++;
                 }
             }
         }
 
-        if (count > 0) {
-            return count;
-        }
-
-        if (this.black != null) {
-            for (Battalion b : this.black.getBattalions()) {
-                if (b.territory == tc) {
-                    count++;
-                }
-            }
-        }
-
-        if (count > 0) {
-            return count;
-        }
-
-        if (this.green != null) {
-            for (Battalion b : this.green.getBattalions()) {
-                if (b.territory == tc) {
-                    count++;
-                }
-            }
-        }
-
-        if (count > 0) {
-            return count;
-        }
-
-        if (this.yellow != null) {
-            for (Battalion b : this.yellow.getBattalions()) {
-                if (b.territory == tc) {
-                    count++;
-                }
-            }
-        }
-
-        return count;
+        return total;
     }
 
     public Army getOccupyingArmy(TerritoryCard tc) {
-
-        if (this.red != null) {
-            for (Battalion b : this.red.getBattalions()) {
+        for (Army army : armies) {
+            if (army == null) {
+                continue;
+            }
+            for (Battalion b : army.getBattalions()) {
                 if (b.territory == tc) {
-                    return this.red;
+                    return army;
                 }
             }
         }
-        if (this.black != null) {
-            for (Battalion b : this.black.getBattalions()) {
-                if (b.territory == tc) {
-                    return this.black;
-                }
-            }
-        }
-        if (this.green != null) {
-            for (Battalion b : this.green.getBattalions()) {
-                if (b.territory == tc) {
-                    return this.green;
-                }
-            }
-        }
-        if (this.yellow != null) {
-            if (this.yellow != null) {
-                for (Battalion b : this.yellow.getBattalions()) {
-                    if (b.territory == tc) {
-                        return this.yellow;
-                    }
-                }
-            }
-        }
-
         return null;
+    }
+
+    public boolean isGameOver() {
+        int aliveArmies = 0;
+
+        for (Army army : armies) {
+            if (army != null && !army.getBattalions().isEmpty()) {
+                if (++aliveArmies > 1) {
+                    return false; // More than one army still alive - game not over
+                }
+            }
+        }
+
+        return aliveArmies == 1; // Game is over if only one army is left standing
     }
 
     public void turnInTerritoryCards(Army army, int sumArchers, int sumRiders, int sumEagles) {
@@ -506,20 +440,6 @@ public class Game {
             status.threat += r.reinforcements() * 2;
         }
         status.percentOwnershipInEachRegion = a.percentOwnershipInEachRegion(claimedTerritories);
-    }
-
-    public boolean isGameOver() {
-        int aliveArmies = 0;
-
-        for (Army army : armies) {
-            if (army != null && !army.getBattalions().isEmpty()) {
-                if (++aliveArmies > 1) {
-                    return false; // More than one army still alive - game not over
-                }
-            }
-        }
-
-        return aliveArmies == 1; // Game is over if only one army is left standing
     }
 
 }

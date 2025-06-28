@@ -15,7 +15,7 @@ import lotr.TerritoryCard;
 import org.apache.commons.collections.CollectionUtils;
 
 public class HeuristicBot extends BaseBot {
-    
+
     private final int attackQuitThreshold;
 
     public HeuristicBot(Game game, Army army, int attackQuitThreshold) {
@@ -26,10 +26,44 @@ public class HeuristicBot extends BaseBot {
     @Override
     public void attack() {
         AttackChoice choice = evaluateAttackAlternatives(army.armyType, game);
-        while (choice != null && rand.nextInt(100) < this.attackQuitThreshold) {
+        while (choice != null && rand.nextInt(100) < computeDynamicAttackThreshold()) {
             army.bot.attack(choice.from.territory, choice.to.territory);
             choice = evaluateAttackAlternatives(army.armyType, game);
         }
+    }
+
+    private int computeDynamicAttackThreshold() {
+        int myTerritories = army.claimedTerritories().size();
+        int myBattalions = army.battalions.size();
+        int totalTerritories = TerritoryCard.values().length - 2;//minus the 2 wildcards
+
+        int strongestOpponentBattalions = 0;
+        for (Army other : game.armies) {
+            if (other != null && other != army && !other.battalions.isEmpty()) {
+                strongestOpponentBattalions = Math.max(strongestOpponentBattalions, other.battalions.size());
+            }
+        }
+
+        // Start from base threshold
+        int dynamicThreshold = this.attackQuitThreshold;
+
+        // If we are dominating the map, be more aggressive
+        if (myTerritories > totalTerritories * 0.6) {
+            dynamicThreshold += 10;  // Confidence boost
+        }
+
+        // If we have a significantly larger army, increase aggression
+        if (myBattalions > strongestOpponentBattalions * 1.3) {
+            dynamicThreshold += 5;
+        }
+
+        // If we are behind, lower aggression slightly to preserve units
+        if (myBattalions < strongestOpponentBattalions * 0.7) {
+            dynamicThreshold -= 10;
+        }
+
+        // Clamp to safe bounds
+        return Math.max(40, Math.min(dynamicThreshold, 95));
     }
 
     @Override
@@ -177,7 +211,7 @@ public class HeuristicBot extends BaseBot {
 
         private List<AttackChoice> attackableTerritories(ArmyType at) {
             List<AttackChoice> attackables = new ArrayList<>();
-            
+
             for (TerritoryWrapper tw : this.territories) {
                 if (tw.armyType == at) {
                     for (TerritoryCard adj : tw.territory.adjacents()) {

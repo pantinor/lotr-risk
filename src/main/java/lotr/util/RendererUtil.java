@@ -40,4 +40,45 @@ public class RendererUtil {
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
+    public static void filledPolygonWithOutline(ShapeRenderer sr, Color color, float[] vertices) {
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        sr.setAutoShapeType(true);
+
+        sr.begin(ShapeType.Filled);
+        sr.setColor(color);
+
+        ShortArray triangles = EAR.computeTriangles(vertices);
+        for (int i = 0; i < triangles.size - 2; i += 3) {
+            int i1 = triangles.get(i) * 2;
+            int i2 = triangles.get(i + 1) * 2;
+            int i3 = triangles.get(i + 2) * 2;
+
+            sr.triangle(
+                    vertices[i1], vertices[i1 + 1],
+                    vertices[i2], vertices[i2 + 1],
+                    vertices[i3], vertices[i3 + 1]
+            );
+        }
+        sr.end();
+
+        Gdx.gl.glLineWidth(3);
+        sr.begin(ShapeType.Line);
+        sr.setColor(Color.BLACK);
+
+        int count = vertices.length / 2;
+        for (int i = 0; i < count; i++) {
+            float x1 = vertices[i * 2];
+            float y1 = vertices[i * 2 + 1];
+            float x2 = vertices[((i + 1) % count) * 2];
+            float y2 = vertices[((i + 1) % count) * 2 + 1];
+            sr.line(x1, y1, x2, y2);
+        }
+
+        sr.end();
+        Gdx.gl.glLineWidth(1); // reset to default
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
 }

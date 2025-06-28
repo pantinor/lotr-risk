@@ -2,6 +2,7 @@ package lotr;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -20,9 +21,9 @@ import static lotr.Risk.YELLOW_LEADER;
 public class Hud {
 
     private final Texture frame = new Texture(Gdx.files.classpath("assets/data/hud-frame.png"));
-    private final Texture highlighter = Risk.fillRectangle(296, 58, new Color(.7f, .3f, .5f, .7f));
     private final Texture defeated = Risk.fillRectangle(296, 58, new Color(.7f, .7f, .7f, .7f));
-
+    private final Texture highlighter;
+    
     private final EnumMap<ArmyType, Texture> backgroundMap = new EnumMap<>(ArmyType.class);
     private final EnumMap<ArmyType, Animation<TextureRegion>> battalionMap = new EnumMap<>(ArmyType.class);
     private final EnumMap<ArmyType, Animation<TextureRegion>> leaderMap = new EnumMap<>(ArmyType.class);
@@ -30,10 +31,10 @@ public class Hud {
     protected float time = 0;
 
     public Hud() {
-        backgroundMap.put(ArmyType.RED, Risk.fillRectangle(296, 58, new Color(Color.RED.r, Color.RED.g, Color.RED.b, .7f)));
-        backgroundMap.put(ArmyType.GREEN, Risk.fillRectangle(296, 58, new Color(Color.GREEN.r, Color.GREEN.g, Color.GREEN.b, .7f)));
-        backgroundMap.put(ArmyType.BLACK, Risk.fillRectangle(296, 58, new Color(Color.DARK_GRAY.r, Color.DARK_GRAY.g, Color.DARK_GRAY.b, .7f)));
-        backgroundMap.put(ArmyType.YELLOW, Risk.fillRectangle(296, 58, new Color(Color.GOLDENROD.r, Color.GOLDENROD.g, Color.GOLDENROD.b, .7f)));
+        backgroundMap.put(ArmyType.RED, Risk.fillRectangle(296, 58, Color.SCARLET));
+        backgroundMap.put(ArmyType.GREEN, Risk.fillRectangle(296, 58, Color.FOREST));
+        backgroundMap.put(ArmyType.BLACK, Risk.fillRectangle(296, 58, Color.DARK_GRAY));
+        backgroundMap.put(ArmyType.YELLOW, Risk.fillRectangle(296, 58, Color.GOLDENROD));
 
         battalionMap.put(ArmyType.RED, RED_BATTALION);
         battalionMap.put(ArmyType.GREEN, GREEN_BATTALION);
@@ -44,6 +45,13 @@ public class Hud {
         leaderMap.put(ArmyType.GREEN, GREEN_LEADER);
         leaderMap.put(ArmyType.BLACK, BLACK_LEADER);
         leaderMap.put(ArmyType.YELLOW, YELLOW_LEADER);
+
+        Pixmap pix = new Pixmap(20, 19, Pixmap.Format.RGBA8888);
+        pix.setColor(Color.BLUE);
+        pix.fillRectangle(0, 6, 16, 8);
+        pix.fillTriangle(10, 0, 19, 9, 10, 18);
+        this.highlighter = new Texture(pix);
+        pix.dispose();
     }
 
     public void render(Batch batch, Game game, float delta) {
@@ -63,7 +71,7 @@ public class Hud {
             boolean isCurrent = (army == game.current());
             boolean isDefeated = army.battalions.isEmpty();
 
-            Texture bg = isCurrent ? highlighter : (isDefeated ? defeated : backgroundMap.get(type));
+            Texture bg = isDefeated ? defeated : backgroundMap.get(type);
 
             batch.draw(bg, 2, y - 47);
             batch.draw(battalionMap.get(type).getKeyFrame(time, true), 0, py);
@@ -75,8 +83,12 @@ public class Hud {
             String row1 = String.format("B: %d  T: %d  R: %d  S: %d", status.bcount, status.tcount, status.rcount, status.scount);
             String row2 = String.format("Cards: %d  Threat: %d", status.ccount, status.threat);
 
-            Risk.defaultFont.draw(batch, row1, 50, y);
-            Risk.defaultFont.draw(batch, row2, 50, y - 20);
+            Risk.defaultFont.draw(batch, row1, 80, y);
+            Risk.defaultFont.draw(batch, row2, 80, y - 20);
+
+            if (isCurrent) {
+                batch.draw(highlighter, 50, y - 27);
+            }
 
             y -= 62;
             py -= 62;
