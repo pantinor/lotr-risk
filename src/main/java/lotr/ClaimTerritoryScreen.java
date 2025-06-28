@@ -7,6 +7,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapLayer;
@@ -476,7 +477,6 @@ public class ClaimTerritoryScreen implements Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         renderer.render();
-
         shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
 
         if (selectedTerritory != null) {
@@ -484,61 +484,71 @@ public class ClaimTerritoryScreen implements Screen {
         }
 
         hudbatch.begin();
+
         for (RegionWrapper w : regions) {
-            if (w.territory != null) {
+            if (w.territory == null) {
+                continue;
+            }
 
-                ArmyType at = game.getOccupyingArmy(w.territory) != null ? game.getOccupyingArmy(w.territory).armyType : null;
+            TerritoryCard territory = w.territory;
+            Army occupyingArmy = game.getOccupyingArmy(territory);
+            ArmyType armyType = occupyingArmy != null ? occupyingArmy.armyType : null;
 
-                tmpb.set(w.battalionPosition);
-                tmpt.set(w.textPosition);
+            tmpb.set(w.battalionPosition);
+            tmpt.set(w.textPosition);
 
-                Vector3 bp = this.camera.project(tmpb);
-                Vector3 tp = this.camera.project(tmpt);
+            this.camera.project(tmpb);
+            this.camera.project(tmpt);
 
-                float bx = bp.x - 12;
-                float by = bp.y - 12;
-                float tx = tp.x - 12;
-                float ty = tp.y - 12;
+            float bx = tmpb.x - 12;
+            float by = tmpb.y - 12;
+            float tx = tmpt.x - 12;
+            float ty = tmpt.y - 12;
 
-                Risk.font.draw(hudbatch, w.territory.title(), tp.x - 20, tp.y + 16);
+            // Draw territory name
+            // Draw army indicator and leader icon
+            Texture armyCircle = null;
+            boolean isLeader = false;
+            Color color = Color.WHITE;
 
-                if (at == ArmyType.RED) {
-                    if (w.territory == game.red.leader1.territory || w.territory == game.red.leader2.territory) {
-                        hudbatch.draw(LEADER_CIRCLE, bx, by);
-                    }
-                    hudbatch.draw(RED_CIRCLE, tx, ty);
+            if (armyType == ArmyType.RED) {
+                armyCircle = RED_CIRCLE;
+                color = Color.RED;
+                isLeader = (territory == game.red.leader1.territory || territory == game.red.leader2.territory);
+            } else if (armyType == ArmyType.BLACK) {
+                armyCircle = BLACK_CIRCLE;
+                color = Color.DARK_GRAY;
+                isLeader = (territory == game.black.leader1.territory || territory == game.black.leader2.territory);
+            } else if (armyType == ArmyType.GREEN) {
+                armyCircle = GREEN_CIRCLE;
+                color = Color.GREEN;
+                isLeader = (territory == game.green.leader1.territory || territory == game.green.leader2.territory);
+            } else if (armyType == ArmyType.YELLOW) {
+                armyCircle = YELLOW_CIRCLE;
+                color = Color.YELLOW;
+                isLeader = (territory == game.yellow.leader1.territory || territory == game.yellow.leader2.territory);
+            }
+
+            Risk.font.setColor(color);
+            Risk.font.draw(hudbatch, territory.title(), tmpt.x - 20, tmpt.y + 16);
+
+            if (armyCircle != null) {
+                if (isLeader) {
+                    hudbatch.draw(LEADER_CIRCLE, bx, by);
                 }
-                if (at == ArmyType.BLACK) {
-                    if (w.territory == game.black.leader1.territory || w.territory == game.black.leader2.territory) {
-                        hudbatch.draw(LEADER_CIRCLE, bx, by);
-                    }
-                    hudbatch.draw(BLACK_CIRCLE, tx, ty);
-                }
-                if (at == ArmyType.GREEN) {
-                    if (w.territory == game.green.leader1.territory || w.territory == game.green.leader2.territory) {
-                        hudbatch.draw(LEADER_CIRCLE, bx, by);
-                    }
-                    hudbatch.draw(GREEN_CIRCLE, tx, ty);
-                }
-                if (at == ArmyType.YELLOW) {
-                    if (w.territory == game.yellow.leader1.territory || w.territory == game.yellow.leader2.territory) {
-                        hudbatch.draw(LEADER_CIRCLE, bx, by);
-                    }
-                    hudbatch.draw(YELLOW_CIRCLE, tx, ty);
-                }
+                hudbatch.draw(armyCircle, tx, ty);
+            }
 
-                int bc = game.battalionCount(w.territory);
-                if (bc > 0) {
-                    Risk.defaultFont.draw(hudbatch, bc + "", tp.x - 8, tp.y + 6);
-                }
-
+            int battalionCount = game.battalionCount(territory);
+            if (battalionCount > 0) {
+                Risk.defaultFont.draw(hudbatch, Integer.toString(battalionCount), tmpt.x - 8, tmpt.y + 6);
             }
         }
+
         hudbatch.end();
 
         stage.act();
         stage.draw();
-
     }
 
     @Override

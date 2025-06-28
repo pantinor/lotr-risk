@@ -10,8 +10,9 @@ public enum Sound {
     NEGATIVE_EFFECT("NegativeEffect.ogg", false, 0.3f),
     ARMAGEDDON("Armageddon.ogg", false, 0.3f),
     ARMY_UPGRADE("ArmyUpgrade.ogg", false, 0.3f),
-    DIVINE_INTERVENTION("divineint.ogg", false, 0.3f);
-
+    DIVINE_INTERVENTION("divineint.ogg", false, 0.3f),
+    FANFARE("FanfareGameOver.mid", true, 0.1f);
+    
     String file;
     boolean looping;
     float volume;

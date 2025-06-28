@@ -83,7 +83,7 @@ public abstract class BaseBot {
         SequenceAction s = Actions.sequence();
 
         if (army.claimedTerritories().isEmpty()) {
-            //TODO gome over remove me from game
+            //TODO game over remove me from game
             s.addAction(Actions.delay(1));
             return s;
         }

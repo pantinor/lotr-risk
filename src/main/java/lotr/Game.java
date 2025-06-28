@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import lotr.Constants.ClassType;
+import lotr.util.Sound;
+import lotr.util.Sounds;
 
 public class Game {
 
@@ -22,7 +24,7 @@ public class Game {
 
     public final Army[] armies = new Army[4];
     public final Status[] status = new Status[]{new Status(), new Status(), new Status(), new Status()};
-    
+
     public Step currentStep = Step.DRAFT;
     private List<GameStepListener> listeners = new ArrayList<>();
 
@@ -109,6 +111,10 @@ public class Game {
         }
 
         updateStandings();
+        
+        if (isGameOver()) {
+            Sounds.play(Sound.FANFARE);
+        }
 
     }
 
@@ -440,7 +446,7 @@ public class Game {
                 return t;
             }
         }
-        
+
         //otherwise try find one that is neutral with 10 tries
         for (int i = 0; i < 10; i++) {
             TerritoryCard t = temp.get(rand.nextInt(temp.size()));
@@ -500,6 +506,20 @@ public class Game {
             status.threat += r.reinforcements() * 2;
         }
         status.percentOwnershipInEachRegion = a.percentOwnershipInEachRegion(claimedTerritories);
+    }
+
+    public boolean isGameOver() {
+        int aliveArmies = 0;
+
+        for (Army army : armies) {
+            if (army != null && !army.getBattalions().isEmpty()) {
+                if (++aliveArmies > 1) {
+                    return false; // More than one army still alive - game not over
+                }
+            }
+        }
+
+        return aliveArmies == 1; // Game is over if only one army is left standing
     }
 
 }
