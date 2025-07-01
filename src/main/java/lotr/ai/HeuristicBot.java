@@ -156,6 +156,9 @@ public class HeuristicBot extends BaseBot {
             Map<Region, Integer>[] percentOwnershipInEachRegion = new HashMap[4];
 
             for (Army a : armies) {
+                if (a == null) {
+                    continue;
+                }
                 claimedTerritories[a.armyType.ordinal()] = claimedTerritories(a.armyType);
                 ownedStrongholds[a.armyType.ordinal()] = ownedStrongholds(claimedTerritories[a.armyType.ordinal()]);
                 ownedRegions[a.armyType.ordinal()] = ownedRegions(claimedTerritories[a.armyType.ordinal()]);

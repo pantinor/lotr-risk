@@ -136,7 +136,7 @@ public class GameScreen implements Screen {
         logs = new LogScrollPane();
         cardSlider = new AdventureCardWidget(widgetStage, game, logs);
 
-        CheckBox fullscreen = new CheckBox(" Screen ", Risk.skin, "selection-small");
+        CheckBox fullscreen = new CheckBox(" Screen ", Risk.skin, "selection-white");
         fullscreen.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {

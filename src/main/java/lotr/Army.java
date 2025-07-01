@@ -32,7 +32,7 @@ public class Army {
 
     @Expose
     public BaseBot.Type botType;
-    
+
     public TerritoryCard missionIndication1 = null;
     public TerritoryCard missionIndication2 = null;
 
@@ -80,13 +80,16 @@ public class Army {
         this.adventureCards.remove(c);
     }
 
-    //set 1 battalion in each owned territories
     public void pickTerritories(List<TerritoryCard> deck, int count) {
-
         Random rand = new Random();
 
+        // Only include battalions that are not yet assigned a territory
         List<Battalion> tmp = new ArrayList<>();
-        tmp.addAll(this.battalions);
+        for (Battalion b : this.battalions) {
+            if (b.territory == null) {
+                tmp.add(b);
+            }
+        }
 
         for (int i = 0; i < count; i++) {
             int r = rand.nextInt(deck.size());
@@ -129,7 +132,7 @@ public class Army {
     public List<TerritoryCard> claimedTerritories() {
         List<TerritoryCard> tmp = new ArrayList<>();
         for (Battalion b : this.battalions) {
-            if (!tmp.contains(b.territory)) {
+            if (b.territory != null && !tmp.contains(b.territory)) {
                 tmp.add(b.territory);
             }
         }
@@ -155,7 +158,7 @@ public class Army {
         }
         return tmp;
     }
-    
+
     public Map<Region, Integer> percentOwnershipInEachRegion(List<TerritoryCard> claimedTerritories) {
         Map<Region, Integer> tmp = new HashMap<>();
         for (Region r : Region.values()) {

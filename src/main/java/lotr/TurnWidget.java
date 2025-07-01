@@ -196,7 +196,7 @@ public class TurnWidget extends Table implements GameStepListener {
         add(nextButton).colspan(4).center();
         row();
 
-        CheckBox adventureCards = new CheckBox(" Cards ", Risk.skin, "selection-small");
+        CheckBox adventureCards = new CheckBox(" Cards ", Risk.skin, "selection-white");
         adventureCards.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
@@ -205,7 +205,7 @@ public class TurnWidget extends Table implements GameStepListener {
             }
         });
 
-        CheckBox cbtext = new CheckBox(" Labels ", Risk.skin, "selection-small");
+        CheckBox cbtext = new CheckBox(" Labels ", Risk.skin, "selection-white");
         cbtext.setChecked(true);
         cbtext.addListener(new ChangeListener() {
             @Override
@@ -214,7 +214,7 @@ public class TurnWidget extends Table implements GameStepListener {
             }
         });
 
-        CheckBox logs = new CheckBox(" Log ", Risk.skin, "selection-small");
+        CheckBox logs = new CheckBox(" Log ", Risk.skin, "selection-white");
         logs.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {

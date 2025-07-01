@@ -32,22 +32,12 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lotr.ai.HeuristicBot;
-import lotr.ai.RandomBot;
-import lotr.ai.StrongBot;
-import lotr.ai.WeakBot;
-import org.apache.commons.io.IOUtils;
 
 public class Risk extends Game {
 
@@ -58,7 +48,6 @@ public class Risk extends Game {
     public static int SCREEN_WIDTH = 1800;
     public static int SCREEN_HEIGHT = 1050;
 
-    public static Risk mainGame;
     public static TiledMap TMX_MAP;
     public static Animation<TextureRegion> RED_BATTALION, BLACK_BATTALION, GREEN_BATTALION, YELLOW_BATTALION;
     public static Animation<TextureRegion> RED_LEADER, BLACK_LEADER, GREEN_LEADER, YELLOW_LEADER;
@@ -83,7 +72,7 @@ public class Risk extends Game {
 
         cfg.width = SCREEN_WIDTH = displayMode.width - 20;
         cfg.height = SCREEN_HEIGHT = displayMode.height - 100;
-       
+
         cfg.x = 0;
         cfg.y = 0;
         cfg.addIcon("assets/data/icon.png", Files.FileType.Classpath);
@@ -141,64 +130,8 @@ public class Risk extends Game {
             redModels[i] = buildDiceModel(1, i);
         }
 
-        InputStream is = null;
-        String json = null;
-        try {
-            is = new FileInputStream("savedGame.json");
-            json = IOUtils.toString(is);
-        } catch (Throwable e) {
-        }
-
-        if (is == null) {
-            GAME = new lotr.Game();
-
-            ClaimTerritoryScreen startScreen = new ClaimTerritoryScreen(this, GAME);
-            setScreen(startScreen);
-
-        } else {
-            GsonBuilder builder = new GsonBuilder();
-            Gson gson = builder.excludeFieldsWithoutExposeAnnotation().create();
-
-            GAME = gson.fromJson(json, new TypeToken<lotr.Game>() {
-            }.getType());
-
-            GAME.setRed(GAME.red);
-            GAME.setGreen(GAME.green);
-            GAME.setBlack(GAME.black);
-            GAME.setYellow(GAME.yellow);
-
-            for (int i = 0; i < 4; i++) {
-                if (GAME.armies[i] != null && GAME.armies[i].botType != null) {
-                    switch (GAME.armies[i].botType) {
-                        case STRONG:
-                            GAME.armies[i].bot = new StrongBot(GAME, GAME.armies[i]);
-                            break;
-                        case RANDOM:
-                            GAME.armies[i].bot = new RandomBot(GAME, GAME.armies[i]);
-                            break;
-                        case WEAK:
-                            GAME.armies[i].bot = new WeakBot(GAME, GAME.armies[i]);
-                            break;
-                        case HEURISTIC:
-                            GAME.armies[i].bot = new HeuristicBot(GAME, GAME.armies[i], 85);
-                            break;
-                    }
-                }
-            }
-
-            //ThreeDGameScreen gameScreen = new ThreeDGameScreen();
-            GameScreen gameScreen = new GameScreen(this, GAME);
-            setScreen(gameScreen);
-
-            for (int i = 0; i < 4; i++) {
-                if (GAME.armies[i] != null && GAME.armies[i].botType != null) {
-                    GAME.armies[i].bot.set(gameScreen, gameScreen.ringPath, gameScreen.cardSlider);
-                }
-            }
-
-            GAME.updateStandings();
-
-        }
+        StartScreen start = new StartScreen(this);
+        setScreen(start);
 
     }
 

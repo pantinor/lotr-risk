@@ -29,23 +29,17 @@ import static lotr.util.RendererUtil.filledPolygonWithOutline;
 public class PreviewDialog extends Dialog {
 
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
-
-    private final Game game;
-    private final GameScreen screen;
     private final InputProcessor input;
 
     private final float unitScale = 0.35f;
     private final List<RegionWrapper> regions = new ArrayList<>();
 
-    private final SpriteBatch batch = new SpriteBatch();
     private final OrthographicCamera camera = new OrthographicCamera();
     private final FrameBuffer fbo;
     private final TextureRegion staticMapTexture;
 
     public PreviewDialog(GameScreen screen, Game game) {
         super("", Risk.skin.get("dialog", Window.WindowStyle.class));
-        this.screen = screen;
-        this.game = game;
         this.input = Gdx.input.getInputProcessor();
 
         MapLayer regionsLayer = TMX_MAP.getLayers().get("regions");

@@ -81,7 +81,11 @@ public enum Location {
     }
 
     public boolean isSiteOfPower() {
-        return siteOfPower;
+        return siteOfPower == true;
+    }
+    
+    public boolean isStronghold() {
+        return siteOfPower == false;
     }
 
     public static Location getStronghold(TerritoryCard c) {

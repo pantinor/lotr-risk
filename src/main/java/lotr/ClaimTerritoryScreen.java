@@ -3,12 +3,17 @@ package lotr;
 import lotr.util.Sound;
 import lotr.util.Sounds;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
@@ -18,15 +23,14 @@ import com.badlogic.gdx.maps.tiled.renderers.HexagonalTiledMapRenderer;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputEvent.Type;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.actions.RunnableAction;
-import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
@@ -60,7 +64,7 @@ import static lotr.util.RendererUtil.filledPolygon;
 
 public class ClaimTerritoryScreen implements Screen {
 
-    protected float time = 0;
+    public static BitmapFont font;
     private final HexagonalTiledMapRenderer renderer;
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
 
@@ -71,13 +75,12 @@ public class ClaimTerritoryScreen implements Screen {
     private final List<RegionWrapper> regions = new ArrayList<>();
     private RegionWrapper selectedTerritory;
 
-    private final SpriteBatch hudbatch = new SpriteBatch();
-    private final SpriteBatch batch = new SpriteBatch();
+    private final Batch hudbatch = new SpriteBatch();
+    private final Batch batch = new SpriteBatch();
     private final Viewport mapViewport;
     private final OrthographicCamera camera;
 
-    private final Viewport viewport = new ScreenViewport();
-    private final Stage stage = new Stage(viewport);
+    private final Stage stage = new Stage();
 
     private static final int MAP_VIEWPORT_WIDTH = 736;
     private static final int MAP_VIEWPORT_HEIGHT = 968;
@@ -91,10 +94,24 @@ public class ClaimTerritoryScreen implements Screen {
 
     private final Random rand = new Random();
 
+    private final GlyphLayout layout = new GlyphLayout();
+    private static final List<String> TEXTS = new ArrayList<>();
+
+    static {
+        TEXTS.add("Select a terririty on the map and click on CLAIM during your turn.");
+        TEXTS.add("When all territories are claimed, Reinforce your territories in similar way during your turn.");
+        TEXTS.add("The Game will begin when all battalions of each player are deployed.");
+    }
+
     public ClaimTerritoryScreen(Risk main, Game game) {
 
         this.game = game;
         this.main = main;
+
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.classpath("assets/fonts/aniron.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameter.size = 10;
+        font = generator.generateFont(parameter);
 
         this.camera = new OrthographicCamera(MAP_VIEWPORT_WIDTH, MAP_VIEWPORT_HEIGHT);
         this.mapViewport = new ScreenViewport(this.camera);
@@ -227,7 +244,7 @@ public class ClaimTerritoryScreen implements Screen {
                 main.setScreen(gameScreen);
 
                 for (int i = 0; i < 4; i++) {
-                    if (GAME.armies[i].botType != null) {
+                    if (GAME.armies[i] != null && GAME.armies[i].botType != null) {
                         GAME.armies[i].bot.set(gameScreen, gameScreen.ringPath, gameScreen.cardSlider);
                     }
                 }
@@ -398,64 +415,83 @@ public class ClaimTerritoryScreen implements Screen {
             this.stage.addAction(botClaim());
         }
 
-        boolean reinforcedone = true;
-        boolean leaderPlacementDone = true;
-        for (Army a : this.game.armies) {
-            if (a != null) {
-                for (Battalion b : a.battalions) {
-                    if (b.territory == null) {
-                        reinforcedone = false;
+        RunnableAction closure = new RunnableAction();
+        closure.setRunnable(() -> {
+            boolean reinforcedone = true;
+            boolean leaderPlacementDone = true;
+            for (Army a : this.game.armies) {
+                if (a != null) {
+                    for (Battalion b : a.battalions) {
+                        if (b.territory == null) {
+                            reinforcedone = false;
+                        }
+                    }
+                    if (a.leader1.territory == null || a.leader2.territory == null) {
+                        leaderPlacementDone = false;
                     }
                 }
-                if (a.leader1.territory == null || a.leader2.territory == null) {
-                    leaderPlacementDone = false;
-                }
             }
-        }
-        if (reinforcedone) {
-            if (leaderPlacementDone) {
-                this.exit.setVisible(true);
-                this.claim.setVisible(false);
-            } else {
-                this.claim.setText("PLACE LEADERS");
-            }
-        }
-    }
-
-    public SequenceAction botClaim() {
-
-        SequenceAction s = Actions.sequence();
-
-        if (!claim.getText().toString().equals("REINFORCE")) {
-            s.addAction(Actions.delay(1));
-        }
-
-        RunnableAction r1 = new RunnableAction();
-        r1.setRunnable(() -> {
-            TerritoryCard t = game.findRandomEmptyTerritory(game.current().getClassType());
-            if (t != null) {
-                addBattalion(t);
-            } else {
-                List<TerritoryCard> terrs = game.current().claimedTerritories();
-                List<Location> sh = game.current().ownedStrongholds(terrs);
-                if (sh.isEmpty()) {
-                    t = terrs.get(rand.nextInt(terrs.size()));
+            if (reinforcedone) {
+                if (leaderPlacementDone) {
+                    this.exit.setVisible(true);
+                    this.claim.setVisible(false);
                 } else {
-                    t = sh.get(rand.nextInt(sh.size())).getTerritory();
+                    this.claim.setText("PLACE LEADERS");
                 }
-                if (game.current().leader1.territory == null) {
-                    game.current().leader1.territory = t;
-                }
-                if (game.current().leader2.territory == null) {
-                    terrs.remove(game.current().leader1.territory);
-                    game.current().leader2.territory = terrs.get(rand.nextInt(terrs.size()));
-                }
-                addBattalion(t);
             }
         });
-        s.addAction(r1);
+        this.stage.addAction(closure);
 
-        return s;
+    }
+
+    private Action botClaim() {
+        RunnableAction action = new RunnableAction();
+        action.setRunnable(() -> {
+            Army current = game.current();
+            TerritoryCard t = game.findRandomEmptyTerritory(current.getClassType());
+
+            if (t != null) {
+                addBattalion(t);
+                return;
+            }
+
+            List<TerritoryCard> claimed = current.claimedTerritories();
+
+            List<Location> ownedStrongholds = current.ownedStrongholds(claimed);
+
+            List<TerritoryCard> adjacentToEnemyStronghold = new ArrayList<>();
+            for (TerritoryCard tr : claimed) {
+                for (TerritoryCard adj : tr.adjacents()) {
+                    Army owner = game.isClaimed(adj);
+                    if (owner != null && owner != current && game.isStronghold(adj)) {
+                        adjacentToEnemyStronghold.add(tr);
+                        break;
+                    }
+                }
+            }
+
+            boolean flip = rand.nextBoolean();
+            if (flip && !adjacentToEnemyStronghold.isEmpty()) {
+                t = adjacentToEnemyStronghold.get(rand.nextInt(adjacentToEnemyStronghold.size()));
+            } else if (!ownedStrongholds.isEmpty()) {
+                Location loc = ownedStrongholds.get(rand.nextInt(ownedStrongholds.size()));
+                t = loc.getTerritory();
+            } else {
+                t = claimed.get(rand.nextInt(claimed.size()));
+            }
+
+            addBattalion(t);
+
+            if (current.leader1.territory == null) {
+                current.leader1.territory = t;
+            }
+            if (current.leader2.territory == null) {
+                claimed.remove(current.leader1.territory);
+                current.leader2.territory = claimed.get(rand.nextInt(claimed.size()));
+            }
+        });
+
+        return action;
     }
 
     @Override
@@ -465,20 +501,18 @@ public class ClaimTerritoryScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-
+        stage.getViewport().update(width, height, true);
     }
 
-    Vector3 tmpb = new Vector3();
     Vector3 tmpt = new Vector3();
 
     @Override
     public void render(float delta) {
-        time += delta;
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         renderer.render();
-        shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
 
+        shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
         if (selectedTerritory != null) {
             filledPolygon(shapeRenderer, new Color(0x00ff0080), selectedTerritory.vertices);
         }
@@ -494,14 +528,10 @@ public class ClaimTerritoryScreen implements Screen {
             Army occupyingArmy = game.getOccupyingArmy(territory);
             ArmyType armyType = occupyingArmy != null ? occupyingArmy.armyType : null;
 
-            tmpb.set(w.battalionPosition);
             tmpt.set(w.textPosition);
 
-            this.camera.project(tmpb);
             this.camera.project(tmpt);
 
-            float bx = tmpb.x - 12;
-            float by = tmpb.y - 12;
             float tx = tmpt.x - 12;
             float ty = tmpt.y - 12;
 
@@ -529,26 +559,41 @@ public class ClaimTerritoryScreen implements Screen {
                 isLeader = (territory == game.yellow.leader1.territory || territory == game.yellow.leader2.territory);
             }
 
-            Risk.font.setColor(color);
-            Risk.font.draw(hudbatch, territory.title(), tmpt.x - 20, tmpt.y + 16);
+            font.setColor(armyType == ArmyType.BLACK ? Color.BLUE : Color.BLACK);
+            font.draw(hudbatch, territory.title(), tx - 25 + 1, ty + 30 - 1);
+            font.setColor(color);
+            font.draw(hudbatch, territory.title(), tx - 25, ty + 30);
 
             if (armyCircle != null) {
                 if (isLeader) {
-                    hudbatch.draw(LEADER_CIRCLE, bx, by);
+                    hudbatch.draw(LEADER_CIRCLE, tx - 5, ty - 5);
                 }
                 hudbatch.draw(armyCircle, tx, ty);
             }
 
             int battalionCount = game.battalionCount(territory);
             if (battalionCount > 0) {
-                Risk.defaultFont.draw(hudbatch, Integer.toString(battalionCount), tmpt.x - 8, tmpt.y + 6);
+                Risk.defaultFont.draw(hudbatch, Integer.toString(battalionCount), tx + 3, ty + 18);
             }
+        }
+
+        int x = 15;
+        int y = Gdx.graphics.getHeight() - 350;
+
+        for (String text : TEXTS) {
+            layout.setText(Risk.font, text, Color.WHITE, 320, Align.left, true);
+            Risk.font.draw(hudbatch, layout, 15, y);
+            y -= layout.height + 30;
         }
 
         hudbatch.end();
 
         stage.act();
         stage.draw();
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && this.claim.isVisible()) {
+            this.claim.fire(new ChangeListener.ChangeEvent());
+        }
     }
 
     @Override

@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 import lotr.Constants.ClassType;
 import lotr.util.Sound;
 import lotr.util.Sounds;
@@ -72,23 +73,20 @@ public class Game {
     }
 
     public Army nextPlayer() {
-        turnIndex++;
-        if (turnIndex > 3) {
-            turnIndex = 0;
-        }
-        if (armies[turnIndex] == null) {
-            turnIndex++;
-        }
+        int attempts = 0;
+        int totalPlayers = armies.length;
+
+        do {
+            turnIndex = (turnIndex + 1) % totalPlayers;
+            attempts++;
+        } while ((armies[turnIndex] == null || armies[turnIndex].battalions.isEmpty()) && attempts <= totalPlayers);
 
         updateStandings();
+
         for (AdventureCard c : AdventureCard.values()) {
             c.setUsed(false);
         }
-
-        if (armies[turnIndex].battalions.size() == 0) {
-            nextPlayer();
-        }
-
+        
         return armies[turnIndex];
     }
 
@@ -373,16 +371,24 @@ public class Game {
 
         Random rand = new Random();
 
-        //first try find one with the same class type as the army with 10 tries
-        for (int i = 0; i < 10; i++) {
+        //first try find one with the same class type as the army and is a stronghold with 2 chances
+        for (int i = 0; i < 2; i++) {
+            TerritoryCard t = temp.get(rand.nextInt(temp.size()));
+            if (t.type() == hint && isStronghold(t)) {
+                return t;
+            }
+        }
+
+        //first try find one with the same class type as the army with 1 chance
+        for (int i = 0; i < 1; i++) {
             TerritoryCard t = temp.get(rand.nextInt(temp.size()));
             if (t.type() == hint) {
                 return t;
             }
         }
 
-        //otherwise try find one that is neutral with 10 tries
-        for (int i = 0; i < 10; i++) {
+        //otherwise try find one that is neutral with 1 chance
+        for (int i = 0; i < 1; i++) {
             TerritoryCard t = temp.get(rand.nextInt(temp.size()));
             if (t.type() == ClassType.NEUTRAL) {
                 return t;
@@ -391,6 +397,15 @@ public class Game {
 
         //otherwise pick any random one
         return temp.get(rand.nextInt(temp.size()));
+    }
+
+    public boolean isStronghold(TerritoryCard t) {
+        for (Location l : Location.values()) {
+            if (l.getTerritory() == t && l.isStronghold()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static class Status {
