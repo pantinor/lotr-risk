@@ -118,6 +118,9 @@ public class TurnWidget extends Table implements GameStepListener {
                 //here we check if the site of power was conquered with a leader and add a card if so
                 if (conqueredSOPWithLeader) {
                     gameScreen.cardSlider.drawAdventureCard();
+                    gameScreen.cardSlider.set();
+                } else {
+                    gameScreen.logs.log(String.format("%s did not conquer a Site of Power and does not collect an adventure card.", game.current().armyType), game.current().armyType.color());
                 }
                 game.nextStep();//replace leader
             }

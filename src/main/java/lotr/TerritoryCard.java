@@ -100,7 +100,7 @@ public enum TerritoryCard {
     WITHERED_HEATH(EVIL, ELVEN_ARCHER, RHUN),;
 
     private ClassType type;
-    private BattalionType battalion;
+    private BattalionType battalionType;
     private TerritoryCard[] adjacents;
     private Region region;
 
@@ -109,7 +109,7 @@ public enum TerritoryCard {
 
     private TerritoryCard(ClassType t, BattalionType b, Region r) {
         this.type = t;
-        this.battalion = b;
+        this.battalionType = b;
         this.region = r;
 
         String name = this.toString();
@@ -130,7 +130,7 @@ public enum TerritoryCard {
     }
 
     public BattalionType battalionType() {
-        return battalion;
+        return battalionType;
     }
 
     public Region region() {

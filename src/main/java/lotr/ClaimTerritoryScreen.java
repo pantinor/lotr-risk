@@ -98,7 +98,7 @@ public class ClaimTerritoryScreen implements Screen {
     private static final List<String> TEXTS = new ArrayList<>();
 
     static {
-        TEXTS.add("Select a terririty on the map and click on CLAIM during your turn.");
+        TEXTS.add("Select a terririty on the map and click on CLAIM or SPACE bar during your turn.");
         TEXTS.add("When all territories are claimed, Reinforce your territories in similar way during your turn.");
         TEXTS.add("The Game will begin when all battalions of each player are deployed.");
     }

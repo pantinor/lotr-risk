@@ -82,11 +82,11 @@ public class RingPath implements RingPathAction {
                 if (w.roll) {
                     Dice d = new Dice();
                     int r = d.roll();
-                    logger.log("The FELLOWSHIP rolls a " + r + " at " + w.name.toUpperCase(), Color.PURPLE);
                     if (r > 3) {
                         //advance
                         Sounds.play(Sound.POSITIVE_EFFECT);
                     } else {
+                        logger.log("The FELLOWSHIP fails to advance rolling a " + r + " at " + w.name.toUpperCase(), Color.PURPLE);
                         Sounds.play(Sound.NEGATIVE_EFFECT);
                         return false;
                     }

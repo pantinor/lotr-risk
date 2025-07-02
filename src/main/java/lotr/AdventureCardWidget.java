@@ -84,7 +84,7 @@ public class AdventureCardWidget extends Table implements CardAction {
                 public void changed(ChangeListener.ChangeEvent event, Actor actor) {
                     AdventureCard card = (AdventureCard) actor.getUserObject();
                     process(card);
-                    hide();
+                    set();
                 }
             });
             boxes.add(cb);
@@ -292,7 +292,7 @@ public class AdventureCardWidget extends Table implements CardAction {
 
                 //cannot have more than 4 adventure cards in hand
                 if (game.current().adventureCards.size() > 4) {
-                    //discard first card - should be a choice which one but not that is implemented at this time
+                    //discard first card - should be a choice which one but that is not implemented at this time
                     AdventureCard discard = game.current().adventureCards.remove(0);
                     game.adventureCards.add(discard);
                 }

@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicInteger;
 import lotr.Constants.ClassType;
 import lotr.util.Sound;
 import lotr.util.Sounds;
@@ -86,7 +86,7 @@ public class Game {
         for (AdventureCard c : AdventureCard.values()) {
             c.setUsed(false);
         }
-        
+
         return armies[turnIndex];
     }
 
@@ -264,64 +264,41 @@ public class Game {
         return aliveArmies == 1; // Game is over if only one army is left standing
     }
 
-    public void turnInTerritoryCards(Army army, int sumArchers, int sumRiders, int sumEagles) {
+    public void turnInTerritoryCards(Army army, int sumArchers, int sumRiders, int sumEagles, int wildcardsUsed) {
+        List<TerritoryCard> cards = army.territoryCards;
+
+        AtomicInteger wildcardsUsedAtomic = new AtomicInteger(wildcardsUsed);
+
         if (sumArchers >= 1 && sumRiders >= 1 && sumEagles >= 1) {
-            Iterator<TerritoryCard> iter = army.territoryCards.iterator();
-            while (iter.hasNext()) {
-                TerritoryCard c = iter.next();
-                if (c.battalionType() == Constants.BattalionType.EAGLE || c.battalionType() == null) {
-                    iter.remove();
-                    break;
-                }
-            }
-            iter = army.territoryCards.iterator();
-            while (iter.hasNext()) {
-                TerritoryCard c = iter.next();
-                if (c.battalionType() == Constants.BattalionType.DARK_RIDER || c.battalionType() == null) {
-                    iter.remove();
-                    territoryCards.add(c);
-                }
-            }
-            iter = army.territoryCards.iterator();
-            while (iter.hasNext()) {
-                TerritoryCard c = iter.next();
-                if (c.battalionType() == Constants.BattalionType.ELVEN_ARCHER || c.battalionType() == null) {
-                    iter.remove();
-                    territoryCards.add(c);
-                }
-            }
+            removeCardsOfType(cards, Constants.BattalionType.EAGLE, 1, wildcardsUsedAtomic);
+            removeCardsOfType(cards, Constants.BattalionType.DARK_RIDER, 1, wildcardsUsedAtomic);
+            removeCardsOfType(cards, Constants.BattalionType.ELVEN_ARCHER, 1, wildcardsUsedAtomic);
         } else if (sumEagles >= 3) {
-            Iterator<TerritoryCard> iter = army.territoryCards.iterator();
-            int removed = 0;
-            while (iter.hasNext()) {
-                TerritoryCard c = iter.next();
-                if (removed < 3 && c.battalionType() == Constants.BattalionType.EAGLE || c.battalionType() == null) {
-                    iter.remove();
-                    territoryCards.add(c);
-                    removed++;
-                }
-            }
+            removeCardsOfType(cards, Constants.BattalionType.EAGLE, 3, wildcardsUsedAtomic);
         } else if (sumRiders >= 3) {
-            Iterator<TerritoryCard> iter = army.territoryCards.iterator();
-            int removed = 0;
-            while (iter.hasNext()) {
-                TerritoryCard c = iter.next();
-                if (removed < 3 && c.battalionType() == Constants.BattalionType.DARK_RIDER || c.battalionType() == null) {
-                    iter.remove();
-                    territoryCards.add(c);
-                    removed++;
-                }
-            }
+            removeCardsOfType(cards, Constants.BattalionType.DARK_RIDER, 3, wildcardsUsedAtomic);
         } else if (sumArchers >= 3) {
-            Iterator<TerritoryCard> iter = army.territoryCards.iterator();
-            int removed = 0;
-            while (iter.hasNext()) {
-                TerritoryCard c = iter.next();
-                if (removed < 3 && c.battalionType() == Constants.BattalionType.ELVEN_ARCHER || c.battalionType() == null) {
-                    iter.remove();
-                    territoryCards.add(c);
-                    removed++;
-                }
+            removeCardsOfType(cards, Constants.BattalionType.ELVEN_ARCHER, 3, wildcardsUsedAtomic);
+        }
+    }
+
+    private void removeCardsOfType(List<TerritoryCard> cards, Constants.BattalionType type, int count, AtomicInteger wildcardsUsed) {
+        Iterator<TerritoryCard> iter = cards.iterator();
+        int removed = 0;
+
+        while (iter.hasNext() && removed < count) {
+            TerritoryCard c = iter.next();
+            Constants.BattalionType bt = c.battalionType();
+
+            if (bt == type) {
+                iter.remove();
+                territoryCards.add(c);
+                removed++;
+            } else if (bt == null && wildcardsUsed.get() > 0) {
+                iter.remove();
+                territoryCards.add(c);
+                removed++;
+                wildcardsUsed.decrementAndGet();
             }
         }
     }

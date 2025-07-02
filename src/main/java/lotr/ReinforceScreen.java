@@ -3,6 +3,7 @@ package lotr;
 import lotr.util.Sound;
 import lotr.util.Sounds;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -28,7 +29,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -77,14 +77,14 @@ public class ReinforceScreen implements Screen {
 
     private final Table table = new Table();
 
-    private final TextButton reinforceStrongholds, reinforceTerritories, reinforceRegions, reinforceCards, exit;
+    private final TextButton reinforce, exit;
 
     private final List<TerritoryCard> claimedTerritories;
     private final List<Location> strongholds;
     private final List<Region> ownedRegions = new ArrayList<>();
 
     private int strongholdReinforcements, territoryReinforcements, regionReinforcements, cardReinforcements;
-    private int sumArchers = 0, sumRiders = 0, sumEagles = 0;
+    private int sumArchers = 0, sumRiders = 0, sumEagles = 0, wildcards = 0, wildcardsUsed = 0;
 
     private final GlyphLayout layout = new GlyphLayout();
     private static final List<String> TEXTS = new ArrayList<>();
@@ -93,7 +93,7 @@ public class ReinforceScreen implements Screen {
         TEXTS.add("1. Reinforce Strongholds - Place 1 battalion into each territory with a stronghold you control.");
         TEXTS.add("2. Count your Territories - Divide the total number of territories by 3.  The number of reinforcecments you recive can never be fewer than 3.");
         TEXTS.add("3. Reinforcements from regions - If you control every teritory within the region, then you control the region.");
-        TEXTS.add("4. Turn in any card sets - when you have a set of 3 cards that show the same picture or 1 of each picture, turn them in for reinforcements.");
+        TEXTS.add("4. Turn in any card sets - when you have a set of 3 cards that show the same picture or 1 of each picture, turn them in for reinforcements.  This is done automatically for you.");
     }
 
     public ReinforceScreen(Risk main, Game game, Army army, GameScreen gameScreen, TurnWidget turnWidget) {
@@ -117,49 +117,63 @@ public class ReinforceScreen implements Screen {
             }
         }
 
-        int wildcardcount = 0;
+        // Count battalion types
         for (TerritoryCard c : army.territoryCards) {
-            if (c.battalionType() == BattalionType.ELVEN_ARCHER) {
+            BattalionType type = c.battalionType();
+            if (type == BattalionType.ELVEN_ARCHER) {
                 sumArchers++;
-            }
-            if (c.battalionType() == BattalionType.DARK_RIDER) {
+            } else if (type == BattalionType.DARK_RIDER) {
                 sumRiders++;
-            }
-            if (c.battalionType() == BattalionType.EAGLE) {
+            } else if (type == BattalionType.EAGLE) {
                 sumEagles++;
+            } else if (type == null) {
+                wildcards++;
             }
-            if (c.battalionType() == null) {
-                wildcardcount++;
-            }
-        }
-        if (sumEagles == 2 && wildcardcount > 0) {
-            sumEagles++;
-            wildcardcount--;
-        }
-        if (sumRiders == 2 && wildcardcount > 0) {
-            sumRiders++;
-            wildcardcount--;
-        }
-        if (sumArchers == 2 && wildcardcount > 0) {
-            sumArchers++;
-            wildcardcount--;
         }
 
-        if (sumArchers >= 3) {
-            cardReinforcements = 4;
-        }
-        if (sumRiders >= 3) {
-            cardReinforcements = 6;
-        }
-        if (sumEagles >= 3) {
-            cardReinforcements = 8;
-        }
-        if (sumArchers >= 1 && sumRiders >= 1 && sumEagles >= 1) {
+        cardReinforcements = 0;
+
+        /**
+         * Calculates the number of reinforcement battalions awarded based on
+         * the player's current set of Territory cards. Reinforcements are
+         * granted by turning in a valid set of cards, with priority given to
+         * the most valuable combination.
+         * <p>
+         * The player may redeem:
+         * <ul>
+         * <li><b>10 battalions</b> for a mixed set: one Elven Archer, one Dark
+         * Rider, and one Eagle.</li>
+         * <li><b>8 battalions</b> for a set of three Eagles.</li>
+         * <li><b>6 battalions</b> for a set of three Dark Riders.</li>
+         * <li><b>4 battalions</b> for a set of three Elven Archers.</li>
+         * </ul>
+         * Wildcards can substitute for any missing card type in a set.
+         * <p>
+         * The logic first attempts to complete a mixed set using wildcards if
+         * needed. If a mixed set is not possible, it checks for matching sets
+         * of 3 of the same type (including wildcard substitutions), in
+         * descending order of value.
+         */
+        int neededMixed = Math.max(0, 1 - sumArchers) + Math.max(0, 1 - sumRiders) + Math.max(0, 1 - sumEagles);
+        if (wildcards >= neededMixed) {
             cardReinforcements = 10;
+            wildcardsUsed = neededMixed;
+        } else if (sumEagles + wildcards >= 3) {
+            int needed = Math.max(0, 3 - sumEagles);
+            cardReinforcements = 8;
+            wildcardsUsed = Math.min(needed, wildcards);
+        } else if (sumRiders + wildcards >= 3) {
+            int needed = Math.max(0, 3 - sumRiders);
+            cardReinforcements = 6;
+            wildcardsUsed = Math.min(needed, wildcards);
+        } else if (sumArchers + wildcards >= 3) {
+            int needed = Math.max(0, 3 - sumArchers);
+            cardReinforcements = 4;
+            wildcardsUsed = Math.min(needed, wildcards);
         }
 
-        gameScreen.logs.log(String.format("%s is reinforcing territories with %d battalion(s).", army.armyType,
-                strongholdReinforcements + territoryReinforcements + regionReinforcements + cardReinforcements), army.armyType.color());
+        gameScreen.logs.log(String.format("%s reinforcements: %d (stronghold) + %d (territory) + %d (region) + %d (cards)",
+                army.armyType, strongholdReinforcements, territoryReinforcements, regionReinforcements, cardReinforcements), army.armyType.color());
 
         this.camera = new OrthographicCamera(MAP_VIEWPORT_WIDTH, MAP_VIEWPORT_HEIGHT);
         this.mapViewport = new ScreenViewport(this.camera);
@@ -204,84 +218,52 @@ public class ReinforceScreen implements Screen {
         this.stage.addActor(sp);
 
         for (TerritoryCard c : army.territoryCards) {
-            CheckBox cb = new CheckBox(c.toString().replace("_", " "), Risk.skin, "default");
-            cb.setUserObject(c);
-            this.table.add(cb);
             String bt = c.battalionType() == null ? "WILDCARD" : c.battalionType().toString().replace("_", " ");
             this.table.add(new Label(bt, Risk.skin));
             this.table.row();
         }
 
-        this.reinforceStrongholds = new TextButton("REINFORCE STRONGHOLDS", Risk.skin, "blue");
-        this.reinforceTerritories = new TextButton("REINFORCE TERRITORIES", Risk.skin, "blue");
-        this.reinforceRegions = new TextButton("REINFORCE REGIONS", Risk.skin, "blue");
-        this.reinforceCards = new TextButton("REINFORCE CARDS", Risk.skin, "blue");
+        if (cardReinforcements > 0) {
+            game.turnInTerritoryCards(army, sumArchers, sumRiders, sumEagles, wildcardsUsed);
+        }
 
-        this.reinforceStrongholds.addListener(new ChangeListener() {
+        this.reinforce = new TextButton("REINFORCE", Risk.skin, "blue");
+
+        this.reinforce.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+
+                if (selectedTerritory == null) {
+                    Sounds.play(Sound.NEGATIVE_EFFECT);
+                    return;
+                }
+
+                TerritoryCard target = selectedTerritory.territory;
+
+                if (!claimedTerritories.contains(target)) {
+                    Sounds.play(Sound.NEGATIVE_EFFECT);
+                    return;
+                }
+
                 if (strongholdReinforcements > 0) {
-                    for (TerritoryCard c : TerritoryCard.values()) {
-                        if (claimedTerritories.contains(c) && Location.getStronghold(c) != null) {
-                            army.addBattalion(c);
-                            strongholdReinforcements--;
-                        }
-                    }
+                    army.addBattalion(target);
                     Sounds.play(Sound.TRIGGER);
+                    strongholdReinforcements--;
+                } else if (territoryReinforcements > 0) {
+                    army.addBattalion(target);
+                    Sounds.play(Sound.TRIGGER);
+                    territoryReinforcements--;
+                } else if (regionReinforcements > 0) {
+                    army.addBattalion(target);
+                    Sounds.play(Sound.TRIGGER);
+                    regionReinforcements--;
+                } else if (cardReinforcements > 0) {
+                    army.addBattalion(target);
+                    Sounds.play(Sound.TRIGGER);
+                    cardReinforcements--;
                 } else {
                     Sounds.play(Sound.NEGATIVE_EFFECT);
                 }
-            }
-        });
-        this.reinforceTerritories.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                if (selectedTerritory != null) {
-                    if (territoryReinforcements > 0 && claimedTerritories.contains(selectedTerritory.territory)) {
-                        army.addBattalion(selectedTerritory.territory);
-                        territoryReinforcements--;
-                        Sounds.play(Sound.TRIGGER);
-                    } else {
-                        Sounds.play(Sound.NEGATIVE_EFFECT);
-                    }
-                } else {
-                    Sounds.play(Sound.NEGATIVE_EFFECT);
-                }
-            }
-        });
-        this.reinforceRegions.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                if (selectedTerritory != null) {
-                    if (regionReinforcements > 0 && claimedTerritories.contains(selectedTerritory.territory)) {
-                        army.addBattalion(selectedTerritory.territory);
-                        regionReinforcements--;
-                        Sounds.play(Sound.TRIGGER);
-                    } else {
-                        Sounds.play(Sound.NEGATIVE_EFFECT);
-                    }
-                } else {
-                    Sounds.play(Sound.NEGATIVE_EFFECT);
-                }
-            }
-        });
-        this.reinforceCards.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                if (selectedTerritory != null) {
-                    if (cardReinforcements > 0 && claimedTerritories.contains(selectedTerritory.territory)) {
-                        army.addBattalion(selectedTerritory.territory);
-                        cardReinforcements--;
-                        Sounds.play(Sound.TRIGGER);
-                    } else {
-                        Sounds.play(Sound.NEGATIVE_EFFECT);
-                    }
-                } else {
-                    Sounds.play(Sound.NEGATIVE_EFFECT);
-                }
-
-                game.turnInTerritoryCards(army, sumArchers, sumRiders, sumEagles);
-
             }
         });
 
@@ -295,16 +277,10 @@ public class ReinforceScreen implements Screen {
             }
         });
 
-        this.reinforceStrongholds.setBounds(400, 720, 220, 35);
-        this.reinforceTerritories.setBounds(400, 680, 220, 35);
-        this.reinforceRegions.setBounds(400, 640, 220, 35);
-        this.reinforceCards.setBounds(400, 600, 220, 35);
+        this.reinforce.setBounds(400, 600, 220, 35);
         this.exit.setBounds(400, 560, 220, 35);
 
-        this.stage.addActor(this.reinforceStrongholds);
-        this.stage.addActor(this.reinforceTerritories);
-        this.stage.addActor(this.reinforceRegions);
-        this.stage.addActor(this.reinforceCards);
+        this.stage.addActor(this.reinforce);
         this.stage.addActor(this.exit);
 
         this.stage.addListener(new EventListener() {
@@ -439,12 +415,12 @@ public class ReinforceScreen implements Screen {
         stage.draw();
 
         if (strongholdReinforcements == 0 && territoryReinforcements == 0 && regionReinforcements == 0 && cardReinforcements == 0) {
-            this.reinforceStrongholds.setVisible(false);
-            this.reinforceTerritories.setVisible(false);
-            this.reinforceRegions.setVisible(false);
-            this.reinforceCards.setVisible(false);
-
+            this.reinforce.setVisible(false);
             this.exit.setVisible(true);
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && this.reinforce.isVisible()) {
+            this.reinforce.fire(new ChangeListener.ChangeEvent());
         }
 
     }

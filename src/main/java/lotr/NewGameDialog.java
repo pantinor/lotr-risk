@@ -147,28 +147,28 @@ public class NewGameDialog extends Dialog {
                     boolean fourplayers = buttonGroup1.getAllChecked().size == 4;
 
                     if (fourplayers) {
-                        Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, 30);
+                        Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, 45);
                         game.setRed(red);
                         if (cbrb.isChecked()) {
                             red.botType = BaseBot.Type.HEURISTIC;
                             red.bot = new HeuristicBot(game, red, 85);
                         }
 
-                        Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 30);
+                        Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 45);
                         game.setBlack(black);
                         if (cbbb.isChecked()) {
                             black.botType = BaseBot.Type.HEURISTIC;
                             black.bot = new HeuristicBot(game, black, 85);
                         }
 
-                        Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 30);
+                        Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 45);
                         game.setGreen(green);
                         if (cbgb.isChecked()) {
                             green.botType = BaseBot.Type.HEURISTIC;
                             green.bot = new HeuristicBot(game, green, 85);
                         }
 
-                        Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, 30);
+                        Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, 45);
                         game.setYellow(yellow);
                         if (cbyb.isChecked()) {
                             yellow.botType = BaseBot.Type.HEURISTIC;
@@ -176,7 +176,7 @@ public class NewGameDialog extends Dialog {
                         }
                     } else {
                         if (cbr.isChecked()) {
-                            Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, 35);
+                            Army red = new Army(Constants.ArmyType.RED, Constants.ClassType.EVIL, 52);
                             game.setRed(red);
                             if (cbrb.isChecked()) {
                                 red.botType = BaseBot.Type.HEURISTIC;
@@ -184,7 +184,7 @@ public class NewGameDialog extends Dialog {
                             }
                         }
                         if (cbb.isChecked()) {
-                            Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 35);
+                            Army black = new Army(Constants.ArmyType.BLACK, Constants.ClassType.EVIL, 52);
                             game.setBlack(black);
                             if (cbbb.isChecked()) {
                                 black.botType = BaseBot.Type.HEURISTIC;
@@ -192,7 +192,7 @@ public class NewGameDialog extends Dialog {
                             }
                         }
                         if (cbg.isChecked()) {
-                            Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 35);
+                            Army green = new Army(Constants.ArmyType.GREEN, Constants.ClassType.GOOD, 52);
                             game.setGreen(green);
                             if (cbgb.isChecked()) {
                                 green.botType = BaseBot.Type.HEURISTIC;
@@ -200,7 +200,7 @@ public class NewGameDialog extends Dialog {
                             }
                         }
                         if (cby.isChecked()) {
-                            Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, 35);
+                            Army yellow = new Army(Constants.ArmyType.YELLOW, Constants.ClassType.GOOD, 52);
                             game.setYellow(yellow);
                             if (cbyb.isChecked()) {
                                 yellow.botType = BaseBot.Type.HEURISTIC;
@@ -215,40 +215,36 @@ public class NewGameDialog extends Dialog {
                     List<TerritoryCard> neutral = TerritoryCard.shuffledTerritoriesOfClass(Constants.ClassType.NEUTRAL);
 
                     if (fourplayers) {
-                        // 4-PLAYER GAME
-                        game.green.pickTerritories(good, 5);     // Player 1: Good
-                        game.red.pickTerritories(evil, 5);       // Player 2: Evil
-                        game.yellow.pickTerritories(good, 4);    // Player 3: Good
-                        game.black.pickTerritories(evil, 4);     // Player 4: Evil
-                    } else {
-                        // 3-PLAYER GAME — determine which one army is null
-                        List<Army> evilArmies = new ArrayList<>();
-                        List<Army> goodArmies = new ArrayList<>();
+                        // 4-PLAYER GAME: 2 good and 2 evil players, 8 cards each
+                        List<TerritoryCard> good1 = good.subList(0, 8);
+                        List<TerritoryCard> good2 = good.subList(8, 16);
+                        List<TerritoryCard> evil1 = evil.subList(0, 8);
+                        List<TerritoryCard> evil2 = evil.subList(8, 16);
 
+                        game.green.pickTerritories(good1, 8);     // Good army
+                        game.yellow.pickTerritories(good2, 8);    // Good army
+                        game.red.pickTerritories(evil1, 8);       // Evil army
+                        game.black.pickTerritories(evil2, 8);     // Evil army
+                    } else {
+                        // 3-PLAYER GAME: 1 good player gets all 16 good cards
+                        // each evil player gets 8 evil + 8 neutral
+                        Army goodArmy = game.green != null ? game.green : game.yellow;
+                        List<Army> evilArmies = new ArrayList<>();
                         if (game.red != null) {
                             evilArmies.add(game.red);
                         }
                         if (game.black != null) {
                             evilArmies.add(game.black);
                         }
-                        if (game.green != null) {
-                            goodArmies.add(game.green);
+
+                        goodArmy.pickTerritories(good, 16);
+
+                        for (int i = 0; i < evilArmies.size(); i++) {
+                            List<TerritoryCard> pick = new ArrayList<>();
+                            pick.addAll(evil.subList(i * 8, (i + 1) * 8));
+                            pick.addAll(neutral.subList(i * 8, (i + 1) * 8));
+                            evilArmies.get(i).pickTerritories(pick, 16);
                         }
-                        if (game.yellow != null) {
-                            goodArmies.add(game.yellow);
-                        }
-
-                        // Assign territories per player order:
-                        // Player 1 (Evil #1): 5 Evil + 4 Neutral
-                        evilArmies.get(0).pickTerritories(evil, 5);
-                        evilArmies.get(0).pickTerritories(neutral, 4);
-
-                        // Player 2 (Good): 9 Good
-                        goodArmies.get(0).pickTerritories(good, 9);
-
-                        // Player 3 (Evil #2): 4 Evil + 5 Neutral
-                        evilArmies.get(1).pickTerritories(evil, 4);
-                        evilArmies.get(1).pickTerritories(neutral, 5);
                     }
 
                     List<TerritoryCard> temp = new ArrayList<>();
