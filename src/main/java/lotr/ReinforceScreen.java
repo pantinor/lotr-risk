@@ -218,8 +218,8 @@ public class ReinforceScreen implements Screen {
         this.stage.addActor(sp);
 
         for (TerritoryCard c : army.territoryCards) {
-            String bt = c.battalionType() == null ? "WILDCARD" : c.battalionType().toString().replace("_", " ");
-            this.table.add(new Label(bt, Risk.skin));
+            String bt = c.battalionType() == null ? "ANY" : c.battalionType().toString().replace("_", " ");
+            this.table.add(new Label(c.title() + " - " + bt, Risk.skin));
             this.table.row();
         }
 
@@ -246,9 +246,10 @@ public class ReinforceScreen implements Screen {
                 }
 
                 if (strongholdReinforcements > 0) {
-                    army.addBattalion(target);
-                    Sounds.play(Sound.TRIGGER);
-                    strongholdReinforcements--;
+                    for (Location l : strongholds) {
+                        army.addBattalion(l.getTerritory());
+                        strongholdReinforcements--;
+                    }
                 } else if (territoryReinforcements > 0) {
                     army.addBattalion(target);
                     Sounds.play(Sound.TRIGGER);

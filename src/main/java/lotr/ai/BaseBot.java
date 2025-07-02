@@ -294,6 +294,8 @@ public abstract class BaseBot {
 
     public void reinforce() {
         List<TerritoryCard> claimedTerritories = army.claimedTerritories();
+        List<Location> strongholds = army.ownedStrongholds(claimedTerritories);
+
         int[] r = getReinforcementCounts();
 
         int strongholdReinforcements = r[0];
@@ -325,13 +327,8 @@ public abstract class BaseBot {
             wildcardsUsed = Math.min(needed, wildcards);
         }
 
-        if (strongholdReinforcements > 0) {
-            for (TerritoryCard c : claimedTerritories) {
-                if (Location.getStronghold(c) != null && strongholdReinforcements > 0) {
-                    army.addBattalion(c);
-                    strongholdReinforcements--;
-                }
-            }
+        for (Location s : strongholds) {
+            army.addBattalion(s.getTerritory());
         }
 
         List<SortWrapper> sorted = sortedClaimedTerritories(Step.COMBAT);
@@ -419,8 +416,8 @@ public abstract class BaseBot {
      * For fortify phase, return a list of owned territories sorted by battalion
      * count which have friendly adjacents.
      *
-     * For reinforcing before combat phase, return a list of owned territories sorted by battalion
-     * count which have enemy adjacents.
+     * For reinforcing before combat phase, return a list of owned territories
+     * sorted by battalion count which have enemy adjacents.
      *
      * @param step
      * @return

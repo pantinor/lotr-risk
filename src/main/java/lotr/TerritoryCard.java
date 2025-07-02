@@ -113,7 +113,7 @@ public enum TerritoryCard {
         this.region = r;
 
         String name = this.toString();
-        this.title = name.replace("_1", "").replace("_2", "").replace("_2", "").replace("_4", "").replace("_", " ");
+        this.title = name.replace("_1", "").replace("_2", "").replace("_3", "").replace("_4", "").replace("_", " ");
 
         char[] array = title().toLowerCase().toCharArray();
         array[0] = Character.toUpperCase(array[0]);
