@@ -135,15 +135,15 @@ public abstract class BaseBot {
 
         RunnableAction r5 = new RunnableAction();
         r5.setRunnable(() -> {
+            
             if (conqueredSOPWithLeader) {
                 cardAction.drawAdventureCard();
             }
 
-            int count = game.current().adventureCards.size();
-            if (rand.nextInt(2) == 1 && count > 0) {
-                AdventureCard c = game.current().adventureCards.get(rand.nextInt(count));
+            for (AdventureCard c : game.current().adventureCards) {
                 cardAction.process(c);
             }
+            
             game.nextStep();//replace
         });
         s.addAction(r5);
@@ -160,7 +160,7 @@ public abstract class BaseBot {
             } else if (game.current().leader1.territory != null && game.current().leader2.territory != null) {
                 log(String.format("%s has both leaders on the map.", army.armyType), army.armyType.color());
             } else {
-                log(String.format("%s is only missing one leader, and cannot replace a leader at this time.", army.armyType), army.armyType.color());
+                log(String.format("%s is only missing one leader, and cannot replace a leader at this turn.", army.armyType), army.armyType.color());
             }
             game.nextStep();//ring
         });
@@ -188,10 +188,19 @@ public abstract class BaseBot {
             return;
         }
 
+        Army defender = game.getOccupyingArmy(to);
+
         while (rollAttack(from, to)) {
 
             int defenderCount = game.battalionCount(to);
             if (defenderCount == 0) {
+
+                // Check for and remove the defeated defender's leader.
+                if (game.hasLeader(defender, to)) {
+                    game.removeLeader(defender, to);
+                    log(String.format("%s's leader on %s was defeated!", defender.armyType, to.title()), defender.armyType.color());
+                }
+
                 int tempCount;
                 int reinforceCount = tempCount = game.battalionCount(from) - 1;
                 for (Battalion b : army.getBattalions()) {
@@ -216,9 +225,15 @@ public abstract class BaseBot {
 
                 log(String.format("%s conquered %s and reinforced with %d battalions.", army.armyType, to.title(), tempCount), army.armyType.color());
 
+                // Attack on this territory is over, so exit the loop.
+                break;
             }
 
-            //TODO defeated totally remove from game
+            // Exit loop if the attacker can no longer continue the assault from this territory.
+            if (game.battalionCount(from) <= 1) {
+                break;
+            }
+
         }
     }
 
@@ -409,6 +424,87 @@ public abstract class BaseBot {
      */
     public abstract TerritoryCard pickClaimedTerritory(Step step);
 
+    protected List<SortWrapper> sortedClaimedTerritories(Step step) {
+
+        List<SortWrapper> sorted = new ArrayList<>();
+        List<TerritoryCard> owned = army.claimedTerritories();
+
+        for (TerritoryCard t : owned) {
+
+            boolean hasLeader = game.hasLeader(army, t);
+            int count = game.battalionCount(t);
+
+            if (step == Step.COMBAT) {
+                int strategicValue = 0;
+                boolean enemyAdjacent = false;
+
+                // Evaluate the strategic importance of the frontier
+                for (TerritoryCard adj : t.adjacents()) {
+                    Army occupyingArmy = game.getOccupyingArmy(adj);
+                    if (occupyingArmy != null && occupyingArmy != army) {
+                        enemyAdjacent = true;
+                        strategicValue++; // Base value for being on the frontier
+
+                        // Add significant value for bordering an enemy stronghold
+                        if (game.isStronghold(adj)) {
+                            strategicValue += 2;
+                        }
+                        // Add even more value for bordering an enemy leader
+                        if (game.hasLeader(occupyingArmy, adj)) {
+                            strategicValue += 3;
+                        }
+                    }
+                }
+
+                if (enemyAdjacent) {
+                    // The base score is the strategic value of the frontier
+                    int factor = strategicValue;
+                    // Multiply by existing battalions to favor reinforcing stronger positions
+                    factor *= count;
+                    // Leaders are force multipliers; give a bonus to reinforce them for an attack
+                    if (hasLeader) {
+                        factor *= 1.5;
+                    }
+                    sorted.add(new SortWrapper(factor, t));
+                }
+
+            } else if (step == Step.FORTIFY) {
+                //check if territory has connected adjacents
+                boolean friendlyadjacent = false;
+                for (TerritoryCard adj : t.adjacents()) {
+                    if (game.isClaimed(adj) == army) {
+                        friendlyadjacent = true;
+                        break;
+                    }
+                }
+                //check if territory has enemy adjacents
+                boolean enemyadjacent = false;
+                for (TerritoryCard adj : t.adjacents()) {
+                    if (game.isClaimed(adj) != army) {
+                        enemyadjacent = true;
+                        break;
+                    }
+                }
+                if (count == 1 && hasLeader && !enemyadjacent && friendlyadjacent) {
+                    sorted.clear();
+                    sorted.add(new SortWrapper(count, t));
+                    break;
+                } else if (count > 1 && hasLeader && !enemyadjacent && friendlyadjacent) {
+                    sorted.clear();
+                    sorted.add(new SortWrapper(count, t));
+                    break;
+                } else if (hasLeader && enemyadjacent) {
+                    //leave the leader there - no need to move him
+                } else if (friendlyadjacent && count > 1) {
+                    sorted.add(new SortWrapper(count, t));
+                }
+            }
+
+        }
+        Collections.sort(sorted, Collections.reverseOrder());
+        return sorted;
+    }
+
     /**
      * Pick a territory from which battalions may be sent from in the fortify
      * phase, or from which an attack may be made from in the attack phase.
@@ -422,7 +518,7 @@ public abstract class BaseBot {
      * @param step
      * @return
      */
-    protected List<SortWrapper> sortedClaimedTerritories(Step step) {
+    protected List<SortWrapper> oldSortedClaimedTerritories(Step step) {
 
         List<SortWrapper> sorted = new ArrayList<>();
         List<TerritoryCard> owned = army.claimedTerritories();

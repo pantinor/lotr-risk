@@ -264,6 +264,20 @@ public class Game {
         return aliveArmies == 1; // Game is over if only one army is left standing
     }
 
+    public Army tallyGameWinner() {
+        Army winner = null;
+        int highestScore = Integer.MIN_VALUE;
+
+        for (Status s : status) {
+            if (s.army != null && s.score > highestScore) {
+                highestScore = s.score;
+                winner = s.army;
+            }
+        }
+
+        return winner;
+    }
+
     public void turnInTerritoryCards(Army army, int sumArchers, int sumRiders, int sumEagles, int wildcardsUsed) {
         List<TerritoryCard> cards = army.territoryCards;
 
@@ -388,12 +402,11 @@ public class Game {
     public static class Status {
 
         public Army army;
-        public int bcount;
+        public int score;
         public int rcount;
         public int tcount;
         public int ccount;
         public int scount;
-        public int threat;
         public Map<Region, Integer> percentOwnershipInEachRegion;
     }
 
@@ -414,7 +427,6 @@ public class Game {
 
     private void setStatus(Status status, Army a) {
         status.army = a;
-        status.bcount = a.battalions.size();
 
         List<TerritoryCard> claimedTerritories = a.claimedTerritories();
         List<Region> ownedRegions = a.ownedRegions(claimedTerritories);
@@ -424,13 +436,12 @@ public class Game {
         status.ccount = a.territoryCards.size();
         status.scount = a.ownedStrongholds(claimedTerritories).size();
 
-        status.threat = 0;
-        status.threat += status.bcount;
-        status.threat += status.tcount;
-        status.threat += status.ccount * 2;
+        status.score = status.tcount + status.scount * 2 + status.ccount + a.countAdventureCardsPlayed;
+
         for (Region r : ownedRegions) {
-            status.threat += r.reinforcements() * 2;
+            status.score += r.reinforcements() * 2;
         }
+
         status.percentOwnershipInEachRegion = a.percentOwnershipInEachRegion(claimedTerritories);
     }
 

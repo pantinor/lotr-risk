@@ -80,11 +80,11 @@ public class Hud {
             int idx = type.ordinal();
             Game.Status status = game.status[idx];
 
-            String row1 = String.format("B: %d  T: %d  R: %d  S: %d", status.bcount, status.tcount, status.rcount, status.scount);
-            String row2 = String.format("Cards: %d  Threat: %d", status.ccount, status.threat);
+            String row1 = String.format("Cards: %d  Reg: %d  SH: %d", status.tcount, status.rcount, status.scount);
+            String row2 = String.format("Cards Played: %d Score: %d", army.countAdventureCardsPlayed, status.score);
 
-            Risk.defaultFont.draw(batch, row1, 80, y);
-            Risk.defaultFont.draw(batch, row2, 80, y - 20);
+            Risk.defaultFont.draw(batch, row1, 75, y);
+            Risk.defaultFont.draw(batch, row2, 75, y - 20);
 
             if (isCurrent) {
                 batch.draw(highlighter, 50, y - 27);

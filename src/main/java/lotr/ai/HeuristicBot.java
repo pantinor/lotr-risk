@@ -22,13 +22,16 @@ public class HeuristicBot extends BaseBot {
         super(game, army);
         this.attackQuitThreshold = attackQuitThreshold;
     }
-
+    
     @Override
     public void attack() {
         AttackChoice choice = evaluateAttackAlternatives(army.armyType, game);
-        while (choice != null && rand.nextInt(100) < computeDynamicAttackThreshold()) {
-            army.bot.attack(choice.from.territory, choice.to.territory);
-            choice = evaluateAttackAlternatives(army.armyType, game);
+
+        // FIX: Lower the score threshold to make the bot more willing to attack.
+        while (choice != null && choice.score > 0.5 && rand.nextInt(100) < computeDynamicAttackThreshold()) { //
+            army.bot.attack(choice.from.territory, choice.to.territory); //
+            // Re-evaluate the situation after the attack changes the board state
+            choice = evaluateAttackAlternatives(army.armyType, game); //
         }
     }
 
@@ -78,10 +81,11 @@ public class HeuristicBot extends BaseBot {
         return picked;
     }
 
-    private class AttackChoice implements Comparable {
+    private class AttackChoice implements Comparable<AttackChoice> {
 
         public TerritoryWrapper from;
         public TerritoryWrapper to;
+        public double score; // Use a double for more nuanced scoring
 
         public AttackChoice(TerritoryWrapper from, TerritoryWrapper to) {
             this.from = from;
@@ -89,15 +93,9 @@ public class HeuristicBot extends BaseBot {
         }
 
         @Override
-        public int compareTo(Object obj) {
-            AttackChoice other = (AttackChoice) obj;
-            if (this.to.valuePoints > other.to.valuePoints) {
-                return 1;
-            } else if (this.to.valuePoints < other.to.valuePoints) {
-                return -1;
-            } else {
-                return 0;
-            }
+        public int compareTo(AttackChoice other) {
+            // Sort in descending order of score
+            return Double.compare(other.score, this.score);
         }
 
     }
@@ -216,31 +214,57 @@ public class HeuristicBot extends BaseBot {
             List<AttackChoice> attackables = new ArrayList<>();
 
             for (TerritoryWrapper tw : this.territories) {
-                if (tw.armyType == at) {
-                    for (TerritoryCard adj : tw.territory.adjacents()) {
+                if (tw.armyType == at && tw.battalionCount > 1) { //
+                    for (TerritoryCard adj : tw.territory.adjacents()) { //
                         TerritoryWrapper neighbour = get(adj);
-                        if (at != neighbour.armyType) {
-                            if (tw.battalionCount > 1) {
-                                attackables.add(new AttackChoice(tw, neighbour));
-                            }
+                        if (at != neighbour.armyType) { //
+                            attackables.add(new AttackChoice(tw, neighbour)); //
                         }
                     }
                 }
             }
 
-            for (AttackChoice territory : attackables) {
-                territory.to.valuePoints = 0;
-                territory.to.valuePoints += territory.to.hasLeader ? 1 : 0;
-                territory.to.valuePoints += territory.to.opportunityToEliminatePlayer ? 1 : 0;
-                territory.to.valuePoints += territory.to.belongsToBigThreat ? 1 : 0;
-                territory.to.valuePoints += territory.to.closeToCaptureRegion ? 1 : 0;
-                territory.to.valuePoints += territory.to.canBeAttackedToBreakUpRegion ? 1 : 0;
-                territory.to.valuePoints += territory.to.lastTerritoryLeftInRegion ? 1 : 0;
-                territory.to.valuePoints += territory.to.isStrongHold ? 1 : 0;
+            for (AttackChoice choice : attackables) {
+                // 1. Calculate the strategic value of the target
+                // FIX: Add a base value of 1 for any attack.
+                int strategicValue = 1;
+                strategicValue += choice.to.hasLeader ? 3 : 0; //
+                strategicValue += choice.to.opportunityToEliminatePlayer ? 5 : 0; //
+                strategicValue += choice.to.belongsToBigThreat ? 1 : 0; //
+                strategicValue += choice.to.lastTerritoryLeftInRegion ? 3 : 0; //
+                strategicValue += choice.to.canBeAttackedToBreakUpRegion ? 2 : 0; //
+                strategicValue += choice.to.isStrongHold ? 2 : 0; //
+
+                // 2. Estimate tactical advantage
+                double odds = calculateWinAdvantage(choice.from.battalionCount, choice.to.battalionCount, choice.from.hasLeader, choice.to.hasLeader, choice.to.isStrongHold);
+
+                // 3. Combine value and odds for a final score
+                choice.score = strategicValue * odds;
             }
 
-            Collections.sort(attackables, Collections.reverseOrder());
+            Collections.sort(attackables);
             return attackables;
+        }
+
+        // Helper method to estimate the advantage in a fight
+        private double calculateWinAdvantage(int attackers, int defenders, boolean attackerHasLeader, boolean defenderHasLeader, boolean isStronghold) {
+            if (attackers <= 1) {
+                return 0;
+            }
+
+            // Effective strength considers bonuses
+            double attackerStrength = attackers + (attackerHasLeader ? 1 : 0);
+            double defenderStrength = defenders + (defenderHasLeader ? 1 : 0) + (isStronghold ? 1 : 0);
+
+            if (attackerStrength <= defenderStrength) {
+                return 0.3; // Low odds for an unfavorable attack
+            }
+
+            // A simple ratio can represent the advantage
+            double advantageRatio = attackerStrength / defenderStrength;
+
+            // Normalize to a value (e.g., between 0 and 1) to serve as a weight
+            return advantageRatio / (advantageRatio + 1.0);
         }
 
         private List<TerritoryWrapper> claimedTerritories(ArmyType at) {

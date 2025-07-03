@@ -25,9 +25,6 @@ import static lotr.ai.BaseBot.Type.RANDOM;
 import static lotr.ai.BaseBot.Type.STRONG;
 import static lotr.ai.BaseBot.Type.WEAK;
 import lotr.ai.HeuristicBot;
-import lotr.ai.RandomBot;
-import lotr.ai.StrongBot;
-import lotr.ai.WeakBot;
 import org.apache.commons.io.IOUtils;
 
 public class StartScreen implements Screen {
@@ -82,14 +79,8 @@ public class StartScreen implements Screen {
                         if (GAME.armies[i] != null && GAME.armies[i].botType != null) {
                             switch (GAME.armies[i].botType) {
                                 case STRONG:
-                                    GAME.armies[i].bot = new StrongBot(GAME, GAME.armies[i]);
-                                    break;
                                 case RANDOM:
-                                    GAME.armies[i].bot = new RandomBot(GAME, GAME.armies[i]);
-                                    break;
                                 case WEAK:
-                                    GAME.armies[i].bot = new WeakBot(GAME, GAME.armies[i]);
-                                    break;
                                 case HEURISTIC:
                                     GAME.armies[i].bot = new HeuristicBot(GAME, GAME.armies[i], 85);
                                     break;

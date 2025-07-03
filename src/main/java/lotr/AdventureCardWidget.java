@@ -138,7 +138,7 @@ public class AdventureCardWidget extends Table implements CardAction {
                     TerritoryCard newCard = game.territoryCards.remove(0);
                     game.current().territoryCards.add(newCard);
 
-                    game.current().adventureCards.remove(card);
+                    game.current().removeAdventureCard(card);
                     game.adventureCards.add(card);
 
                     Sounds.play(Sound.ARMY_UPGRADE);
@@ -158,7 +158,7 @@ public class AdventureCardWidget extends Table implements CardAction {
                     for (int i = 0; i < count; i++) {
                         game.current().addBattalion(from);
                     }
-                    game.current().adventureCards.remove(card);
+                    game.current().removeAdventureCard(card);
                     game.adventureCards.add(card);
                     Sounds.play(Sound.ARMY_UPGRADE);
                     logger.log(String.format("%s used adventure card [%s] to add battalions in %s.", game.current().armyType, card.title(), from.title()), game.current().armyType.color());
@@ -171,7 +171,7 @@ public class AdventureCardWidget extends Table implements CardAction {
         } else {
             logger.log(String.format("%s is using POWER card [%s].", game.current().armyType, card.title()), game.current().armyType.color());
             card.setUsed(true);
-            game.current().adventureCards.remove(card);
+            game.current().removeAdventureCard(card);
             game.adventureCards.add(card);
         }
 
@@ -295,6 +295,8 @@ public class AdventureCardWidget extends Table implements CardAction {
                     //discard first card - should be a choice which one but that is not implemented at this time
                     AdventureCard discard = game.current().adventureCards.remove(0);
                     game.adventureCards.add(discard);
+                    logger.log(String.format("%s had to discard adventure card [%s] type [%s] because cannot have more than 4 adventure cards in hand.", 
+                            game.current().armyType, discard.title(), discard.type()), game.current().armyType.color());
                 }
             }
 

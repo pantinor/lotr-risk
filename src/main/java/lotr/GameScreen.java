@@ -156,7 +156,7 @@ public class GameScreen implements Screen {
         widgetStage.addActor(logs);
         widgetStage.addActor(fullscreen);
 
-        ringPath = new RingPath(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"), logs);
+        ringPath = new RingPath(mapStage, shapeRenderer, TMX_MAP.getLayers().get("ring-path"), game, logs);
         shippingRoutes = new ShippingRoutes(shapeRenderer);
 
         input = new InputMultiplexer(widgetStage, new InputAdapter() {

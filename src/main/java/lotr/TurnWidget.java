@@ -38,6 +38,7 @@ public class TurnWidget extends Table implements GameStepListener {
 
     private final TextButton nextButton;
     private final TextButton combatButton;
+    private final TextButton save;
 
     private ChangeListener currentListener;
     private final Label stepLabel;
@@ -74,6 +75,7 @@ public class TurnWidget extends Table implements GameStepListener {
         draftListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                save.setVisible(false);
                 ReinforceScreen rsc = new ReinforceScreen(main, game, game.current(), gameScreen, TurnWidget.this);
                 main.setScreen(rsc);
                 game.nextStep();//attack
@@ -128,23 +130,46 @@ public class TurnWidget extends Table implements GameStepListener {
 
         replaceListener = new ChangeListener() {
             @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-
-                gameScreen.logs.log(String.format("%s leader 1 territory [%s] ldr 2 territory [%s].",
-                        game.current().armyType, game.current().leader1.territory, game.current().leader2.territory
-                ), game.current().armyType.color());
+            public void changed(ChangeEvent event, Actor actor) {
+                gameScreen.logs.log(String.format("%s leader 1 territory [%s] leader 2 territory [%s].",
+                        game.current().armyType,
+                        game.current().leader1.territory,
+                        game.current().leader2.territory),
+                        game.current().armyType.color());
 
                 if (game.current().leader1.territory == null && game.current().leader2.territory == null) {
                     List<TerritoryCard> claimedTerritories = game.current().claimedTerritories();
                     List<Location> strongholds = game.current().ownedStrongholds(claimedTerritories);
-                    game.current().leader1.territory = !strongholds.isEmpty() ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
-                    gameScreen.logs.log(String.format("%s replaced a leader to %s.", game.current().armyType, game.current().leader1.territory), game.current().armyType.color());
+                    TerritoryCard newTerritory = !strongholds.isEmpty() ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
+
+                    if (game.current().leader1.territory == null) {
+                        game.current().leader1.territory = newTerritory;
+                    } else {
+                        game.current().leader2.territory = newTerritory;
+                    }
+
+                    gameScreen.logs.log(String.format("%s replaced a leader to %s.",
+                            game.current().armyType, newTerritory), game.current().armyType.color());
+
                 } else if (game.current().leader1.territory != null && game.current().leader2.territory != null) {
-                    gameScreen.logs.log(String.format("%s has both leaders on the map.", game.current().armyType), game.current().armyType.color());
-                } else if (game.current().leader1.territory != null || game.current().leader2.territory != null) {
-                    gameScreen.logs.log(String.format("%s is only missing one leader, and cannot replace a leader at this time.", game.current().armyType), game.current().armyType.color());
+                    gameScreen.logs.log(String.format("%s has both leaders on the map.", game.current().armyType),
+                            game.current().armyType.color());
+                } else {
+                    /**
+                     * Many of the Adventure Cards (4 of the 13 Event Cards)
+                     * allow players to place a second Leader on the board.
+                     * Leaders can perish and these cards allow you to replace
+                     * them, which can be valuable as once you lose a second
+                     * Leader these cards are the only way to get it back. The
+                     * Replace a Leader step of your turn only allows you to
+                     * place 1 Leader if you have none on the board.
+                     *
+                     */
+                    gameScreen.logs.log(String.format("%s is only missing one leader, and cannot replace a leader at this turn.",
+                            game.current().armyType), game.current().armyType.color());
                 }
-                game.nextStep();//ring
+
+                game.nextStep(); // ring
             }
         };
 
@@ -226,8 +251,8 @@ public class TurnWidget extends Table implements GameStepListener {
             }
         });
 
-        TextButton save = new TextButton("Save", Risk.skin, "blue");
-        save.addListener(new ChangeListener() {
+        this.save = new TextButton("Save", Risk.skin, "blue");
+        this.save.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
 
@@ -241,6 +266,7 @@ public class TurnWidget extends Table implements GameStepListener {
 
             }
         });
+        this.save.setVisible(false);
 
         Table inner = new Table();
 
@@ -277,6 +303,7 @@ public class TurnWidget extends Table implements GameStepListener {
             this.conqueredSOPWithLeader = false;
 
             if (!game.current().isBot()) {
+                this.save.setVisible(true);
                 currentListener = draftListener;
                 nextButton.addListener(draftListener);
             }

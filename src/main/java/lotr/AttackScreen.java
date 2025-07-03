@@ -334,6 +334,7 @@ public class AttackScreen implements Screen {
                     if (defenderDice == 0 && defenderCount == 0) {
                         if (game.hasLeader(defender, to)) {
                             game.removeLeader(defender, to);
+                            parent.logs.log(String.format("%s's leader on %s was defeated!", defender.armyType, to.title()), defender.armyType.color());
                             AttackScreen.this.animateRemovalActor(defenderIcons.get(defenderIcons.size() - 1));
                         }
                         parent.turnWidget.conqueredTerritory = true;

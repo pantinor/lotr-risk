@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import lotr.Constants.ArmyType;
+import static lotr.Risk.LEADER_CIRCLE;
 import lotr.Risk.RegionWrapper;
 import static lotr.Risk.TMX_MAP;
 import static lotr.util.RendererUtil.filledPolygonWithOutline;
@@ -88,6 +89,13 @@ public class PreviewDialog extends Dialog {
         fboBatch.setProjectionMatrix(camera.combined);
         fboBatch.begin();
         for (RegionWrapper wr : regions) {
+            for (Army a : game.armies) {
+                if (a != null) {
+                    if (wr.territory == a.leader1.territory || wr.territory == a.leader2.territory) {
+                        fboBatch.draw(Risk.LEADER_CIRCLE, wr.battalionPosition.x - 5, wr.battalionPosition.y - 15);
+                    }
+                }
+            }
             fboBatch.draw(Risk.DISPLAY_CIRCLE, wr.battalionPosition.x, wr.battalionPosition.y - 10);
             Risk.defaultFont.draw(fboBatch, game.battalionCount(wr.territory) + "", wr.battalionPosition.x + 4, wr.battalionPosition.y + 10);
         }

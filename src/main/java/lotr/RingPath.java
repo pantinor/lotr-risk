@@ -32,12 +32,14 @@ public class RingPath implements RingPathAction {
     private final ShapeRenderer shapeRenderer;
     private final CatmullRomSpline<Vector2> path;
     private final Logger logger;
+    private final Game game;
     private final AnimatedSpriteActor frodo, sam;
     private static final List<RingPathWrapper> RING_PATHS = new ArrayList<>();
 
-    public RingPath(Stage stage, ShapeRenderer shapeRenderer, MapLayer pathLayer, Logger logger) {
+    public RingPath(Stage stage, ShapeRenderer shapeRenderer, MapLayer pathLayer, Game game, Logger logger) {
         this.shapeRenderer = shapeRenderer;
         this.logger = logger;
+        this.game = game;
 
         Iterator<MapObject> pathIter = pathLayer.getObjects().iterator();
         while (pathIter.hasNext()) {
@@ -100,6 +102,7 @@ public class RingPath implements RingPathAction {
                 } else {
                     logger.log("Sam and Frodo have thrown the ONE RING into MOUNT DOOM!", Color.PURPLE);
                     Sounds.play(Sound.ARMAGEDDON);
+                    logger.log(String.format("The game is technically over and %s has won the game with the highest score.", game.tallyGameWinner().armyType), Color.BLUE);
                     return true;
                 }
                 break;

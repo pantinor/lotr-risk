@@ -36,6 +36,9 @@ public class Army {
     public TerritoryCard missionIndication1 = null;
     public TerritoryCard missionIndication2 = null;
 
+    @Expose
+    public int countAdventureCardsPlayed;
+
     public Army() {
 
     }
@@ -77,6 +80,7 @@ public class Army {
     }
 
     public void removeAdventureCard(AdventureCard c) {
+        this.countAdventureCardsPlayed++;
         this.adventureCards.remove(c);
     }
 

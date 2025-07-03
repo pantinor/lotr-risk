@@ -216,15 +216,10 @@ public class NewGameDialog extends Dialog {
 
                     if (fourplayers) {
                         // 4-PLAYER GAME: 2 good and 2 evil players, 8 cards each
-                        List<TerritoryCard> good1 = good.subList(0, 8);
-                        List<TerritoryCard> good2 = good.subList(8, 16);
-                        List<TerritoryCard> evil1 = evil.subList(0, 8);
-                        List<TerritoryCard> evil2 = evil.subList(8, 16);
-
-                        game.green.pickTerritories(good1, 8);     // Good army
-                        game.yellow.pickTerritories(good2, 8);    // Good army
-                        game.red.pickTerritories(evil1, 8);       // Evil army
-                        game.black.pickTerritories(evil2, 8);     // Evil army
+                        game.green.pickTerritories(good, 8);     // Good army
+                        game.yellow.pickTerritories(good, 8);    // Good army
+                        game.red.pickTerritories(evil, 8);       // Evil army
+                        game.black.pickTerritories(evil, 8);     // Evil army
                     } else {
                         // 3-PLAYER GAME: 1 good player gets all 16 good cards
                         // each evil player gets 8 evil + 8 neutral
