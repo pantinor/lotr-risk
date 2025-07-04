@@ -140,7 +140,7 @@ public class HeuristicBot extends BaseBot {
             for (int i = 2; i < 66; i++) {
                 TerritoryCard t = TerritoryCard.values()[i];
                 Army a = game.isClaimed(t);
-                boolean hasLeader = (a.leader1 != null && a.leader1.territory == t) || (a.leader2 != null && a.leader2.territory == t);
+                boolean hasLeader = a.leader1.territory == t || a.leader2.territory == t;
                 this.territories[i - 2] = new TerritoryWrapper(a.getArmyType(), t, game.battalionCount(t), hasLeader);
             }
         }

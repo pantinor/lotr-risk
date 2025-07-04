@@ -141,11 +141,15 @@ public class AttackScreen implements Screen {
         if (AdventureCard.THE_ENEMY_IS_AT_HAND.isUsed()) {
             AdventureCard.THE_ENEMY_IS_AT_HAND.setUsed(false);
             strongholdBonusSuppressed = true;
+            parent.logs.log(String.format("%s used POWER card %s to suppress the stronghold bonus on the attack.",
+                    invader.armyType, AdventureCard.THE_ENEMY_IS_AT_HAND.title()), invader.armyType.color());
         }
 
         if (AdventureCard.SIEGE_MACHINES.isUsed()) {
             AdventureCard.SIEGE_MACHINES.setUsed(false);
             strongholdBonusSuppressed = true;
+            parent.logs.log(String.format("%s used POWER card %s to suppress the stronghold bonus on the attack.",
+                    invader.armyType, AdventureCard.SIEGE_MACHINES.title()), invader.armyType.color());
         }
 
         int invaderCount = game.battalionCount(from);
@@ -163,6 +167,8 @@ public class AttackScreen implements Screen {
                 invader.addBattalion(from);
                 defender.removeBattalion(to);
             }
+            parent.logs.log(String.format("%s used POWER card %s to add battalions on the attack.",
+                    invader.armyType, AdventureCard.GRIMA_WORMTONGUE_1.title()), invader.armyType.color());
         }
 
         if (AdventureCard.GRIMA_WORMTONGUE_2.isUsed()) {
@@ -177,6 +183,8 @@ public class AttackScreen implements Screen {
                 invader.addBattalion(from);
                 defender.removeBattalion(to);
             }
+            parent.logs.log(String.format("%s used POWER card %s to add battalions on the attack.",
+                    invader.armyType, AdventureCard.GRIMA_WORMTONGUE_2.title()), invader.armyType.color());
         }
 
         if (AdventureCard.AMBUSH.isUsed()) {
@@ -184,6 +192,8 @@ public class AttackScreen implements Screen {
             invader.addBattalion(from);
             invader.addBattalion(from);
             invader.addBattalion(from);
+            parent.logs.log(String.format("%s used POWER card %s to add battalions on the attack.",
+                    invader.armyType, AdventureCard.AMBUSH.title()), invader.armyType.color());
         }
 
         invaderCount = game.battalionCount(from);

@@ -102,6 +102,12 @@ public abstract class BaseBot {
 
         RunnableAction r2 = new RunnableAction();
         r2.setRunnable(() -> {
+            AdventureCard[] advCards = game.current().adventureCards.toArray(new AdventureCard[0]);
+            for (AdventureCard c : advCards) {
+                if (c.type() == AdventureCard.Type.POWER) {
+                    cardAction.process(c);
+                }
+            }
             attack();
             game.nextStep();//fortify
         });
@@ -135,15 +141,16 @@ public abstract class BaseBot {
 
         RunnableAction r5 = new RunnableAction();
         r5.setRunnable(() -> {
-            
+
             if (conqueredSOPWithLeader) {
-                cardAction.drawAdventureCard();
+                cardAction.drawAdventureCard(false);
             }
 
-            for (AdventureCard c : game.current().adventureCards) {
+            AdventureCard[] advCards = game.current().adventureCards.toArray(new AdventureCard[0]);
+            for (AdventureCard c : advCards) {
                 cardAction.process(c);
             }
-            
+
             game.nextStep();//replace
         });
         s.addAction(r5);
@@ -195,7 +202,6 @@ public abstract class BaseBot {
             int defenderCount = game.battalionCount(to);
             if (defenderCount == 0) {
 
-                // Check for and remove the defeated defender's leader.
                 if (game.hasLeader(defender, to)) {
                     game.removeLeader(defender, to);
                     log(String.format("%s's leader on %s was defeated!", defender.armyType, to.title()), defender.armyType.color());
@@ -239,9 +245,67 @@ public abstract class BaseBot {
 
     protected boolean rollAttack(TerritoryCard from, TerritoryCard to) {
 
+        boolean strongholdBonusSuppressed = false;
+        Army invader = game.getOccupyingArmy(from);
+        Army defender = game.getOccupyingArmy(to);
+
+        if (AdventureCard.THE_ENEMY_IS_AT_HAND.isUsed()) {
+            AdventureCard.THE_ENEMY_IS_AT_HAND.setUsed(false);
+            strongholdBonusSuppressed = true;
+            log(String.format("%s used POWER card %s to suppress the stronghold bonus on the attack.",
+                    invader.armyType, AdventureCard.THE_ENEMY_IS_AT_HAND.title()), invader.armyType.color());
+        }
+
+        if (AdventureCard.SIEGE_MACHINES.isUsed()) {
+            AdventureCard.SIEGE_MACHINES.setUsed(false);
+            strongholdBonusSuppressed = true;
+            log(String.format("%s used POWER card %s to suppress the stronghold bonus on the attack.",
+                    invader.armyType, AdventureCard.SIEGE_MACHINES.title()), invader.armyType.color());
+        }
+
         int invaderCount = game.battalionCount(from);
         int defenderCount = game.battalionCount(to);
-        Army defender = game.getOccupyingArmy(to);
+
+        if (AdventureCard.GRIMA_WORMTONGUE_1.isUsed()) {
+            AdventureCard.GRIMA_WORMTONGUE_1.setUsed(false);
+            if (defenderCount > 2) {
+                invader.addBattalion(from);
+                invader.addBattalion(from);
+                defender.removeBattalion(to);
+                defender.removeBattalion(to);
+            }
+            if (defenderCount == 2) {
+                invader.addBattalion(from);
+                defender.removeBattalion(to);
+            }
+            log(String.format("%s used POWER card %s to add battalions on the attack.",
+                    invader.armyType, AdventureCard.GRIMA_WORMTONGUE_1.title()), invader.armyType.color());
+        }
+
+        if (AdventureCard.GRIMA_WORMTONGUE_2.isUsed()) {
+            AdventureCard.GRIMA_WORMTONGUE_2.setUsed(false);
+            if (defenderCount > 2) {
+                invader.addBattalion(from);
+                invader.addBattalion(from);
+                defender.removeBattalion(to);
+                defender.removeBattalion(to);
+            }
+            if (defenderCount == 2) {
+                invader.addBattalion(from);
+                defender.removeBattalion(to);
+            }
+            log(String.format("%s used POWER card %s to add battalions on the attack.",
+                    invader.armyType, AdventureCard.GRIMA_WORMTONGUE_2.title()), invader.armyType.color());
+        }
+
+        if (AdventureCard.AMBUSH.isUsed()) {
+            AdventureCard.AMBUSH.setUsed(false);
+            invader.addBattalion(from);
+            invader.addBattalion(from);
+            invader.addBattalion(from);
+            log(String.format("%s used POWER card %s to add battalions on the attack.",
+                    invader.armyType, AdventureCard.AMBUSH.title()), invader.armyType.color());
+        }
 
         if (invaderCount == 1) {
             return false;
@@ -272,7 +336,7 @@ public abstract class BaseBot {
             if (game.hasLeader(defender, to)) {
                 r++;
             }
-            if (game.isDefendingStrongHold(to)) {
+            if (!strongholdBonusSuppressed && game.isDefendingStrongHold(to)) {
                 r++;
             }
             defenderRolls[i] = r;

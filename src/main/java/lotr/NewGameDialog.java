@@ -36,10 +36,6 @@ public class NewGameDialog extends Dialog {
         table.row();
         table.add(new Label("In 4-player game, pick 2 Evil and 2 Good armies.", Risk.skin));
         table.row();
-        table.add(new Label("Exactly one selected army must be player-controlled.", Risk.skin));
-        table.row();
-        table.add(new Label("The remaining armies will be controlled by AI Bot.", Risk.skin));
-        table.row();
 
         table.add(new Label("", Risk.skin));
         table.row();
@@ -53,16 +49,16 @@ public class NewGameDialog extends Dialog {
         CheckBox cbb = new CheckBox("BLACK - EVIL", Risk.skin, "selection-blue");
         CheckBox cbg = new CheckBox("GREEN - GOOD", Risk.skin, "selection-green");
         CheckBox cby = new CheckBox("YELLOW - GOOD", Risk.skin, "selection-yellow");
+        
         ButtonGroup buttonGroup1 = new ButtonGroup(cbr, cbb, cbg, cby);
         buttonGroup1.setMaxCheckCount(4);
         buttonGroup1.setMinCheckCount(3);
+        
         CheckBox cbrb = new CheckBox("BOT", Risk.skin, "selection-red");
         CheckBox cbbb = new CheckBox("BOT", Risk.skin, "selection-blue");
         CheckBox cbgb = new CheckBox("BOT", Risk.skin, "selection-green");
         CheckBox cbyb = new CheckBox("BOT", Risk.skin, "selection-yellow");
-        ButtonGroup buttonGroup2 = new ButtonGroup(cbrb, cbbb, cbgb, cbyb);
-        buttonGroup2.setMaxCheckCount(3);
-        buttonGroup2.setMinCheckCount(2);
+        
         inner.add(cbr).padRight(20);
         inner.add(cbrb);
         inner.row();
@@ -90,7 +86,6 @@ public class NewGameDialog extends Dialog {
                 if (event.toString().equals("touchDown")) {
 
                     List<CheckBox> selectedArmies = new ArrayList<>();
-                    List<CheckBox> selectedBots = new ArrayList<>();
 
                     if (cbr.isChecked()) {
                         selectedArmies.add(cbr);
@@ -105,21 +100,7 @@ public class NewGameDialog extends Dialog {
                         selectedArmies.add(cby);
                     }
 
-                    if (cbrb.isChecked()) {
-                        selectedBots.add(cbrb);
-                    }
-                    if (cbbb.isChecked()) {
-                        selectedBots.add(cbbb);
-                    }
-                    if (cbgb.isChecked()) {
-                        selectedBots.add(cbgb);
-                    }
-                    if (cbyb.isChecked()) {
-                        selectedBots.add(cbyb);
-                    }
-
                     int totalSelected = selectedArmies.size();
-                    int botCount = selectedBots.size();
 
                     int evilCount = 0;
                     int goodCount = 0;
@@ -137,10 +118,6 @@ public class NewGameDialog extends Dialog {
                     }
 
                     if (totalSelected == 4 && !(evilCount == 2 && goodCount == 2)) {
-                        return false;
-                    }
-
-                    if (botCount != totalSelected - 1) {
                         return false;
                     }
 

@@ -102,7 +102,7 @@ public class RingPath implements RingPathAction {
                 } else {
                     logger.log("Sam and Frodo have thrown the ONE RING into MOUNT DOOM!", Color.PURPLE);
                     Sounds.play(Sound.ARMAGEDDON);
-                    logger.log(String.format("The game is technically over and %s has won the game with the highest score.", game.tallyGameWinner().armyType), Color.BLUE);
+                    logger.log(String.format("The game is technically over and %s has won the game with the highest score.", game.tallyGameWinner().armyType), Color.YELLOW);
                     return true;
                 }
                 break;

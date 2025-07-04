@@ -75,7 +75,9 @@ public class TurnWidget extends Table implements GameStepListener {
         draftListener = new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+
                 save.setVisible(false);
+
                 ReinforceScreen rsc = new ReinforceScreen(main, game, game.current(), gameScreen, TurnWidget.this);
                 main.setScreen(rsc);
                 game.nextStep();//attack
@@ -108,7 +110,10 @@ public class TurnWidget extends Table implements GameStepListener {
                         Sounds.play(Sound.ARMY_UPGRADE);
                         gameScreen.logs.log(String.format("%s collected territory card [%s].", game.current().armyType, newCard.title()), game.current().armyType.color());
                     }
+                } else {
+                    gameScreen.logs.log(String.format("%s did not conquer any territory and does not collect a territory card.", game.current().armyType), game.current().armyType.color());
                 }
+
                 game.nextStep();//acard
             }
         };
@@ -119,7 +124,7 @@ public class TurnWidget extends Table implements GameStepListener {
                 //use the adventure card slider to use adventure cards
                 //here we check if the site of power was conquered with a leader and add a card if so
                 if (conqueredSOPWithLeader) {
-                    gameScreen.cardSlider.drawAdventureCard();
+                    gameScreen.cardSlider.drawAdventureCard(false);
                     gameScreen.cardSlider.set();
                 } else {
                     gameScreen.logs.log(String.format("%s did not conquer a Site of Power and does not collect an adventure card.", game.current().armyType), game.current().armyType.color());
@@ -298,7 +303,9 @@ public class TurnWidget extends Table implements GameStepListener {
         }
 
         if (step == Step.DRAFT) {
-
+            
+            gameScreen.cardSlider.set();
+            
             this.conqueredTerritory = false;
             this.conqueredSOPWithLeader = false;
 

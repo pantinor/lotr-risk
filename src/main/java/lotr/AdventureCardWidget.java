@@ -49,6 +49,28 @@ public class AdventureCardWidget extends Table implements CardAction {
         this.game = game;
         this.stage = stage;
         this.logger = logger;
+        show();
+    }
+
+    public void show() {
+        if (visible) {
+            hide();
+        } else {
+            if (getActions().size > 0) {
+                clearActions();
+            }
+            setPosition(Gdx.graphics.getWidth(), Gdx.graphics.getHeight() - 15 - HEIGHT);
+            addAction(Actions.sequence(Actions.show(), Actions.moveBy(-WIDTH, 0, 1f, Interpolation.sine)));
+            visible = true;
+        }
+    }
+
+    public void hide() {
+        visible = false;
+        if (getActions().size > 0) {
+            clearActions();
+        }
+        addAction(Actions.sequence(Actions.moveBy(WIDTH, 0, 1f, Interpolation.sine), Actions.hide()));
     }
 
     public void set() {
@@ -82,9 +104,11 @@ public class AdventureCardWidget extends Table implements CardAction {
             cb.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                    AdventureCard card = (AdventureCard) actor.getUserObject();
-                    process(card);
-                    set();
+                    if (!game.current().isBot()) {
+                        AdventureCard card = (AdventureCard) actor.getUserObject();
+                        process(card);
+                        set();
+                    }
                 }
             });
             boxes.add(cb);
@@ -106,27 +130,6 @@ public class AdventureCardWidget extends Table implements CardAction {
             row();
 
         }
-    }
-
-    public void show() {
-        if (visible) {
-            hide();
-        } else {
-            if (getActions().size > 0) {
-                clearActions();
-            }
-            setPosition(Gdx.graphics.getWidth(), Gdx.graphics.getHeight() - 15 - HEIGHT);
-            addAction(Actions.sequence(Actions.show(), Actions.moveBy(-WIDTH, 0, 1f, Interpolation.sine)));
-            visible = true;
-        }
-    }
-
-    public void hide() {
-        visible = false;
-        if (getActions().size > 0) {
-            clearActions();
-        }
-        addAction(Actions.sequence(Actions.moveBy(WIDTH, 0, 1f, Interpolation.sine), Actions.hide()));
     }
 
     @Override
@@ -187,24 +190,40 @@ public class AdventureCardWidget extends Table implements CardAction {
      *
      */
     @Override
-    public void drawAdventureCard() {
+    public void drawAdventureCard(boolean drawsAgain) {
+
         if (!game.adventureCards.isEmpty()) {
 
             AdventureCard newCard = game.adventureCards.remove(0);
+            newCard.setUsed(false);
 
-            logger.log(String.format("%s conquered a Site of Power and collects an adventure card [%s] type [%s].", game.current().armyType, newCard.title(), newCard.type()), game.current().armyType.color());
+            if (drawsAgain) {
+                logger.log(String.format("%s draws again and gets adventure card [%s] type [%s].", game.current().armyType, newCard.title(), newCard.type()), game.current().armyType.color());
+            } else {
+                logger.log(String.format("%s conquered a Site of Power and collects an adventure card [%s] type [%s].", game.current().armyType, newCard.title(), newCard.type()), game.current().armyType.color());
+            }
 
             if (newCard.type() == EVENT) {
                 //play immediately and draw another card
                 boolean supported = false; //some of the cards not implemented
 
-                if (newCard == APPOINT_A_SECOND_LEADER_1 || newCard == APPOINT_A_SECOND_LEADER_2 || newCard == APPOINT_A_SECOND_LEADER_3 || newCard == APPOINT_A_SECOND_LEADER_4) {
+                if (newCard == APPOINT_A_SECOND_LEADER_1 || newCard == APPOINT_A_SECOND_LEADER_2
+                        || newCard == APPOINT_A_SECOND_LEADER_3 || newCard == APPOINT_A_SECOND_LEADER_4) {
+
                     supported = true;
-                    if (game.current().leader1.territory == null || game.current().leader2.territory == null) {
+
+                    Leader leader1 = game.current().leader1;
+                    Leader leader2 = game.current().leader2;
+
+                    if (leader1.territory == null || leader2.territory == null) {
                         List<TerritoryCard> claimedTerritories = game.current().claimedTerritories();
                         List<Location> strongholds = game.current().ownedStrongholds(claimedTerritories);
-                        Leader l = game.current().leader1 == null ? game.current().leader1 : game.current().leader2;
-                        l.territory = !strongholds.isEmpty() ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
+
+                        Leader leaderToAppoint = (leader1.territory == null) ? leader1 : leader2;
+
+                        leaderToAppoint.territory = !strongholds.isEmpty()
+                                ? strongholds.get(0).getTerritory()
+                                : claimedTerritories.get(0);
                     }
                 }
 
@@ -215,6 +234,7 @@ public class AdventureCardWidget extends Table implements CardAction {
                         for (int i = 0; i < 10; i++) {
                             owner.addBattalion(TerritoryCard.UDUN_VALE);
                         }
+                        logger.log("Evil player reinforced Udun Vale with 10 battalions.", owner.armyType.color());
                     } else {
                         int count = game.battalionCount(TerritoryCard.UDUN_VALE);
                         if (count == 2) {
@@ -223,16 +243,19 @@ public class AdventureCardWidget extends Table implements CardAction {
                             owner.removeBattalion(TerritoryCard.UDUN_VALE);
                             owner.removeBattalion(TerritoryCard.UDUN_VALE);
                         }
+                        logger.log("Good player loses battalions in Udun Vale.", owner.armyType.color());
                     }
                 }
 
                 if (newCard == THEYVE_BROUGHT_A_CAVE_TROLL) {
                     supported = true;
                     Army owner = game.isClaimed(TerritoryCard.MORIA);
+
                     if (owner.classType == EVIL) {
                         for (int i = 0; i < 2; i++) {
                             owner.addBattalion(TerritoryCard.MORIA);
                         }
+                        logger.log("Evil player reinforced Moria with 2 battalions.", owner.armyType.color());
                     } else {
                         int count = game.battalionCount(TerritoryCard.MORIA);
                         if (count == 2) {
@@ -241,16 +264,20 @@ public class AdventureCardWidget extends Table implements CardAction {
                             owner.removeBattalion(TerritoryCard.MORIA);
                             owner.removeBattalion(TerritoryCard.MORIA);
                         }
+                        logger.log("Good player loses battalions in Moria.", owner.armyType.color());
                     }
                 }
 
                 if (newCard == THE_ENTMOOT) {
                     supported = true;
                     Army owner = game.isClaimed(TerritoryCard.FANGORN);
+                    logger.log(String.format("%s plays [%s] on territory [%s].", game.current().armyType, newCard.title(), TerritoryCard.FANGORN), game.current().armyType.color());
+
                     if (owner.classType == GOOD) {
                         for (int i = 0; i < 2; i++) {
                             owner.addBattalion(TerritoryCard.FANGORN);
                         }
+                        logger.log("Good player reinforced Fangorn with 2 battalions.", owner.armyType.color());
                     } else {
                         int count = game.battalionCount(TerritoryCard.FANGORN);
                         if (count == 2) {
@@ -259,16 +286,19 @@ public class AdventureCardWidget extends Table implements CardAction {
                             owner.removeBattalion(TerritoryCard.FANGORN);
                             owner.removeBattalion(TerritoryCard.FANGORN);
                         }
+                        logger.log("Evil player loses battalions in Fangorn.", owner.armyType.color());
                     }
                 }
 
                 if (newCard == ARAGORN_ARRIVES) {
                     supported = true;
                     Army owner = game.isClaimed(TerritoryCard.MINAS_TIRITH);
+
                     if (owner.classType == GOOD) {
                         for (int i = 0; i < 10; i++) {
                             owner.addBattalion(TerritoryCard.MINAS_TIRITH);
                         }
+                        logger.log("Good player reinforced Minas Tirith with 10 battalions.", owner.armyType.color());
                     } else {
                         int count = game.battalionCount(TerritoryCard.MINAS_TIRITH);
                         if (count == 2) {
@@ -277,15 +307,17 @@ public class AdventureCardWidget extends Table implements CardAction {
                             owner.removeBattalion(TerritoryCard.MINAS_TIRITH);
                             owner.removeBattalion(TerritoryCard.MINAS_TIRITH);
                         }
+                        logger.log("Evil player loses battalions in Minas Tirith.", owner.armyType.color());
                     }
                 }
 
                 if (!supported) {
-                    logger.log(String.format("%s Sorry but adventure card [%s] type [%s] is not supported at this time.", game.current().armyType, newCard.title(), newCard.type()), game.current().armyType.color());
+                    logger.log(String.format("%s Sorry but adventure card [%s] type [%s] is not supported at this time.",
+                            game.current().armyType, newCard.title(), newCard.type()), game.current().armyType.color());
                 }
 
                 game.adventureCards.add(newCard);//put it back in the deck
-                drawAdventureCard();
+                drawAdventureCard(true);
 
             } else {
                 game.current().adventureCards.add(newCard);//add to the end
@@ -295,7 +327,7 @@ public class AdventureCardWidget extends Table implements CardAction {
                     //discard first card - should be a choice which one but that is not implemented at this time
                     AdventureCard discard = game.current().adventureCards.remove(0);
                     game.adventureCards.add(discard);
-                    logger.log(String.format("%s had to discard adventure card [%s] type [%s] because cannot have more than 4 adventure cards in hand.", 
+                    logger.log(String.format("%s had to discard adventure card [%s] type [%s] because cannot have more than 4 adventure cards in hand.",
                             game.current().armyType, discard.title(), discard.type()), game.current().armyType.color());
                 }
             }

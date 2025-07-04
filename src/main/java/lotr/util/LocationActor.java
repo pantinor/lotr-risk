@@ -1,5 +1,6 @@
 package lotr.util;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -25,7 +26,9 @@ public class LocationActor extends Actor {
         batch.draw(tr, getX(), getY());
         if (Risk.textToggle) {
             Risk.blackFont.draw(batch, this.label, getX() - 19, getY() + 42);
+            Risk.font.setColor(this.location.isSiteOfPower() ? Color.YELLOW : Color.SKY);
             Risk.font.draw(batch, this.label, getX() - 20, getY() + 43);
+            Risk.font.setColor(Color.WHITE);
         }
     }
 }

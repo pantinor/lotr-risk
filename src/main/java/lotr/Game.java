@@ -154,30 +154,31 @@ public class Game {
 
     public boolean hasLeader(Army a, TerritoryCard tc) {
 
-        if (a.leader1 != null && a.leader1.territory == tc) {
+        if (a.leader1.territory == tc) {
             return true;
         }
 
-        if (a.leader2 != null && a.leader2.territory == tc) {
+        if (a.leader2.territory == tc) {
             return true;
         }
+        
         return false;
     }
 
     public void removeLeader(Army a, TerritoryCard tc) {
 
-        if (a.leader1 != null && a.leader1.territory == tc) {
+        if (a.leader1.territory == tc) {
             a.leader1.territory = null;
         }
 
-        if (a.leader2 != null && a.leader2.territory == tc) {
+        if (a.leader2.territory == tc) {
             a.leader2.territory = null;
         }
     }
 
     public void moveLeader(Army a, TerritoryCard from, TerritoryCard to) {
 
-        if (a.leader1 != null && a.leader1.territory == from) {
+        if (a.leader1.territory == from) {
             a.leader1.territory = to;
             Location sop = Location.getSiteOfPower(to);
             if (sop != null) {
@@ -185,7 +186,7 @@ public class Game {
             }
         }
 
-        if (a.leader2 != null && a.leader2.territory == from) {
+        if (a.leader2.territory == from) {
             a.leader2.territory = to;
             Location sop = Location.getSiteOfPower(to);
             if (sop != null) {

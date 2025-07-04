@@ -390,6 +390,7 @@ public class ReinforceScreen implements Screen {
             y -= layout.height + 30;
         }
 
+        Risk.font.setColor(army.armyType.color());
         Risk.font.draw(hudbatch, army.armyType.toString(), x, y -= 20);
 
         Risk.font.draw(hudbatch, "Stronghold Reinforcements " + strongholdReinforcements, x, y -= 30);
@@ -409,6 +410,7 @@ public class ReinforceScreen implements Screen {
         Risk.font.draw(hudbatch, "Cards with Eleven Archers " + sumArchers, x, y -= 40);
         Risk.font.draw(hudbatch, "Cards with Dark Riders " + sumRiders, x, y -= 20);
         Risk.font.draw(hudbatch, "Cards with Eagles " + sumEagles, x, y -= 20);
+        Risk.font.setColor(Color.WHITE);
 
         this.hudbatch.end();
 

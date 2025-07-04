@@ -124,6 +124,9 @@ public class GameScreen implements Screen {
 
         this.widgetStage = Risk.STAGE = new Stage(new ScreenViewport());
 
+        logs = new LogScrollPane();
+        cardSlider = new AdventureCardWidget(widgetStage, game, logs);
+
         this.turnWidget = new TurnWidget(main, this, game);
         this.widgetStage.addActor(turnWidget);
 
@@ -132,9 +135,6 @@ public class GameScreen implements Screen {
         style.selectedColor = new Color(.7f, .3f, .5f, 1);
         style.sliceColor = new Color(0, .7f, 0, 1);
         style.alternateSliceColor = new Color(.7f, 0, 0, 1);
-
-        logs = new LogScrollPane();
-        cardSlider = new AdventureCardWidget(widgetStage, game, logs);
 
         CheckBox fullscreen = new CheckBox(" Screen ", Risk.skin, "selection-white");
         fullscreen.addListener(new ChangeListener() {
@@ -235,6 +235,8 @@ public class GameScreen implements Screen {
             public boolean keyDown(int keycode) {
                 if (keycode == Keys.ENTER || keycode == Keys.SPACE || keycode == Keys.ESCAPE) {
                     new PreviewDialog(GameScreen.this, game).show(widgetStage);
+                } else if (keycode == Keys.Q) {
+                    new AdventureCardHelpDialog(GameScreen.this).show(widgetStage);
                 }
                 return false;
             }
@@ -384,7 +386,6 @@ public class GameScreen implements Screen {
 
     public void setCards(boolean show) {
         if (show) {
-            cardSlider.set();
             cardSlider.show();
         } else {
             cardSlider.hide();

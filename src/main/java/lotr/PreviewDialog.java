@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import lotr.Constants.ArmyType;
-import static lotr.Risk.LEADER_CIRCLE;
 import lotr.Risk.RegionWrapper;
 import static lotr.Risk.TMX_MAP;
 import static lotr.util.RendererUtil.filledPolygonWithOutline;

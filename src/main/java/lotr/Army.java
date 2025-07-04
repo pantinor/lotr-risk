@@ -201,16 +201,8 @@ public class Army {
         return leader1;
     }
 
-    public void setLeader1(Leader leader1) {
-        this.leader1 = leader1;
-    }
-
     public Leader getLeader2() {
         return leader2;
-    }
-
-    public void setLeader2(Leader leader2) {
-        this.leader2 = leader2;
     }
 
     /**

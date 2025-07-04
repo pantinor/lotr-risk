@@ -143,6 +143,7 @@ public class FortifyScreen implements Screen {
         if (AdventureCard.MOVE_BY_NIGHT.isUsed()) {
             fortifyCount += 3;
             AdventureCard.MOVE_BY_NIGHT.setUsed(false);
+            gameScreen.logs.log(String.format("%s used POWER card %s to add 3 more fortifications.", army.armyType, AdventureCard.MOVE_BY_NIGHT.title()), army.armyType.color());
         }
 
         PieMenu.PieMenuStyle style = new PieMenu.PieMenuStyle();

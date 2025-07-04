@@ -1,8 +1,10 @@
 package lotr;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Random;
+import java.util.stream.Collectors;
 import static lotr.AdventureCard.Type.EVENT;
 import static lotr.AdventureCard.Type.MISSION;
 import static lotr.AdventureCard.Type.POWER;
@@ -180,35 +182,18 @@ public enum AdventureCard {
     }
 
     public static List<AdventureCard> shuffledCards() {
-        List<AdventureCard> temp = new ArrayList<>();
-        for (AdventureCard c : AdventureCard.values()) {
-            temp.add(c);
-        }
-        List<AdventureCard> shuffled = new ArrayList<>();
-        Random rand = new Random();
-        while (!temp.isEmpty()) {
-            int r = rand.nextInt(temp.size());
-            AdventureCard c = temp.remove(r);
-            shuffled.add(c);
-        }
-        return shuffled;
+        List<AdventureCard> cards = new ArrayList<>(Arrays.asList(AdventureCard.values()));
+        Collections.shuffle(cards);
+        return cards;
     }
 
     public static List<AdventureCard> shuffledCardsWithoutEvents() {
-        List<AdventureCard> temp = new ArrayList<>();
-        for (AdventureCard c : AdventureCard.values()) {
-            if (c.type != Type.EVENT) {
-                temp.add(c);
-            }
-        }
-        List<AdventureCard> shuffled = new ArrayList<>();
-        Random rand = new Random();
-        while (!temp.isEmpty()) {
-            int r = rand.nextInt(temp.size());
-            AdventureCard c = temp.remove(r);
-            shuffled.add(c);
-        }
-        return shuffled;
+        List<AdventureCard> filtered = Arrays.stream(AdventureCard.values())
+                .filter(c -> c.type != Type.EVENT)
+                .collect(Collectors.toList());
+
+        Collections.shuffle(filtered);
+        return filtered;
     }
 
 }
