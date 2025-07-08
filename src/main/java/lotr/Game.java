@@ -161,7 +161,7 @@ public class Game {
         if (a.leader2.territory == tc) {
             return true;
         }
-        
+
         return false;
     }
 
@@ -394,6 +394,15 @@ public class Game {
     public boolean isStronghold(TerritoryCard t) {
         for (Location l : Location.values()) {
             if (l.getTerritory() == t && l.isStronghold()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isSiteOfPower(TerritoryCard t) {
+        for (Location l : Location.values()) {
+            if (l.getTerritory() == t && l.isSiteOfPower()) {
                 return true;
             }
         }

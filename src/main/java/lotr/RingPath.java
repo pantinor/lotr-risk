@@ -34,7 +34,7 @@ public class RingPath implements RingPathAction {
     private final Logger logger;
     private final Game game;
     private final AnimatedSpriteActor frodo, sam;
-    private static final List<RingPathWrapper> RING_PATHS = new ArrayList<>();
+    private final List<RingPathWrapper> ringPaths = new ArrayList<>();
 
     public RingPath(Stage stage, ShapeRenderer shapeRenderer, MapLayer pathLayer, Game game, Logger logger) {
         this.shapeRenderer = shapeRenderer;
@@ -50,15 +50,15 @@ public class RingPath implements RingPathAction {
             w.x = obj.getProperties().get("x", Float.class);
             w.y = obj.getProperties().get("y", Float.class);
             w.roll = obj.getProperties().get("roll") != null;
-            RING_PATHS.add(w);
+            ringPaths.add(w);
         }
-        Collections.sort(RING_PATHS);
-        RING_PATHS.get(0).current = true;
+        Collections.sort(ringPaths);
+        ringPaths.get(0).current = true;
 
-        Vector2[] points = new Vector2[RING_PATHS.size() + 2];
-        points[0] = new Vector2(RING_PATHS.get(0).x, RING_PATHS.get(0).y); //need to duplicate the first and last points
-        for (int i = 0; i < RING_PATHS.size(); i++) {
-            RingPathWrapper w = RING_PATHS.get(i);
+        Vector2[] points = new Vector2[ringPaths.size() + 2];
+        points[0] = new Vector2(ringPaths.get(0).x, ringPaths.get(0).y); //need to duplicate the first and last points
+        for (int i = 0; i < ringPaths.size(); i++) {
+            RingPathWrapper w = ringPaths.get(i);
             points[i + 1] = new Vector2(w.x, w.y);
             stage.addActor(new PathDotActor(w, w.x, w.y));
         }
@@ -69,17 +69,21 @@ public class RingPath implements RingPathAction {
         frodo = new AnimatedSpriteActor(FRODO);
         sam = new AnimatedSpriteActor(SAM);
 
-        frodo.setPosition(RING_PATHS.get(0).x + 10, RING_PATHS.get(0).y + 10);
-        sam.setPosition(RING_PATHS.get(0).x - 10, RING_PATHS.get(0).y - 10);
+        frodo.setPosition(ringPaths.get(0).x + 10, ringPaths.get(0).y + 10);
+        sam.setPosition(ringPaths.get(0).x - 10, ringPaths.get(0).y - 10);
 
         stage.addActor(frodo);
         stage.addActor(sam);
     }
 
+    public List<RingPathWrapper> getRingPaths() {
+        return ringPaths;
+    }
+
     @Override
     public boolean advance() {
-        for (int i = 0; i < RING_PATHS.size(); i++) {
-            RingPathWrapper w = RING_PATHS.get(i);
+        for (int i = 0; i < ringPaths.size(); i++) {
+            RingPathWrapper w = ringPaths.get(i);
             if (w.current) {
                 if (w.roll) {
                     Dice d = new Dice();
@@ -94,11 +98,11 @@ public class RingPath implements RingPathAction {
                     }
                 }
                 w.current = false;
-                if (i < RING_PATHS.size() - 1) {
-                    RING_PATHS.get(i + 1).current = true;
-                    frodo.addAction(moveTo(RING_PATHS.get(i + 1).x + 10, RING_PATHS.get(i + 1).y + 10, 6));
-                    sam.addAction(moveTo(RING_PATHS.get(i + 1).x - 10, RING_PATHS.get(i + 1).y - 10, 6));
-                    logger.log("The FELLOWSHIP advances to " + RING_PATHS.get(i + 1).name.toUpperCase(), Color.PURPLE);
+                if (i < ringPaths.size() - 1) {
+                    ringPaths.get(i + 1).current = true;
+                    frodo.addAction(moveTo(ringPaths.get(i + 1).x + 10, ringPaths.get(i + 1).y + 10, 6));
+                    sam.addAction(moveTo(ringPaths.get(i + 1).x - 10, ringPaths.get(i + 1).y - 10, 6));
+                    logger.log("The FELLOWSHIP advances to " + ringPaths.get(i + 1).name.toUpperCase(), Color.PURPLE);
                 } else {
                     logger.log("Sam and Frodo have thrown the ONE RING into MOUNT DOOM!", Color.PURPLE);
                     Sounds.play(Sound.ARMAGEDDON);

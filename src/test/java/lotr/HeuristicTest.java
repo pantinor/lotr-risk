@@ -39,10 +39,10 @@ public class HeuristicTest {
             game.setBlack(game.black);
             game.setYellow(game.yellow);
 
-            game.red.bot = new HeuristicBot(game, game.red, 85);
-            game.green.bot = new HeuristicBot(game, game.green, 85);
-            game.black.bot = new HeuristicBot(game, game.black, 85);
-            game.yellow.bot = new HeuristicBot(game, game.yellow, 85);
+            game.red.bot = new HeuristicBot(game, game.red);
+            game.green.bot = new HeuristicBot(game, game.green);
+            game.black.bot = new HeuristicBot(game, game.black);
+            game.yellow.bot = new HeuristicBot(game, game.yellow);
 
             List<Army> players = new ArrayList<>();
             Random r = new Random();
@@ -57,15 +57,29 @@ public class HeuristicTest {
             }
 
             int round = 0;
+            boolean playing = true;
 
-            while (round < 40) {
+            while (playing) {
+
+                int defeatedCount = 0;
+
                 for (Army army : players) {
+
+                    List<TerritoryCard> claimedTerritories = army.claimedTerritories();
+
+                    if (claimedTerritories.isEmpty()) {
+                        defeatedCount++;
+                        if (defeatedCount >= 3) {
+                            playing = false;
+                        }
+                        continue;
+                    }
+
                     army.bot.reinforce();
                     army.bot.attack();
                     army.bot.fortify();
 
                     if (army.leader1.territory == null && army.leader2.territory == null) {
-                        List<TerritoryCard> claimedTerritories = army.claimedTerritories();
                         List<Location> strongholds = army.ownedStrongholds(claimedTerritories);
                         army.leader1.territory = !strongholds.isEmpty() ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
                     }
@@ -75,20 +89,22 @@ public class HeuristicTest {
 
 //                System.out.printf("Round: %d\n", round);
 //                for (Army a : game.armies) {
-//                    System.out.printf("%s - B: %d  T: %d  R: %d  S: %d Cards: %d  Threat: %d\n", a.armyType,
-//                            game.status[a.armyType.ordinal()].bcount, game.status[a.armyType.ordinal()].tcount,
-//                            game.status[a.armyType.ordinal()].rcount, game.status[a.armyType.ordinal()].scount,
-//                            game.status[a.armyType.ordinal()].ccount, game.status[a.armyType.ordinal()].threat);
+//                    System.out.printf("%s - TerrCount: %d  RegionCount: %d  SHCount: %d Terr Cards: %d  L1: %s L2: %s  Score: %d\n", a.armyType,
+//                            game.status[a.armyType.ordinal()].tcount, game.status[a.armyType.ordinal()].rcount,
+//                            game.status[a.armyType.ordinal()].scount, game.status[a.armyType.ordinal()].ccount,
+//                            a.leader1.territory, a.leader2.territory,
+//                            game.status[a.armyType.ordinal()].score);
 //                }
                 round++;
             }
 
-            System.out.printf("Game: %d\n", games);
+            System.out.printf("Game: %d Rounds: %d\n", games, round);
             for (Army a : game.armies) {
-                System.out.printf("%s - T: %d  R: %d  S: %d Cards: %d  Score: %d\n", a.armyType,
-                        game.status[a.armyType.ordinal()].tcount,
-                        game.status[a.armyType.ordinal()].rcount, game.status[a.armyType.ordinal()].scount,
-                        game.status[a.armyType.ordinal()].ccount, game.status[a.armyType.ordinal()].score);
+                System.out.printf("%s - TerrCount: %d  RegionCount: %d  SHCount: %d Terr Cards: %d  L1: %s L2: %s  Score: %d\n", a.armyType,
+                        game.status[a.armyType.ordinal()].tcount, game.status[a.armyType.ordinal()].rcount,
+                        game.status[a.armyType.ordinal()].scount, game.status[a.armyType.ordinal()].ccount,
+                        a.leader1.territory, a.leader2.territory,
+                        game.status[a.armyType.ordinal()].score);
             }
 
             games++;

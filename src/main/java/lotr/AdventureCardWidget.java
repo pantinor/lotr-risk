@@ -324,11 +324,19 @@ public class AdventureCardWidget extends Table implements CardAction {
 
                 //cannot have more than 4 adventure cards in hand
                 if (game.current().adventureCards.size() > 4) {
-                    //discard first card - should be a choice which one but that is not implemented at this time
-                    AdventureCard discard = game.current().adventureCards.remove(0);
-                    game.adventureCards.add(discard);
-                    logger.log(String.format("%s had to discard adventure card [%s] type [%s] because cannot have more than 4 adventure cards in hand.",
-                            game.current().armyType, discard.title(), discard.type()), game.current().armyType.color());
+                    List<AdventureCard> currentCards = game.current().adventureCards;
+
+                    // Prioritize discarding a POWER card. If none exist, discard the first card in the list.
+                    AdventureCard cardToDiscard = currentCards.stream()
+                            .filter(card -> card.type() == AdventureCard.Type.POWER && card != AdventureCard.AMBUSH && card != AdventureCard.THE_ENEMY_IS_AT_HAND
+                            && card != AdventureCard.GRIMA_WORMTONGUE_2 && card != AdventureCard.GRIMA_WORMTONGUE_1 && card != AdventureCard.SIEGE_MACHINES)
+                            .findFirst()
+                            .orElse(currentCards.get(0));
+
+                    currentCards.remove(cardToDiscard);
+                    game.adventureCards.add(cardToDiscard);
+                    logger.log(String.format("%s had to discard adventure card [%s] type [%s] because they cannot have more than 4 adventure cards in hand.",
+                            game.current().armyType, cardToDiscard.title(), cardToDiscard.type()), game.current().armyType.color());
                 }
             }
 

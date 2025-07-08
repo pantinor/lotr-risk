@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 import lotr.AdventureCard;
 import lotr.Army;
 import lotr.Battalion;
@@ -15,6 +16,7 @@ import lotr.Constants;
 import lotr.Game;
 import lotr.Game.Step;
 import lotr.GameScreen;
+import lotr.Leader;
 import lotr.Location;
 import lotr.Region;
 import static lotr.Risk.GAME;
@@ -25,6 +27,10 @@ import lotr.util.Logger;
 import lotr.util.RingPathAction;
 
 public abstract class BaseBot {
+
+    public static enum Type {
+        HEURISTIC;
+    }
 
     public static class SortWrapper implements Comparable {
 
@@ -50,8 +56,23 @@ public abstract class BaseBot {
 
     }
 
-    public static enum Type {
-        STRONG, RANDOM, WEAK, HEURISTIC;
+    private static class FortificationMove implements Comparable<FortificationMove> {
+
+        TerritoryCard from;
+        TerritoryCard to;
+        double score;
+
+        FortificationMove(TerritoryCard from, TerritoryCard to, double score) {
+            this.from = from;
+            this.to = to;
+            this.score = score;
+        }
+
+        @Override
+        public int compareTo(FortificationMove other) {
+            // Sort in descending order to get the best score first
+            return Double.compare(other.score, this.score);
+        }
     }
 
     final Dice dice = new Dice();
@@ -59,6 +80,7 @@ public abstract class BaseBot {
 
     final Game game;
     final Army army;
+
     private GameScreen gameScreen;
     private Logger logger;
     private RingPathAction rpa;
@@ -76,6 +98,14 @@ public abstract class BaseBot {
         this.logger = gameScreen.logs;
         this.rpa = rpa;
         this.cardAction = cardAction;
+    }
+
+    public void log(String text, Color color) {
+        if (this.logger != null) {
+            this.logger.log(text, color);
+        } else {
+            //System.out.println(text);
+        }
     }
 
     public SequenceAction run() {
@@ -237,6 +267,7 @@ public abstract class BaseBot {
 
             // Exit loop if the attacker can no longer continue the assault from this territory.
             if (game.battalionCount(from) <= 1) {
+                log(String.format("%s aborted their attack on %s.", army.armyType, to.title()), Color.SCARLET);
                 break;
             }
 
@@ -365,7 +396,7 @@ public abstract class BaseBot {
         }
 
         //log(String.format("%s lost %d battalion(s) from %s and %s lost %d battalion(s) from %s.",
-        //        army.armyType, attackerLosses, from, defender.armyType, defenderLosses, to), army.armyType.color());
+        //        army.armyType, attackerLosses, from, defender.armyType, defenderLosses, to), Color.SCARLET);
         return true;
     }
 
@@ -413,16 +444,18 @@ public abstract class BaseBot {
         List<SortWrapper> sorted = sortedClaimedTerritories(Step.COMBAT);
 
         if (!sorted.isEmpty()) {
-            for (int i = 0; i < territoryReinforcements; i++) {
-                army.addBattalion(randomFrom(sorted));
-            }
+            int[] reinforcementCounts = {
+                territoryReinforcements,
+                regionReinforcements,
+                cardReinforcements
+            };
 
-            for (int i = 0; i < regionReinforcements; i++) {
-                army.addBattalion(randomFrom(sorted));
-            }
-
-            for (int i = 0; i < cardReinforcements; i++) {
-                army.addBattalion(randomFrom(sorted));
+            int idx = 0;
+            for (int count : reinforcementCounts) {
+                for (int i = 0; i < count; i++) {
+                    army.addBattalion(sorted.get(idx).territory);
+                    idx = (idx + 1) % sorted.size();
+                }
             }
         }
 
@@ -433,8 +466,21 @@ public abstract class BaseBot {
 
     }
 
-    private TerritoryCard randomFrom(List<SortWrapper> sorted) {
-        return sorted.get(rand.nextInt(sorted.size())).territory;
+    /**
+     * Evaluates all possible fortification moves and executes the one with the
+     * highest strategic value. The logic prioritizes moving forces to set up
+     * high-value attacks or to defend critical territories like strongholds. If
+     * no such move is found, it performs a last-resort check to move an idle
+     * leader to the front line.
+     */
+    public void fortify() {
+        FortificationMove bestMove = findBestFortificationMove();
+
+        if (bestMove != null) {
+            fortify(bestMove.from, bestMove.to);
+        } else {
+            log(String.format("%s could not find a strategic territory to fortify.", army.armyType), army.armyType.color());
+        }
     }
 
     int[] getReinforcementCounts() {
@@ -502,26 +548,24 @@ public abstract class BaseBot {
                 int strategicValue = 0;
                 boolean enemyAdjacent = false;
 
-                // Evaluate the strategic importance of the frontier
                 for (TerritoryCard adj : t.adjacents()) {
                     Army occupyingArmy = game.getOccupyingArmy(adj);
-                    if (occupyingArmy != null && occupyingArmy != army) {
+                    if (occupyingArmy != army) {
                         enemyAdjacent = true;
-                        strategicValue++; // Base value for being on the frontier
-
-                        // Add significant value for bordering an enemy stronghold
+                        strategicValue++;
                         if (game.isStronghold(adj)) {
                             strategicValue += 2;
                         }
-                        // Add even more value for bordering an enemy leader
+                        if (game.isSiteOfPower(adj)) {
+                            strategicValue += 1;
+                        }
                         if (game.hasLeader(occupyingArmy, adj)) {
-                            strategicValue += 3;
+                            strategicValue += 2;
                         }
                     }
                 }
 
                 if (enemyAdjacent) {
-                    // The base score is the strategic value of the frontier
                     int factor = strategicValue;
                     // Multiply by existing battalions to favor reinforcing stronger positions
                     factor *= count;
@@ -570,111 +614,176 @@ public abstract class BaseBot {
     }
 
     /**
-     * Pick a territory from which battalions may be sent from in the fortify
-     * phase, or from which an attack may be made from in the attack phase.
+     * Finds the best possible fortification move by scoring all valid source
+     * and destination pairs. This includes standard battalion moves and
+     * last-resort leader repositioning.
      *
-     * For fortify phase, return a list of owned territories sorted by battalion
-     * count which have friendly adjacents.
-     *
-     * For reinforcing before combat phase, return a list of owned territories
-     * sorted by battalion count which have enemy adjacents.
-     *
-     * @param step
-     * @return
+     * @return The best FortificationMove object, or null if no strategic move
+     * is found.
      */
-    protected List<SortWrapper> oldSortedClaimedTerritories(Step step) {
+    private FortificationMove findBestFortificationMove() {
+        List<FortificationMove> choices = new ArrayList<>();
+        List<TerritoryCard> ownedTerritories = army.claimedTerritories();
+        List<TerritoryCard> goodRegionCompletionCandidatesToAttack = findRegionCompletionTargetsInRegionWhereArmyControlsStrongHold(Step.FORTIFY);
 
-        List<SortWrapper> sorted = new ArrayList<>();
-        List<TerritoryCard> owned = army.claimedTerritories();
-
-        for (TerritoryCard t : owned) {
-
-            boolean hasLeader = game.hasLeader(army, t);
-            int count = game.battalionCount(t);
-
-            //check if territory has connected adjacents
-            boolean friendlyadjacent = false;
-            for (TerritoryCard adj : t.adjacents()) {
-                if (game.isClaimed(adj) == army) {
-                    friendlyadjacent = true;
-                    break;
+        // --- Part 1A: Evaluate completing a region ---
+        for (TerritoryCard attackable : goodRegionCompletionCandidatesToAttack) {
+            Region region = Region.getRegion(attackable);
+            List<TerritoryCard> ownedTerritoriesInRegionOfAttackable = ownedTerritories.stream()
+                    .filter(c -> Region.getRegion(c) == region)
+                    .collect(Collectors.toList());
+            for (TerritoryCard from : ownedTerritoriesInRegionOfAttackable) {
+                if (game.battalionCount(from) <= 1) {
+                    continue;
+                }
+                for (TerritoryCard fortifiable : attackable.adjacents()) {
+                    if (from == fortifiable) {
+                        continue;
+                    }
+                    if (army.isConnected(from, fortifiable)) {
+                        double score = calculateFortificationScore(from, fortifiable);
+                        if (score > 0) {
+                            choices.add(new FortificationMove(from, fortifiable, score));
+                        }
+                    }
                 }
             }
-
-            //check if territory has enemy adjacents
-            boolean enemyadjacent = false;
-            for (TerritoryCard adj : t.adjacents()) {
-                if (game.isClaimed(adj) != army) {
-                    enemyadjacent = true;
-                    break;
-                }
-            }
-
-            if (step == Step.FORTIFY) {
-
-                //a territory with a leader and single battalion with no enemy adjacents 
-                //should qualify highest to fortify the leader to a better territory
-                if (count == 1 && hasLeader && !enemyadjacent && friendlyadjacent) {
-                    sorted.clear();
-                    sorted.add(new SortWrapper(count, t));
-                    break;
-                } else if (count > 1 && hasLeader && !enemyadjacent && friendlyadjacent) {
-                    //move the leader to a better territory that has enemy adjacents
-                    sorted.clear();
-                    sorted.add(new SortWrapper(count, t));
-                    break;
-                } else if (hasLeader && enemyadjacent) {
-                    //leave the leader there - no need to move him
-                } else if (friendlyadjacent && count > 1) {
-                    sorted.add(new SortWrapper(count, t));
-                }
-
-            }
-
-            if (step == Step.COMBAT) {
-                if (enemyadjacent && count == 1 && hasLeader) {
-                    sorted.clear();
-                    sorted.add(new SortWrapper(count * 2, t));
-                    break;
-                } else if (enemyadjacent && count > 1 && hasLeader) {
-                    sorted.add(new SortWrapper(count * 2, t));
-                } else if (enemyadjacent && count > 1) {
-                    sorted.add(new SortWrapper(count, t));
-                }
-            }
-
         }
-        Collections.sort(sorted, Collections.reverseOrder());
-        return sorted;
+
+        if (choices.isEmpty()) {
+            // --- Part 1B: Evaluate standard strategic moves ---
+            for (TerritoryCard from : ownedTerritories) {
+                // A move is only possible if there are battalions to move.
+                if (game.battalionCount(from) <= 1) {
+                    continue;
+                }
+
+                for (TerritoryCard to : ownedTerritories) {
+                    if (from == to) {
+                        continue;
+                    }
+
+                    if (army.isConnected(from, to)) {
+                        double score = calculateFortificationScore(from, to);
+                        if (score > 0) {
+                            choices.add(new FortificationMove(from, to, score));
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Part 2: Last Resort - Check for idle leaders ---
+        // This runs if no standard move with a positive score was found.
+        if (choices.isEmpty()) {
+            List<Leader> leaders = new ArrayList<>();
+            if (army.leader1.territory != null) {
+                leaders.add(army.leader1);
+            }
+            if (army.leader2.territory != null) {
+                leaders.add(army.leader2);
+            }
+
+            for (Leader leader : leaders) {
+                TerritoryCard from = leader.territory;
+                // An idle leader is in a "safe" territory with no adjacent enemies.
+                if (!hasEnemyNeighbors(from)) {
+                    // Find the best frontline destination for this leader.
+                    for (TerritoryCard to : ownedTerritories) {
+                        if (from == to) {
+                            continue;
+                        }
+
+                        // Destination must be on the frontline and connected.
+                        if (hasEnemyNeighbors(to) && army.isConnected(from, to)) {
+                            // Calculate score for moving the leader to this new position.
+                            double score = calculateFortificationScore(from, to);
+                            // Add a small bonus to ensure this move is chosen over doing nothing.
+                            score += 1.0;
+                            choices.add(new FortificationMove(from, to, score));
+                        }
+                    }
+                }
+            }
+        }
+
+        if (choices.isEmpty()) {
+            return null;
+        }
+
+        Collections.sort(choices);
+        return choices.get(0);
     }
 
-    public abstract TerritoryCard pickTerritoryToAttack(TerritoryCard from);
+    /**
+     * Calculates a strategic score for a potential fortification move from
+     * 'from' to 'to'.
+     *
+     * @param from The source territory.
+     * @param to The destination territory.
+     * @return A score representing the strategic value of the move.
+     */
+    private double calculateFortificationScore(TerritoryCard from, TerritoryCard to) {
+        double score = 0;
 
-    public void fortify() {
-        TerritoryCard from = pickClaimedTerritory(Step.FORTIFY);
-        if (from != null) {
-            TerritoryCard to = pickTerritoryToFortify(from);
-            fortify(from, to);
-        } else {
-            log(String.format("%s could not fortify any territories.", army.armyType), army.armyType.color());
+        // 1. Offensive Score: How good is 'to' as a staging ground for an attack?
+        double highestEnemyValue = 0;
+        for (TerritoryCard adj : to.adjacents()) {
+            Army owner = game.getOccupyingArmy(adj);
+            if (owner != null && owner != army) {
+                double enemyValue = 1; // Base value for bordering an enemy
+                if (game.isStronghold(adj)) {
+                    enemyValue += 3;
+                }
+                if (Location.getSiteOfPower(adj) != null) {
+                    enemyValue += 3;
+                }
+                // A higher battalion count makes it a harder, but more valuable target to be near
+                enemyValue += game.battalionCount(adj) / 2.0;
+
+                if (enemyValue > highestEnemyValue) {
+                    highestEnemyValue = enemyValue;
+                }
+            }
         }
+        score += highestEnemyValue * 1.5; // Weight offensive moves higher
+
+        // 2. Defensive Score: How important is it to defend the 'to' territory?
+        boolean toHasEnemyNeighbors = hasEnemyNeighbors(to);
+        if (game.isStronghold(to) && toHasEnemyNeighbors) {
+            score += 5;
+        }
+
+        // 3. Positional Score: Is this a good repositioning of forces?
+        boolean fromHasEnemyNeighbors = hasEnemyNeighbors(from);
+        if (!fromHasEnemyNeighbors && toHasEnemyNeighbors) {
+            score += 3; // Bonus for moving from a safe rear territory to the front line
+        }
+
+        return score;
     }
 
+    /**
+     * Executes the fortification move, transferring battalions and leaders.
+     *
+     * @param from The source territory.
+     * @param to The destination territory.
+     */
     private void fortify(TerritoryCard from, TerritoryCard to) {
 
-        int fortifyCount = game.battalionCount(from) - 1;
+        int bcount = game.battalionCount(from) - 1;
 
         if (to == null) {
-            log(String.format("%s did NOT find territory to fortify from %s with %d battalion(s).", army.armyType, from.title(), fortifyCount), army.armyType.color());
+            log(String.format("%s did NOT find territory to fortify from %s with %d battalion(s).", army.armyType, from.title(), bcount), army.armyType.color());
             return;
         }
 
-        log(String.format("%s fortified from %s to %s with %d battalion(s).", army.armyType, from.title(), to.title(), fortifyCount), army.armyType.color());
+        log(String.format("%s fortified from %s to %s with %d battalion(s).", army.armyType, from.title(), to.title(), bcount), army.armyType.color());
 
         for (Battalion b : army.getBattalions()) {
-            if (b.territory == from && fortifyCount > 0) {
+            if (b.territory == from && bcount > 0) {
                 b.territory = to;
-                fortifyCount--;
+                bcount--;
             }
         }
 
@@ -688,66 +797,63 @@ public abstract class BaseBot {
         }
     }
 
-    private TerritoryCard pickTerritoryToFortify(TerritoryCard from) {
-        List<TerritoryCard> targets = new ArrayList<>();
-        List<TerritoryCard> owned = army.claimedTerritories();
-
-        boolean fromTerritoryIsStronghold = game.isDefendingStrongHold(from);
-
-        boolean fromTerritoryHasEnemyadjacents = false;
-        for (TerritoryCard adj : from.adjacents()) {
-            if (game.isClaimed(adj) != army) {
-                fromTerritoryHasEnemyadjacents = true;
-                break;
+    /**
+     * Checks if a given territory is adjacent to any enemy-controlled
+     * territories.
+     *
+     * @param tc The territory to check.
+     * @return True if there is at least one enemy neighbor, false otherwise.
+     */
+    private boolean hasEnemyNeighbors(TerritoryCard tc) {
+        for (TerritoryCard adj : tc.adjacents()) {
+            Army owner = game.getOccupyingArmy(adj);
+            if (owner != null && owner != this.army) {
+                return true;
             }
         }
-
-        for (TerritoryCard t : owned) {
-
-            if (from == t) {
-                continue;
-            }
-
-            if (!army.isConnected(from, t)) {
-                continue;
-            }
-
-            boolean toTerritoryIsStronghold = game.isDefendingStrongHold(t);
-
-            boolean toTerritoryHasEnemyadjacents = false;
-            for (TerritoryCard adj : t.adjacents()) {
-                if (game.isClaimed(adj) != army) {
-                    toTerritoryHasEnemyadjacents = true;
-                    break;
-                }
-            }
-
-            if (toTerritoryIsStronghold && toTerritoryHasEnemyadjacents && !fromTerritoryIsStronghold && !fromTerritoryHasEnemyadjacents) {
-                targets.clear();
-                targets.add(t);
-                break;
-            } else if (!fromTerritoryHasEnemyadjacents && toTerritoryHasEnemyadjacents) {
-                int fromcount = game.battalionCount(from);
-                int tocount = game.battalionCount(t);
-                if (tocount < fromcount) {
-                    targets.add(t);
-                }
-            }
-        }
-
-        TerritoryCard picked = !targets.isEmpty() ? targets.get(0) : null;
-
-        log(String.format("%s picked territory %s to fortify to.", army.armyType, picked != null ? picked.title() : "NONE"), army.armyType.color());
-
-        return picked;
+        return false;
     }
 
-    public void log(String text, Color color) {
-        if (this.logger != null) {
-            this.logger.log(text, color);
-        } else {
-            //System.out.println(text);
+    protected List<TerritoryCard> findRegionCompletionTargetsInRegionWhereArmyControlsStrongHold(Game.Step step) {
+        List<TerritoryCard> targets = new ArrayList<>();
+
+        for (Region region : Region.values()) {
+            List<TerritoryCard> regionTerritories = region.territories();
+            int owned = 0;
+            int ownedSH = 0;
+            int enemy = 0;
+            List<TerritoryCard> enemyTerritories = new ArrayList<>();
+
+            for (TerritoryCard card : regionTerritories) {
+                Army owner = this.game.isClaimed(card);
+                if (owner.equals(this.army)) {
+                    owned++;
+                    if (this.game.isDefendingStrongHold(card)) {
+                        ownedSH++;
+                    }
+                } else {
+                    enemy++;
+                    enemyTerritories.add(card);
+                }
+            }
+
+            if (owned > 0 && ownedSH > 0 && enemy > 0) {
+                for (TerritoryCard t : enemyTerritories) {
+                    for (TerritoryCard adj : t.adjacents()) {
+                        if (this.game.isClaimed(adj) == this.army) {
+                            int count = this.game.battalionCount(adj);
+                            if ((step == Game.Step.COMBAT && count > 1) || (step == Game.Step.FORTIFY && count == 1)) {
+                                targets.add(t);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
         }
+
+        return targets;
     }
 
 }

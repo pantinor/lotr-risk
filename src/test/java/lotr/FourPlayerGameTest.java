@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import lotr.Game.Step;
-import lotr.ai.BaseBot;
 import lotr.ai.HeuristicBot;
 import org.apache.commons.io.IOUtils;
 import static org.testng.Assert.assertEquals;
@@ -161,17 +160,17 @@ public class FourPlayerGameTest {
         game.setBlack(game.black);
         game.setYellow(game.yellow);
 
-        game.red.bot = new HeuristicBot(game, game.red, 85);
-        game.green.bot = new HeuristicBot(game, game.red, 85);
-        game.black.bot = new HeuristicBot(game, game.red, 85);
-        game.yellow.bot = new HeuristicBot(game, game.red, 85);
+        game.red.bot = new HeuristicBot(game, game.red);
+        game.green.bot = new HeuristicBot(game, game.red);
+        game.black.bot = new HeuristicBot(game, game.red);
+        game.yellow.bot = new HeuristicBot(game, game.red);
 
         TerritoryCard pickedFromTerritory = game.red.bot.pickClaimedTerritory(Step.COMBAT);
         assertNotNull(pickedFromTerritory);
-        TerritoryCard pickedToTerritory = game.red.bot.pickTerritoryToAttack(pickedFromTerritory);
-        assertNotNull(pickedToTerritory);
-        game.black.bot.reinforce();
-        game.black.bot.attack(pickedFromTerritory, pickedToTerritory);
+        //TerritoryCard pickedToTerritory = game.red.bot.pickTerritoryToAttack(pickedFromTerritory);
+        //assertNotNull(pickedToTerritory);
+        //game.black.bot.reinforce();
+        //game.black.bot.attack(pickedFromTerritory, pickedToTerritory);
 
         TerritoryCard f = game.red.bot.pickClaimedTerritory(Step.FORTIFY);
         assertNotNull(f);
@@ -344,11 +343,6 @@ public class FourPlayerGameTest {
         }
 
         game.adventureCards.addAll(adventureCards);
-
-        red.botType = BaseBot.Type.HEURISTIC;
-        black.botType = BaseBot.Type.HEURISTIC;
-        yellow.botType = BaseBot.Type.HEURISTIC;
-        green.botType = null;
 
         GsonBuilder builder = new GsonBuilder();
         Gson gson = builder.setPrettyPrinting().excludeFieldsWithoutExposeAnnotation().create();

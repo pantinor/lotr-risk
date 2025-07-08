@@ -20,10 +20,6 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import static lotr.Risk.GAME;
 import static lotr.Risk.defaultFont;
-import static lotr.ai.BaseBot.Type.HEURISTIC;
-import static lotr.ai.BaseBot.Type.RANDOM;
-import static lotr.ai.BaseBot.Type.STRONG;
-import static lotr.ai.BaseBot.Type.WEAK;
 import lotr.ai.HeuristicBot;
 import org.apache.commons.io.IOUtils;
 
@@ -78,11 +74,8 @@ public class StartScreen implements Screen {
                     for (int i = 0; i < 4; i++) {
                         if (GAME.armies[i] != null && GAME.armies[i].botType != null) {
                             switch (GAME.armies[i].botType) {
-                                case STRONG:
-                                case RANDOM:
-                                case WEAK:
                                 case HEURISTIC:
-                                    GAME.armies[i].bot = new HeuristicBot(GAME, GAME.armies[i], 85);
+                                    GAME.armies[i].bot = new HeuristicBot(GAME, GAME.armies[i]);
                                     break;
                             }
                         }
@@ -150,7 +143,8 @@ public class StartScreen implements Screen {
         font.draw(batch, "Lord of the Rings", x, Risk.SCREEN_HEIGHT - 100);
         font.draw(batch, "Game of RISK", x + 20, Risk.SCREEN_HEIGHT - 270);
 
-        defaultFont.draw(batch, "LIBGDX Conversion by Paul Antinori", 300, 128);
+        defaultFont.draw(batch, "Trilogy Edition Rules", 300, 130);
+        defaultFont.draw(batch, "LIBGDX Conversion by Paul Antinori", 300, 100);
 
         batch.end();
 

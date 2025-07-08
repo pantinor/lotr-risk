@@ -16,62 +16,28 @@ import org.apache.commons.collections.CollectionUtils;
 
 public class HeuristicBot extends BaseBot {
 
+    public static final int DEFAULT_ATTACK_QUIT_THRESHOLD = 85;
     private final int attackQuitThreshold;
+
+    public HeuristicBot(Game game, Army army) {
+        super(game, army);
+        this.attackQuitThreshold = DEFAULT_ATTACK_QUIT_THRESHOLD;
+    }
 
     public HeuristicBot(Game game, Army army, int attackQuitThreshold) {
         super(game, army);
         this.attackQuitThreshold = attackQuitThreshold;
     }
-    
+
     @Override
     public void attack() {
         AttackChoice choice = evaluateAttackAlternatives(army.armyType, game);
 
-        // FIX: Lower the score threshold to make the bot more willing to attack.
-        while (choice != null && choice.score > 0.5 && rand.nextInt(100) < computeDynamicAttackThreshold()) { //
-            army.bot.attack(choice.from.territory, choice.to.territory); //
+        while (choice != null && choice.score > 0.5 && rand.nextInt(100) < this.attackQuitThreshold) {
+            army.bot.attack(choice.from.territory, choice.to.territory);
             // Re-evaluate the situation after the attack changes the board state
-            choice = evaluateAttackAlternatives(army.armyType, game); //
+            choice = evaluateAttackAlternatives(army.armyType, game);
         }
-    }
-
-    private int computeDynamicAttackThreshold() {
-        int myTerritories = army.claimedTerritories().size();
-        int myBattalions = army.battalions.size();
-        int totalTerritories = TerritoryCard.values().length - 2;//minus the 2 wildcards
-
-        int strongestOpponentBattalions = 0;
-        for (Army other : game.armies) {
-            if (other != null && other != army && !other.battalions.isEmpty()) {
-                strongestOpponentBattalions = Math.max(strongestOpponentBattalions, other.battalions.size());
-            }
-        }
-
-        // Start from base threshold
-        int dynamicThreshold = this.attackQuitThreshold;
-
-        // If we are dominating the map, be more aggressive
-        if (myTerritories > totalTerritories * 0.6) {
-            dynamicThreshold += 10;  // Confidence boost
-        }
-
-        // If we have a significantly larger army, increase aggression
-        if (myBattalions > strongestOpponentBattalions * 1.3) {
-            dynamicThreshold += 5;
-        }
-
-        // If we are behind, lower aggression slightly to preserve units
-        if (myBattalions < strongestOpponentBattalions * 0.7) {
-            dynamicThreshold -= 10;
-        }
-
-        // Clamp to safe bounds
-        return Math.max(40, Math.min(dynamicThreshold, 95));
-    }
-
-    @Override
-    public TerritoryCard pickTerritoryToAttack(TerritoryCard from) {
-        return null;//unused
     }
 
     @Override
@@ -103,7 +69,7 @@ public class HeuristicBot extends BaseBot {
     private AttackChoice evaluateAttackAlternatives(ArmyType at, Game game) {
         HeuristicMap map = new HeuristicMap(game);
         map.evaluate(at, game.armies);
-        List<AttackChoice> attackables = map.attackableTerritories(at);
+        List<AttackChoice> attackables = map.attackableTerritories();
         AttackChoice choice = !attackables.isEmpty() ? attackables.get(0) : null;
         return choice;
     }
@@ -115,7 +81,7 @@ public class HeuristicBot extends BaseBot {
         private int battalionCount;
         private boolean hasLeader;
         private boolean isStrongHold;
-        private int valuePoints;
+        private boolean isSOP;
 
         public boolean canBeAttackedToBreakUpRegion;// CAN I BREAK UP A REGION BY CONQUERING THIS TERRITORY?
         public boolean closeToCaptureRegion;// AM I CLOSE TO CAPTURING A REGION?
@@ -190,10 +156,9 @@ public class HeuristicBot extends BaseBot {
                 tw.opportunityToEliminatePlayer = tw.armyType != player && claimedTerritories[tw.armyType.ordinal()].size() == 1;
 
                 for (Location l : Location.values()) {
-                    if (!l.isSiteOfPower()) {
-                        if (tw.territory == l.getTerritory()) {
-                            tw.isStrongHold = true;
-                        }
+                    if (tw.territory == l.getTerritory()) {
+                        tw.isStrongHold = !l.isSiteOfPower();
+                        tw.isSOP = l.isSiteOfPower();
                     }
                 }
 
@@ -210,15 +175,29 @@ public class HeuristicBot extends BaseBot {
             return null;
         }
 
-        private List<AttackChoice> attackableTerritories(ArmyType at) {
+        private List<AttackChoice> attackableTerritories() {
             List<AttackChoice> attackables = new ArrayList<>();
 
-            for (TerritoryWrapper tw : this.territories) {
-                if (tw.armyType == at && tw.battalionCount > 1) { //
-                    for (TerritoryCard adj : tw.territory.adjacents()) { //
-                        TerritoryWrapper neighbour = get(adj);
-                        if (at != neighbour.armyType) { //
-                            attackables.add(new AttackChoice(tw, neighbour)); //
+            List<TerritoryCard> goodRegionCompletionCandidatesToAttack = findRegionCompletionTargetsInRegionWhereArmyControlsStrongHold(Game.Step.COMBAT);
+
+            if (!goodRegionCompletionCandidatesToAttack.isEmpty()) {
+                for (TerritoryCard t : goodRegionCompletionCandidatesToAttack) {
+                    TerritoryWrapper to = get(t);
+                    for (TerritoryCard adj : to.territory.adjacents()) {
+                        TerritoryWrapper from = get(adj);
+                        if (army.armyType == from.armyType && from.battalionCount > 1) {
+                            attackables.add(new AttackChoice(from, to));
+                        }
+                    }
+                }
+            } else {
+                for (TerritoryWrapper to : this.territories) {
+                    if (army.armyType != to.armyType) {
+                        for (TerritoryCard adj : to.territory.adjacents()) {
+                            TerritoryWrapper from = get(adj);
+                            if (army.armyType == from.armyType && from.battalionCount > 1) {
+                                attackables.add(new AttackChoice(from, to));
+                            }
                         }
                     }
                 }
@@ -228,12 +207,12 @@ public class HeuristicBot extends BaseBot {
                 // 1. Calculate the strategic value of the target
                 // FIX: Add a base value of 1 for any attack.
                 int strategicValue = 1;
-                strategicValue += choice.to.hasLeader ? 3 : 0; //
-                strategicValue += choice.to.opportunityToEliminatePlayer ? 5 : 0; //
-                strategicValue += choice.to.belongsToBigThreat ? 1 : 0; //
-                strategicValue += choice.to.lastTerritoryLeftInRegion ? 3 : 0; //
-                strategicValue += choice.to.canBeAttackedToBreakUpRegion ? 2 : 0; //
-                strategicValue += choice.to.isStrongHold ? 2 : 0; //
+                strategicValue += choice.to.opportunityToEliminatePlayer ? 5 : 0;
+                strategicValue += choice.to.belongsToBigThreat ? 1 : 0;
+                strategicValue += choice.to.lastTerritoryLeftInRegion ? 3 : 0;
+                strategicValue += choice.to.canBeAttackedToBreakUpRegion ? 3 : 0;
+                strategicValue += choice.to.isStrongHold ? 3 : 0;
+                strategicValue += choice.to.isSOP ? 3 : 0;
 
                 // 2. Estimate tactical advantage
                 double odds = calculateWinAdvantage(choice.from.battalionCount, choice.to.battalionCount, choice.from.hasLeader, choice.to.hasLeader, choice.to.isStrongHold);
@@ -252,15 +231,10 @@ public class HeuristicBot extends BaseBot {
                 return 0;
             }
 
-            // Effective strength considers bonuses
-            double attackerStrength = attackers + (attackerHasLeader ? 1 : 0);
-            double defenderStrength = defenders + (defenderHasLeader ? 1 : 0) + (isStronghold ? 1 : 0);
+            // Effective strength considers advantages
+            double attackerStrength = attackers + (attackerHasLeader ? 2 : 0);
+            double defenderStrength = defenders + (defenderHasLeader ? 2 : 0) + (isStronghold ? 1 : 0);
 
-            if (attackerStrength <= defenderStrength) {
-                return 0.3; // Low odds for an unfavorable attack
-            }
-
-            // A simple ratio can represent the advantage
             double advantageRatio = attackerStrength / defenderStrength;
 
             // Normalize to a value (e.g., between 0 and 1) to serve as a weight

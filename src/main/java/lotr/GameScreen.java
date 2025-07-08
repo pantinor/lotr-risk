@@ -361,6 +361,18 @@ public class GameScreen implements Screen {
 
         this.widgetStage.getBatch().begin();
         this.hud.render(this.widgetStage.getBatch(), this.game, delta);
+
+        if (Risk.textToggle) {
+            int y = Risk.SCREEN_HEIGHT - 20;
+            Risk.defaultFont.setColor(Color.SKY);
+            Risk.defaultFont.draw(this.widgetStage.getBatch(), "FELLOWSHIP", 5, y -= 20);
+            for (RingPath.RingPathWrapper r : this.ringPath.getRingPaths()) {
+                Risk.defaultFont.setColor(r.current ? Color.GREEN : Color.WHITE);
+                Risk.defaultFont.draw(this.widgetStage.getBatch(), r.name.toUpperCase(), 8, y -= 20);
+            }
+            Risk.defaultFont.setColor(Color.WHITE);
+        }
+
         this.widgetStage.getBatch().end();
 
         this.widgetStage.act();

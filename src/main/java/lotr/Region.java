@@ -32,6 +32,19 @@ public enum Region {
     public List<TerritoryCard> territories() {
         return territories;
     }
+    
+    public static Region getRegion(TerritoryCard card) {
+        for (Region r : Region.values()) {
+            if (r.containsTerritory(card)) {
+                return r;
+            }
+        }
+        return null;
+    }
+    
+    public boolean containsTerritory(TerritoryCard card) {
+        return this.territories.contains(card);
+    }
 
     public int reinforcements() {
         return reinforcements;
