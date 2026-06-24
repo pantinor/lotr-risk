@@ -145,13 +145,10 @@ public class TurnWidget extends Table implements GameStepListener {
                 if (game.current().leader1.territory == null && game.current().leader2.territory == null) {
                     List<TerritoryCard> claimedTerritories = game.current().claimedTerritories();
                     List<Location> strongholds = game.current().ownedStrongholds(claimedTerritories);
+                    // Placement preference: owned stronghold first, otherwise first claimed territory
                     TerritoryCard newTerritory = !strongholds.isEmpty() ? strongholds.get(0).getTerritory() : claimedTerritories.get(0);
 
-                    if (game.current().leader1.territory == null) {
-                        game.current().leader1.territory = newTerritory;
-                    } else {
-                        game.current().leader2.territory = newTerritory;
-                    }
+                    game.current().leader1.territory = newTerritory;
 
                     gameScreen.logs.log(String.format("%s replaced a leader to %s.",
                             game.current().armyType, newTerritory), game.current().armyType.color());

@@ -7,8 +7,17 @@ With AI for strong, weak and random bots.
 
 Some of the POWER cards are not fully implemented.
 
-To run this, you will need to install java first (if not already installed), and then extract 
-the binary zip archive and double click on the main jar file, or use java -jar command.
+## To Journey Onward
+
+This is a Maven-based Java project.
+It can run directly in your IDE (I use Netbeans) as opened maven project, 
+or from the command line requiring Apache Maven and latest Java (JDK) installed.
+
+Build and run with these CLI commands:
+```
+mvn clean install
+java -jar ./target/gdx-risk-1.0.0-SNAPSHOT-jar-with-dependencies.jar
+```
 
 ![screenshot of the example](https://raw.github.com/pantinor/lotr-risk/main/shot1.png)
 

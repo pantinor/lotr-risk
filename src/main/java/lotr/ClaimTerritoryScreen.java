@@ -98,9 +98,11 @@ public class ClaimTerritoryScreen implements Screen {
     private static final List<String> TEXTS = new ArrayList<>();
 
     static {
-        TEXTS.add("Select a terririty on the map and click on CLAIM or SPACE bar during your turn.");
-        TEXTS.add("When all territories are claimed, Reinforce your territories in similar way during your turn.");
-        TEXTS.add("The Game will begin when all battalions of each player are deployed.");
+        TEXTS.add("PHASE 1 - CLAIM: Players take turns claiming territories. LEFT-CLICK any unclaimed territory to select it (highlights green), then click CLAIM or press SPACE. One battalion is placed there. Play passes to the next player automatically.");
+        TEXTS.add("PHASE 2 - REINFORCE: Once all 64 territories are claimed, the button changes to REINFORCE. LEFT-CLICK one of YOUR territories, then click REINFORCE or press SPACE to place 1 battalion. Repeat until all your starting battalions are placed. You cannot reinforce an enemy territory.");
+        TEXTS.add("PHASE 3 - PLACE LEADERS: Once all battalions are deployed, the button changes to PLACE LEADERS. Each player places both Leaders one at a time. LEFT-CLICK one of YOUR territories and click PLACE LEADERS. Your two Leaders must be in different territories.");
+        TEXTS.add("START: When all players have placed all battalions and both Leaders, the EXIT button appears. Click EXIT to deal cards and begin the game.");
+        TEXTS.add("The active player is highlighted in yellow in the army list above. Bots take their turns automatically.");
     }
 
     public ClaimTerritoryScreen(Risk main, Game game) {
@@ -149,7 +151,7 @@ public class ClaimTerritoryScreen implements Screen {
         this.table.columnDefaults(0).expandX().left().uniformX();
 
         ScrollPane sp = new ScrollPane(table, Risk.skin);
-        sp.setBounds(300, 700, 300, 225);
+        sp.setBounds(400, 700, 300, 225);
         this.stage.addActor(sp);
 
         this.claim = new TextButton("CLAIM", Risk.skin);
@@ -196,7 +198,7 @@ public class ClaimTerritoryScreen implements Screen {
                 }
             }
         });
-        this.claim.setBounds(525, 600, 150, 40);
+        this.claim.setBounds(400, 200, 220, 35);
 
         this.exit = new TextButton("EXIT", Risk.skin);
         this.exit.setVisible(false);
@@ -251,7 +253,7 @@ public class ClaimTerritoryScreen implements Screen {
 
             }
         });
-        this.exit.setBounds(525, 600, 150, 40);
+        this.exit.setBounds(400, 200, 220, 35);
 
         this.stage.addActor(this.claim);
         this.stage.addActor(this.exit);
@@ -578,11 +580,11 @@ public class ClaimTerritoryScreen implements Screen {
         }
 
         int x = 15;
-        int y = Gdx.graphics.getHeight() - 350;
+        int y = Gdx.graphics.getHeight() - 15;
 
         for (String text : TEXTS) {
             layout.setText(Risk.font, text, Color.WHITE, 320, Align.left, true);
-            Risk.font.draw(hudbatch, layout, 15, y);
+            Risk.font.draw(hudbatch, layout, x, y);
             y -= layout.height + 30;
         }
 

@@ -81,7 +81,11 @@ public class FortifyScreen implements Screen {
     private int fortifyCount = 1;
 
     static {
-        TEXTS.add("You get ONE fortification with your battalions.  To fortify your position, take as many battalions as you'd like from one of your territories and move them to another connected territory.  You MUST leave at least one battalion behind - you cannot abandon a territory.");
+        TEXTS.add("FORTIFY: You get one free redeployment (more if you played MOVE BY NIGHT). Check 'Remaining Fortifications' below to see how many you have left.");
+        TEXTS.add("1. LEFT-CLICK one of your territories to select it as the source (highlights green). All territories connected through your own will highlight as valid destinations.");
+        TEXTS.add("2. RIGHT-CLICK a highlighted destination territory to open the radial menu. Choose how many battalions to move. You MUST leave at least 1 behind.");
+        TEXTS.add("3. If your source has only 1 battalion but a Leader, select 'L' on the radial to move the Leader alone. A Leader cannot end up in a territory that already has your other Leader.");
+        TEXTS.add("4. Click FINISH at any time to skip or end fortification and advance to the next step.");
     }
 
     public FortifyScreen(Risk main, Game game, Army army, GameScreen gameScreen, TurnWidget turnWidget) {

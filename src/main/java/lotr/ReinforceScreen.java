@@ -25,9 +25,6 @@ import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputEvent.Type;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
@@ -75,9 +72,7 @@ public class ReinforceScreen implements Screen {
     private static final int MAP_VIEWPORT_WIDTH = 736;
     private static final int MAP_VIEWPORT_HEIGHT = 968;
 
-    private final Table table = new Table();
-
-    private final TextButton reinforce, exit;
+    private final TextButton exit;
 
     private final List<TerritoryCard> claimedTerritories;
     private final List<Location> strongholds;
@@ -210,69 +205,9 @@ public class ReinforceScreen implements Screen {
         TiledMapTileLayer iconLayer = (TiledMapTileLayer) TMX_MAP.getLayers().get("icons");
         Risk.setPoints(iconLayer, regions, unitScale);
 
-        table.align(Align.left | Align.top).pad(5);
-        table.columnDefaults(0).expandX().left().uniformX();
-        table.columnDefaults(1).expandX().left().uniformX();
-
-        ScrollPane sp = new ScrollPane(table, Risk.skin);
-        sp.setBounds(400, 50, 280, 500);
-        this.stage.addActor(sp);
-
-        for (TerritoryCard c : army.territoryCards) {
-            String bt = c.battalionType() == null ? "ANY" : c.battalionType().toString().replace("_", " ");
-            this.table.add(new Label(c.title() + " - " + bt, Risk.skin));
-            this.table.row();
-        }
-
         if (cardReinforcements > 0) {
             game.turnInTerritoryCards(army, sumArchers, sumRiders, sumEagles, wildcardsUsed);
         }
-
-        this.reinforce = new TextButton("REINFORCE", Risk.skin, "blue");
-
-        this.reinforce.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-
-                // Stronghold reinforcements go to predetermined territories — no selection needed.
-                if (strongholdReinforcements > 0) {
-                    for (Location l : strongholds) {
-                        army.addBattalion(l.getTerritory());
-                        strongholdReinforcements--;
-                    }
-                    Sounds.play(Sound.TRIGGER);
-                    return;
-                }
-
-                if (selectedTerritory == null) {
-                    Sounds.play(Sound.NEGATIVE_EFFECT);
-                    return;
-                }
-
-                TerritoryCard target = selectedTerritory.territory;
-
-                if (!claimedTerritories.contains(target)) {
-                    Sounds.play(Sound.NEGATIVE_EFFECT);
-                    return;
-                }
-
-                if (territoryReinforcements > 0) {
-                    army.addBattalion(target);
-                    Sounds.play(Sound.TRIGGER);
-                    territoryReinforcements--;
-                } else if (regionReinforcements > 0) {
-                    army.addBattalion(target);
-                    Sounds.play(Sound.TRIGGER);
-                    regionReinforcements--;
-                } else if (cardReinforcements > 0) {
-                    army.addBattalion(target);
-                    Sounds.play(Sound.TRIGGER);
-                    cardReinforcements--;
-                } else {
-                    Sounds.play(Sound.NEGATIVE_EFFECT);
-                }
-            }
-        });
 
         this.exit = new TextButton("DONE", Risk.skin, "blue");
         this.exit.setVisible(false);
@@ -284,10 +219,8 @@ public class ReinforceScreen implements Screen {
             }
         });
 
-        this.reinforce.setBounds(400, 600, 220, 35);
-        this.exit.setBounds(400, 560, 220, 35);
+        this.exit.setBounds(400, 200, 220, 35);
 
-        this.stage.addActor(this.reinforce);
         this.stage.addActor(this.exit);
 
         this.stage.addListener(new EventListener() {
@@ -309,6 +242,47 @@ public class ReinforceScreen implements Screen {
             }
         });
 
+    }
+
+    public void reinforce() {
+
+        // Stronghold reinforcements go to predetermined territories — no selection needed.
+        if (strongholdReinforcements > 0) {
+            for (Location l : strongholds) {
+                army.addBattalion(l.getTerritory());
+                strongholdReinforcements--;
+            }
+            Sounds.play(Sound.TRIGGER);
+            return;
+        }
+
+        if (selectedTerritory == null) {
+            Sounds.play(Sound.NEGATIVE_EFFECT);
+            return;
+        }
+
+        TerritoryCard target = selectedTerritory.territory;
+
+        if (!claimedTerritories.contains(target)) {
+            Sounds.play(Sound.NEGATIVE_EFFECT);
+            return;
+        }
+
+        if (territoryReinforcements > 0) {
+            army.addBattalion(target);
+            Sounds.play(Sound.TRIGGER);
+            territoryReinforcements--;
+        } else if (regionReinforcements > 0) {
+            army.addBattalion(target);
+            Sounds.play(Sound.TRIGGER);
+            regionReinforcements--;
+        } else if (cardReinforcements > 0) {
+            army.addBattalion(target);
+            Sounds.play(Sound.TRIGGER);
+            cardReinforcements--;
+        } else {
+            Sounds.play(Sound.NEGATIVE_EFFECT);
+        }
     }
 
     @Override
@@ -392,9 +366,12 @@ public class ReinforceScreen implements Screen {
 
         for (String text : TEXTS) {
             layout.setText(Risk.font, text, Color.WHITE, 320, Align.left, true);
-            Risk.font.draw(hudbatch, layout, 15, y);
+            Risk.font.draw(hudbatch, layout, x, y);
             y -= layout.height + 30;
         }
+        
+        x = 400;
+        y = Gdx.graphics.getHeight() - 15;
 
         Risk.font.setColor(army.armyType.color());
         Risk.font.draw(hudbatch, army.armyType.toString(), x, y -= 20);
@@ -424,12 +401,11 @@ public class ReinforceScreen implements Screen {
         stage.draw();
 
         if (strongholdReinforcements == 0 && territoryReinforcements == 0 && regionReinforcements == 0 && cardReinforcements == 0) {
-            this.reinforce.setVisible(false);
             this.exit.setVisible(true);
         }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && this.reinforce.isVisible()) {
-            this.reinforce.fire(new ChangeListener.ChangeEvent());
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && !this.exit.isVisible()) {
+            reinforce();
         }
 
     }
