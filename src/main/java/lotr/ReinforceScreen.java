@@ -90,10 +90,11 @@ public class ReinforceScreen implements Screen {
     private static final List<String> TEXTS = new ArrayList<>();
 
     static {
-        TEXTS.add("1. Reinforce Strongholds - Place 1 battalion into each territory with a stronghold you control.");
-        TEXTS.add("2. Count your Territories - Divide the total number of territories by 3.  The number of reinforcecments you recive can never be fewer than 3.");
-        TEXTS.add("3. Reinforcements from regions - If you control every teritory within the region, then you control the region.");
-        TEXTS.add("4. Turn in any card sets - when you have a set of 3 cards that show the same picture or 1 of each picture, turn them in for reinforcements.  This is done automatically for you.");
+        TEXTS.add("1. Reinforce Strongholds - 1 battalion is placed automatically into each stronghold territory you control. Press REINFORCE or hit SPACE to apply.");
+        TEXTS.add("2. Territory Reinforcements - Click a territory on the map to select it, then press REINFORCE or hit SPACE to place 1 battalion. Repeat until all territory reinforcements are placed. (min 3)");
+        TEXTS.add("3. Region Reinforcements - If you control every territory in a region you earn bonus battalions. Click a territory and press REINFORCE or SPACE to place each one.");
+        TEXTS.add("4. Card Set Reinforcements - Sets of 3 matching cards (or 1 of each type) are turned in automatically for bonus battalions: 3 Elven Archers=4, 3 Dark Riders=6, 3 Eagles=8, 1 of each=10. Wildcards substitute any type. Place them using REINFORCE or SPACE.");
+        TEXTS.add("5. When all reinforcements are placed the DONE button appears. Click DONE to return to the game.");
     }
 
     public ReinforceScreen(Risk main, Game game, Army army, GameScreen gameScreen, TurnWidget turnWidget) {
@@ -233,6 +234,16 @@ public class ReinforceScreen implements Screen {
             @Override
             public void changed(ChangeListener.ChangeEvent event, Actor actor) {
 
+                // Stronghold reinforcements go to predetermined territories — no selection needed.
+                if (strongholdReinforcements > 0) {
+                    for (Location l : strongholds) {
+                        army.addBattalion(l.getTerritory());
+                        strongholdReinforcements--;
+                    }
+                    Sounds.play(Sound.TRIGGER);
+                    return;
+                }
+
                 if (selectedTerritory == null) {
                     Sounds.play(Sound.NEGATIVE_EFFECT);
                     return;
@@ -245,12 +256,7 @@ public class ReinforceScreen implements Screen {
                     return;
                 }
 
-                if (strongholdReinforcements > 0) {
-                    for (Location l : strongholds) {
-                        army.addBattalion(l.getTerritory());
-                        strongholdReinforcements--;
-                    }
-                } else if (territoryReinforcements > 0) {
+                if (territoryReinforcements > 0) {
                     army.addBattalion(target);
                     Sounds.play(Sound.TRIGGER);
                     territoryReinforcements--;
@@ -407,7 +413,7 @@ public class ReinforceScreen implements Screen {
             Risk.font.draw(hudbatch, "    " + r, x, y -= 20);
         }
 
-        Risk.font.draw(hudbatch, "Cards with Eleven Archers " + sumArchers, x, y -= 40);
+        Risk.font.draw(hudbatch, "Cards with Elven Archers " + sumArchers, x, y -= 40);
         Risk.font.draw(hudbatch, "Cards with Dark Riders " + sumRiders, x, y -= 20);
         Risk.font.draw(hudbatch, "Cards with Eagles " + sumEagles, x, y -= 20);
         Risk.font.setColor(Color.WHITE);

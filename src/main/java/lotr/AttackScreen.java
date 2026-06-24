@@ -279,21 +279,12 @@ public class AttackScreen implements Screen {
                 for (int i = 1; i <= attackerDice; i++) {
                     int r = DICE.roll();
                     rollsInvader.add(r);
-                    if (game.hasLeader(invader, from)) {
-                        r++;
-                    }
                     rollsInvaderWithBonus.add(r);
                 }
 
                 for (int i = 1; i <= defenderDice; i++) {
                     int r = DICE.roll();
                     rollsDefender.add(r);
-                    if (game.hasLeader(defender, to)) {
-                        r++;
-                    }
-                    if (game.isDefendingStrongHold(to) && !strongholdBonusSuppressed) {
-                        r++;
-                    }
                     rollsDefenderWithBonus.add(r);
                 }
 
@@ -301,6 +292,22 @@ public class AttackScreen implements Screen {
                 Collections.sort(rollsDefender, Collections.reverseOrder());
                 Collections.sort(rollsInvaderWithBonus, Collections.reverseOrder());
                 Collections.sort(rollsDefenderWithBonus, Collections.reverseOrder());
+
+                // Per rules: leader and stronghold bonuses apply only to the highest die
+                if (!rollsInvaderWithBonus.isEmpty() && game.hasLeader(invader, from)) {
+                    rollsInvaderWithBonus.set(0, rollsInvaderWithBonus.get(0) + 1);
+                }
+
+                int defenderBonus = 0;
+                if (game.hasLeader(defender, to)) {
+                    defenderBonus++;
+                }
+                if (game.isDefendingStrongHold(to) && !strongholdBonusSuppressed) {
+                    defenderBonus++;
+                }
+                if (!rollsDefenderWithBonus.isEmpty() && defenderBonus > 0) {
+                    rollsDefenderWithBonus.set(0, rollsDefenderWithBonus.get(0) + defenderBonus);
+                }
 
                 for (int i = 0; i < attackerDice; i++) {
                     animate3DDiceThrow(Risk.getRedModel(rollsInvader.get(i) - 1), 2, DICE_DROP_HEIGHT, i * 3 - 4, boxInfo);

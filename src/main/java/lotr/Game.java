@@ -284,15 +284,19 @@ public class Game {
 
         AtomicInteger wildcardsUsedAtomic = new AtomicInteger(wildcardsUsed);
 
-        if (sumArchers >= 1 && sumRiders >= 1 && sumEagles >= 1) {
+        // Wildcards can substitute for any missing card type. Determine how many
+        // wildcards are needed to fill the gaps for a mixed set, then check conditions
+        // using the effective (wildcard-adjusted) totals so cards are removed correctly.
+        int neededMixed = Math.max(0, 1 - sumArchers) + Math.max(0, 1 - sumRiders) + Math.max(0, 1 - sumEagles);
+        if (wildcardsUsed >= neededMixed && (sumArchers + sumRiders + sumEagles + wildcardsUsed) >= 3) {
             removeCardsOfType(cards, Constants.BattalionType.EAGLE, 1, wildcardsUsedAtomic);
             removeCardsOfType(cards, Constants.BattalionType.DARK_RIDER, 1, wildcardsUsedAtomic);
             removeCardsOfType(cards, Constants.BattalionType.ELVEN_ARCHER, 1, wildcardsUsedAtomic);
-        } else if (sumEagles >= 3) {
+        } else if (sumEagles + wildcardsUsed >= 3) {
             removeCardsOfType(cards, Constants.BattalionType.EAGLE, 3, wildcardsUsedAtomic);
-        } else if (sumRiders >= 3) {
+        } else if (sumRiders + wildcardsUsed >= 3) {
             removeCardsOfType(cards, Constants.BattalionType.DARK_RIDER, 3, wildcardsUsedAtomic);
-        } else if (sumArchers >= 3) {
+        } else if (sumArchers + wildcardsUsed >= 3) {
             removeCardsOfType(cards, Constants.BattalionType.ELVEN_ARCHER, 3, wildcardsUsedAtomic);
         }
     }
